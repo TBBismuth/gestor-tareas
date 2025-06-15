@@ -54,3 +54,9 @@ El proyecto comenzó al inicio de mis estudios en DAM utilizando Java puro con a
 ### 🤝 Notas para colaboradores
 
 *Pendiente de definir reglas de colaboración, convenciones de estilo y posibles issues o mejoras.*
+
+---
+
+### 📄 Licencia
+
+Este proyecto está bajo la licencia [MIT](LICENSE).
