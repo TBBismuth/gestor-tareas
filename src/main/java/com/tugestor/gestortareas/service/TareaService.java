@@ -7,8 +7,14 @@ public interface TareaService {
 	/*Recuerda que los metodos de una interfaz son public abstract por defecto
 	 *Por lo tanto es lo mismo que poner:
 	 *(public abstract) Tarea guardarTarea(Tarea tarea); */
-    Tarea guardarTarea(Tarea tarea);
-    List<Tarea> obtenerTodas();
-    Tarea obtenerPorId(Long id);
-    void eliminarPorId(Long id);
+	Tarea guardarTarea(Tarea tarea);
+	List<Tarea> obtenerTodas();
+	Tarea obtenerPorId(Long id);
+	void eliminarPorId(Long id);
+	Tarea actualizarPorId(Long id, Tarea tareaModificada);
+	List<Tarea> obtenerPorTitulo();
+	List<Tarea> obtenerPorTiempo();
+	List<Tarea> obtenerPorPrioridad();
+	List<Tarea> obtenerPorFechaEntrega();
+
 }

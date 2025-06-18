@@ -60,3 +60,8 @@ El proyecto comenzó al inicio de mis estudios en DAM utilizando Java puro con a
 ### 📄 Licencia
 
 Este proyecto está bajo la licencia [MIT](LICENSE).
+
+---
+
+> 🚀 **Nota:** Este proyecto está optimizado para Eclipse; incluye archivos `.classpath` y `.settings/` para facilitar la configuración inmediata al abrirlo en este IDE.
+

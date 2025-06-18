@@ -3,6 +3,8 @@ package com.tugestor.gestortareas.model;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -16,7 +18,8 @@ public class Tarea {
 	private Long id;
 	private String titulo;
 	private int tiempo;
-	private String prioridad;
+	@Enumerated(EnumType.STRING)
+	private Prioridad prioridad;
 	private LocalDateTime fechaAgregado = LocalDateTime.now();
 	private LocalDate fechaEntrega;
 	private String descripcion;
@@ -24,7 +27,7 @@ public class Tarea {
 	public Tarea() {
 		// Obligatorio para JPA
 	}
-	public Tarea(String titulo, int tiempo, String prioridad, LocalDate fechaEntrega, String descripcion) {
+	public Tarea(String titulo, int tiempo, Prioridad prioridad, LocalDate fechaEntrega, String descripcion) {
 		this.titulo = titulo;
 		this.tiempo = tiempo;
 		this.prioridad = prioridad;
@@ -32,6 +35,9 @@ public class Tarea {
 		this.descripcion = descripcion;
 	}
 	
+	public Long getId() {
+		return id;
+	}
 	public String getTitulo() {
 		return titulo;
 	}
@@ -44,10 +50,10 @@ public class Tarea {
 	public void setTiempo(int tiempo) {
 		this.tiempo = tiempo;
 	}
-	public String getPrioridad() {
+	public Prioridad getPrioridad() {
 		return prioridad;
 	}
-	public void setPrioridad(String prioridad) {
+	public void setPrioridad(Prioridad prioridad) {
 		this.prioridad = prioridad;
 	}
 	public LocalDateTime getFechaAgregado() {
