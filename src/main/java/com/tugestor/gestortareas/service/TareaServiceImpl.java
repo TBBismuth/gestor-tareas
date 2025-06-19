@@ -2,6 +2,8 @@ package com.tugestor.gestortareas.service;
 
 import java.util.*;
 import org.springframework.stereotype.Service;
+
+import com.tugestor.gestortareas.model.Prioridad;
 import com.tugestor.gestortareas.model.Tarea;
 import com.tugestor.gestortareas.repository.TareaRepository;
 
@@ -74,5 +76,23 @@ public class TareaServiceImpl implements TareaService{
 	@Override
 	public List<Tarea> obtenerPorFechaEntrega(){
 		return tr.findAllByOrderByFechaEntregaAsc();
+	}
+	
+	@Override
+	public List<Tarea> filtrarPorPrioridad(String prioridad) {
+		// Convierto la cadena de prioridad a un enum Prioridad
+		Prioridad p = Prioridad.valueOf(prioridad.toUpperCase());
+		return tr.findByPrioridad(p);
+	}
+	
+	@Override
+	public List<Tarea> filtrarPorTiempo(int tiempo) {
+		return tr.findByTiempoLessThanEqual(tiempo);
+	}
+	
+	@Override
+	public List<Tarea> filtrarPorPalabrasClave(String palabrasClave) {
+		palabrasClave = palabrasClave.replace("-", " ");
+		return tr.findByTituloContainingIgnoreCaseOrDescripcionContainingIgnoreCase(palabrasClave, palabrasClave);
 	}
 }

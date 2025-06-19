@@ -1,6 +1,7 @@
 package com.tugestor.gestortareas.service;
 
 import java.util.List;
+
 import com.tugestor.gestortareas.model.Tarea;
 
 public interface TareaService {
@@ -16,5 +17,9 @@ public interface TareaService {
 	List<Tarea> obtenerPorTiempo();
 	List<Tarea> obtenerPorPrioridad();
 	List<Tarea> obtenerPorFechaEntrega();
+	List<Tarea> filtrarPorPrioridad(String prioridad);
+	List<Tarea> filtrarPorTiempo(int tiempo);
+	List<Tarea> filtrarPorPalabrasClave(String palabrasClave);
+	
 
 }

@@ -68,5 +68,19 @@ public class TareaController {
 	public List<Tarea> listarPorFechaEntrega(){
 		return ts.obtenerPorFechaEntrega();
 	}
-
+	
+	@GetMapping("/filtrar/{prioridad}")
+	public List<Tarea> filtrarPorPrioridad(@PathVariable String prioridad) {
+		return ts.filtrarPorPrioridad(prioridad);
+	}
+	
+	@GetMapping("/filtrar/tiempo/{tiempo}")
+	public List<Tarea> filtrarPorTiempo(@PathVariable int tiempo) {
+		return ts.filtrarPorTiempo(tiempo);
+	}
+	
+	@GetMapping("/filtrar/palabras/{palabrasClave}")
+	public List<Tarea> filtrarPorPalabrasClave(@PathVariable("palabrasClave") String palabrasClave) {
+		return ts.filtrarPorPalabrasClave(palabrasClave);
+	}
 }

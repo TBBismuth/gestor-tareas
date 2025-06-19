@@ -3,6 +3,8 @@ package com.tugestor.gestortareas.repository;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.tugestor.gestortareas.model.Prioridad;
 import com.tugestor.gestortareas.model.Tarea;
 
 public interface TareaRepository extends JpaRepository<Tarea, Long> {
@@ -10,6 +12,9 @@ public interface TareaRepository extends JpaRepository<Tarea, Long> {
 	List<Tarea> findAllByOrderByTiempoAsc();
 	List<Tarea> findAllByOrderByPrioridadAsc();
 	List<Tarea> findAllByOrderByFechaEntregaAsc();
+	List<Tarea> findByPrioridad(Prioridad prioridad);
+	List<Tarea> findByTiempoLessThanEqual(int tiempo);
+	List<Tarea> findByTituloContainingIgnoreCaseOrDescripcionContainingIgnoreCase(String titulo, String descripcion);
 
-
+	
 }
