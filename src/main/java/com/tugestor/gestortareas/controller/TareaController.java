@@ -80,7 +80,12 @@ public class TareaController {
 	}
 	
 	@GetMapping("/filtrar/palabras/{palabrasClave}")
-	public List<Tarea> filtrarPorPalabrasClave(@PathVariable("palabrasClave") String palabrasClave) {
+	public List<Tarea> filtrarPorPalabrasClave(@PathVariable String palabrasClave) {
 		return ts.filtrarPorPalabrasClave(palabrasClave);
+	}
+	
+	@GetMapping("/filtrar/categoria/{idCategoria}")
+	public List<Tarea> filtrarPorCategoria(@PathVariable Long idCategoria) {
+		return ts.filtrarPorCategoria(idCategoria);
 	}
 }

@@ -15,6 +15,6 @@ public interface TareaRepository extends JpaRepository<Tarea, Long> {
 	List<Tarea> findByPrioridad(Prioridad prioridad);
 	List<Tarea> findByTiempoLessThanEqual(int tiempo);
 	List<Tarea> findByTituloContainingIgnoreCaseOrDescripcionContainingIgnoreCase(String titulo, String descripcion);
-
+	List<Tarea> findByCategoria_IdCategoria(Long idCategoria); // Con el "_" se indica que es un campo de la entidad Categoria (categoria.idCategoria)
 	
 }

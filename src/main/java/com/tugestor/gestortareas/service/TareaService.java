@@ -12,7 +12,7 @@ public interface TareaService {
 	List<Tarea> obtenerTodas();
 	Tarea obtenerPorId(Long id);
 	void eliminarPorId(Long id);
-	Tarea actualizarPorId(Long id, Tarea tareaModificada);
+	Tarea actualizarPorId(Long idTarea, Tarea tareaModificada);
 	List<Tarea> obtenerPorTitulo();
 	List<Tarea> obtenerPorTiempo();
 	List<Tarea> obtenerPorPrioridad();
@@ -20,6 +20,7 @@ public interface TareaService {
 	List<Tarea> filtrarPorPrioridad(String prioridad);
 	List<Tarea> filtrarPorTiempo(int tiempo);
 	List<Tarea> filtrarPorPalabrasClave(String palabrasClave);
+	List<Tarea> filtrarPorCategoria(Long idCategoria);
 	
 
 }

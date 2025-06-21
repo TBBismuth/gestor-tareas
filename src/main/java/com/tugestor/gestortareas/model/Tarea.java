@@ -8,6 +8,8 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 
 @Entity	// Anotación de JPA para indicar que esta clase es una entidad
 public class Tarea {
@@ -15,7 +17,7 @@ public class Tarea {
 	@GeneratedValue(strategy= GenerationType.IDENTITY) 
 	/* Generación automática del ID
 	 * IDENTITY usa AUTO_INCREMENT en la BBDD en MariaDB */
-	private Long id;
+	private Long idTarea;
 	private String titulo;
 	private int tiempo;
 	@Enumerated(EnumType.STRING)
@@ -23,20 +25,24 @@ public class Tarea {
 	private LocalDateTime fechaAgregado = LocalDateTime.now();
 	private LocalDate fechaEntrega;
 	private String descripcion;
+	@ManyToOne // Relación muchos a uno con la entidad Categoria (muchas tareas -> una categoría)
+	@JoinColumn(name = "id_categoria") // Nombre de la columna en la tabla Tarea que referencia a Categoria
+	private Categoria categoria;
 	
 	public Tarea() {
 		// Obligatorio para JPA
 	}
-	public Tarea(String titulo, int tiempo, Prioridad prioridad, LocalDate fechaEntrega, String descripcion) {
+	public Tarea(String titulo, int tiempo, Prioridad prioridad, LocalDate fechaEntrega, String descripcion, Categoria categoria) {
 		this.titulo = titulo;
 		this.tiempo = tiempo;
 		this.prioridad = prioridad;
 		this.fechaEntrega = fechaEntrega;
 		this.descripcion = descripcion;
+		this.categoria = categoria;
 	}
 	
-	public Long getId() {
-		return id;
+	public Long getIdTarea() {
+		return idTarea;
 	}
 	public String getTitulo() {
 		return titulo;
@@ -70,6 +76,12 @@ public class Tarea {
 	}
 	public void setDescripcion(String descripcion) {
 		this.descripcion = descripcion;
+	}
+	public Categoria getCategoria() {
+		return categoria;
+	}
+	public void setCategoria(Categoria categoria) {
+		this.categoria = categoria;
 	}
 
 }

@@ -3,20 +3,34 @@ package com.tugestor.gestortareas.service;
 import java.util.*;
 import org.springframework.stereotype.Service;
 
+import com.tugestor.gestortareas.model.Categoria;
 import com.tugestor.gestortareas.model.Prioridad;
 import com.tugestor.gestortareas.model.Tarea;
+import com.tugestor.gestortareas.repository.CategoriaRepository;
 import com.tugestor.gestortareas.repository.TareaRepository;
 
 @Service
 public class TareaServiceImpl implements TareaService{
+	// Inyección de dependencias a través de @Autowired
+	// @Autowired
+	// private TareaRepository tr;
+	// @Autowired
+	// private CategoriaRepository cr;
 	
+	// Inyección de dependencias a través del constructor
 	private final TareaRepository tr;
-	public TareaServiceImpl(TareaRepository tr) {
+	private final CategoriaRepository cr;
+	public TareaServiceImpl(TareaRepository tr, CategoriaRepository cr) {
 		this.tr = tr;
+		this.cr = cr;
 	}
 
 	@Override
-	public Tarea guardarTarea(Tarea tarea) {	
+	public Tarea guardarTarea(Tarea tarea) {
+		Long id = tarea.getCategoria().getIdCategoria();
+		Categoria categoria = cr.findById(id)
+				.orElseThrow(() -> new RuntimeException("Categoría no encontrada con el id: " + id));
+		tarea.setCategoria(categoria);
 		return tr.save(tarea);
 	}
 
@@ -26,11 +40,11 @@ public class TareaServiceImpl implements TareaService{
 	}
 
 	@Override
-	public Tarea obtenerPorId(Long id) {
+	public Tarea obtenerPorId(Long idTarea) {
 		/*findById(id) devuelve un Optional<Tarea> donde puede haber o NO una tarea
 		 *Optional se usa para evitar el nullPointerException
 		 *orElse(null) se usa para, si el Optional tiene tarea que la devuelva, sino(orElse), devuelve null*/
-		return tr.findById(id).orElse(null);
+		return tr.findById(idTarea).orElse(null);
 	}
 
 	@Override
@@ -39,8 +53,8 @@ public class TareaServiceImpl implements TareaService{
 	}
 	
 	@Override
-	public Tarea actualizarPorId(Long id, Tarea tareaModificada) {
-		Optional<Tarea> tareaOriginal = tr.findById(id);
+	public Tarea actualizarPorId(Long idTarea, Tarea tareaModificada) {
+		Optional<Tarea> tareaOriginal = tr.findById(idTarea);
 		// Optional<Tarea> para evitar errores null. Puede contener una tarea o estar vacío.
 		// Si la tarea existe, la modificamos. Si no, lanzamos una excepción.
 		if(tareaOriginal.isPresent()) {
@@ -52,7 +66,7 @@ public class TareaServiceImpl implements TareaService{
 			existente.setDescripcion(tareaModificada.getDescripcion());
 			return tr.save(existente);
 		}else {
-			throw new RuntimeException("No existe la tarea con ID "+ id);
+			throw new RuntimeException("No existe la tarea con ID "+ idTarea);
 		}
 	}
 	
@@ -94,5 +108,11 @@ public class TareaServiceImpl implements TareaService{
 	public List<Tarea> filtrarPorPalabrasClave(String palabrasClave) {
 		palabrasClave = palabrasClave.replace("-", " ");
 		return tr.findByTituloContainingIgnoreCaseOrDescripcionContainingIgnoreCase(palabrasClave, palabrasClave);
+	}
+
+	
+	@Override
+	public List<Tarea> filtrarPorCategoria(Long idCategoria) {
+		return tr.findByCategoria_IdCategoria(idCategoria);
 	}
 }
