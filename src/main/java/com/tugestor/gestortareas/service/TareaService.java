@@ -2,6 +2,7 @@ package com.tugestor.gestortareas.service;
 
 import java.util.List;
 
+import com.tugestor.gestortareas.model.Estado;
 import com.tugestor.gestortareas.model.Tarea;
 
 public interface TareaService {
@@ -21,6 +22,7 @@ public interface TareaService {
 	List<Tarea> filtrarPorTiempo(int tiempo);
 	List<Tarea> filtrarPorPalabrasClave(String palabrasClave);
 	List<Tarea> filtrarPorCategoria(Long idCategoria);
+	Estado obtenerEstado(Long id);
 	
 
 }

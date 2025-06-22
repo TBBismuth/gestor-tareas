@@ -3,6 +3,8 @@ package com.tugestor.gestortareas.controller;
 import java.util.List;
 
 import org.springframework.web.bind.annotation.*;
+
+import com.tugestor.gestortareas.model.Estado;
 import com.tugestor.gestortareas.model.Tarea;
 import com.tugestor.gestortareas.service.TareaService;
 
@@ -46,7 +48,6 @@ public class TareaController {
 	@PutMapping("/update/{id}")
 	public Tarea modificarTarea(@PathVariable Long id, @RequestBody Tarea tareaModificada) {
 		return ts.actualizarPorId(id, tareaModificada);
-		
 	}
 	
 	@GetMapping("/titulo")
@@ -87,5 +88,10 @@ public class TareaController {
 	@GetMapping("/filtrar/categoria/{idCategoria}")
 	public List<Tarea> filtrarPorCategoria(@PathVariable Long idCategoria) {
 		return ts.filtrarPorCategoria(idCategoria);
+	}
+	
+	@GetMapping("/estado/{id}")
+	public Estado obtenerEstadoTarea(@PathVariable Long id) {
+		return ts.obtenerEstado(id);
 	}
 }

@@ -4,6 +4,7 @@ import java.util.*;
 import org.springframework.stereotype.Service;
 
 import com.tugestor.gestortareas.model.Categoria;
+import com.tugestor.gestortareas.model.Estado;
 import com.tugestor.gestortareas.model.Prioridad;
 import com.tugestor.gestortareas.model.Tarea;
 import com.tugestor.gestortareas.repository.CategoriaRepository;
@@ -56,7 +57,7 @@ public class TareaServiceImpl implements TareaService{
 	public Tarea actualizarPorId(Long idTarea, Tarea tareaModificada) {
 		Optional<Tarea> tareaOriginal = tr.findById(idTarea);
 		// Optional<Tarea> para evitar errores null. Puede contener una tarea o estar vacío.
-		// Si la tarea existe, la modificamos. Si no, lanzamos una excepción.
+		// Si la tarea existe creo copia y sobreescribo la original. Si no, lanzamos una excepción.
 		if(tareaOriginal.isPresent()) {
 			Tarea existente = tareaOriginal.get();
 			existente.setTitulo(tareaModificada.getTitulo());
@@ -64,6 +65,10 @@ public class TareaServiceImpl implements TareaService{
 			existente.setPrioridad(tareaModificada.getPrioridad());
 			existente.setFechaEntrega(tareaModificada.getFechaEntrega());
 			existente.setDescripcion(tareaModificada.getDescripcion());
+			existente.setCompletada(tareaModificada.isCompletada());
+			if (tareaModificada.getFechaCompletada() != null) { // Si se ha completado, y por tanto, tiene fechaCompletada
+				existente.setFechaCompletada(tareaModificada.getFechaCompletada());
+			}
 			return tr.save(existente);
 		}else {
 			throw new RuntimeException("No existe la tarea con ID "+ idTarea);
@@ -114,5 +119,11 @@ public class TareaServiceImpl implements TareaService{
 	@Override
 	public List<Tarea> filtrarPorCategoria(Long idCategoria) {
 		return tr.findByCategoria_IdCategoria(idCategoria);
+	}
+
+	@Override
+	public Estado obtenerEstado(Long id) {
+		return tr.findById(id).orElseThrow(() -> new RuntimeException("No existe la tarea con ID " + id))
+				.getEstado();
 	}
 }

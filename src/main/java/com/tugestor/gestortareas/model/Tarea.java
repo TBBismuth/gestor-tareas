@@ -1,6 +1,5 @@
 package com.tugestor.gestortareas.model;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -23,16 +22,18 @@ public class Tarea {
 	@Enumerated(EnumType.STRING)
 	private Prioridad prioridad;
 	private LocalDateTime fechaAgregado = LocalDateTime.now();
-	private LocalDate fechaEntrega;
+	private LocalDateTime fechaEntrega;
 	private String descripcion;
 	@ManyToOne // Relación muchos a uno con la entidad Categoria (muchas tareas -> una categoría)
 	@JoinColumn(name = "id_categoria") // Nombre de la columna en la tabla Tarea que referencia a Categoria
 	private Categoria categoria;
+	private LocalDateTime fechaCompletada;
+	private boolean completada;
 	
 	public Tarea() {
 		// Obligatorio para JPA
 	}
-	public Tarea(String titulo, int tiempo, Prioridad prioridad, LocalDate fechaEntrega, String descripcion, Categoria categoria) {
+	public Tarea(String titulo, int tiempo, Prioridad prioridad, LocalDateTime fechaEntrega, String descripcion, Categoria categoria) {
 		this.titulo = titulo;
 		this.tiempo = tiempo;
 		this.prioridad = prioridad;
@@ -65,10 +66,10 @@ public class Tarea {
 	public LocalDateTime getFechaAgregado() {
 		return fechaAgregado;
 	}
-	public LocalDate getFechaEntrega() {
+	public LocalDateTime getFechaEntrega() {
 		return fechaEntrega;
 	}
-	public void setFechaEntrega(LocalDate fechaEntrega) {
+	public void setFechaEntrega(LocalDateTime fechaEntrega) {
 		this.fechaEntrega = fechaEntrega;
 	}
 	public String getDescripcion() {
@@ -83,5 +84,33 @@ public class Tarea {
 	public void setCategoria(Categoria categoria) {
 		this.categoria = categoria;
 	}
+	public LocalDateTime getFechaCompletada() {
+		return fechaCompletada;
+	}
+	public void setFechaCompletada(LocalDateTime fechaCompletada) {
+		this.fechaCompletada = fechaCompletada;
+	}
+	public boolean isCompletada() {
+		return completada;
+	}
+	public void setCompletada(boolean completada) {
+		this.completada = completada;
+	}
+	public Estado getEstado() {
+		if(completada) {
+			if(fechaCompletada.isAfter(fechaAgregado)) {
+				return Estado.COMPLETADA_CON_RETRASO;
+			}else {
+				return Estado.COMPLETADA;
+			}
+		}else {
+			if(LocalDateTime.now().isAfter(fechaEntrega)) {
+				return Estado.VENCIDA;
+			}else {
+				return Estado.EN_CURSO;
+			}
+		}
+	}
+	
 
 }
