@@ -9,6 +9,12 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.FutureOrPresent;
+
 
 @Entity	// Anotación de JPA para indicar que esta clase es una entidad
 public class Tarea {
@@ -17,12 +23,18 @@ public class Tarea {
 	/* Generación automática del ID
 	 * IDENTITY usa AUTO_INCREMENT en la BBDD en MariaDB */
 	private Long idTarea;
+	@NotBlank(message = "El titulo no puede estar vacio")
+	@Size(min = 3, max = 100, message = "El titulo debe tener entre 3 y 100 caracteres")
 	private String titulo;
+	@Min(value = 1, message = "El tiempo debe ser mayor a 0")
 	private int tiempo;
+	@NotNull(message = "La prioridad no puede ser nula")
 	@Enumerated(EnumType.STRING)
 	private Prioridad prioridad;
 	private LocalDateTime fechaAgregado = LocalDateTime.now();
+	@FutureOrPresent(message = "La fecha de entrega no puede haber pasado")
 	private LocalDateTime fechaEntrega;
+	@Size(max = 1000, message = "La descripción no puede exceder los 1000 caracteres")
 	private String descripcion;
 	@ManyToOne // Relación muchos a uno con la entidad Categoria (muchas tareas -> una categoría)
 	@JoinColumn(name = "id_categoria") // Nombre de la columna en la tabla Tarea que referencia a Categoria

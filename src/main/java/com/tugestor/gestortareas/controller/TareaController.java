@@ -8,6 +8,8 @@ import com.tugestor.gestortareas.model.Estado;
 import com.tugestor.gestortareas.model.Tarea;
 import com.tugestor.gestortareas.service.TareaService;
 
+import jakarta.validation.Valid;
+
 @RestController					//Responderá a peticiones HTTP y devovlera JSON
 @RequestMapping("/api/tarea")	//Ruta base para los metodos del controlador
 public class TareaController {
@@ -30,6 +32,7 @@ public class TareaController {
 		return ts.obtenerTodas();
 	}
 	
+	@Valid
 	@PostMapping("/add")
 	public Tarea aniadirTarea(@RequestBody Tarea tarea){
 		return ts.guardarTarea(tarea);
@@ -45,6 +48,7 @@ public class TareaController {
 		ts.eliminarPorId(id);
 	}
 	
+	@Valid
 	@PutMapping("/update/{id}")
 	public Tarea modificarTarea(@PathVariable Long id, @RequestBody Tarea tareaModificada) {
 		return ts.actualizarPorId(id, tareaModificada);

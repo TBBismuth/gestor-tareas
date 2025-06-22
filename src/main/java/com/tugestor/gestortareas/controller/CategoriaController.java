@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.tugestor.gestortareas.model.Categoria;
 import com.tugestor.gestortareas.service.CategoriaService;
 
+import jakarta.validation.Valid;
+
 @RestController
 @RequestMapping("/api/categoria")
 public class CategoriaController {
@@ -27,6 +29,7 @@ public class CategoriaController {
 		return cs.obtenerTodas();
 	}
 	
+	@Valid
 	@PostMapping("/add")
 	public Categoria aniadirCategoria(@RequestBody Categoria categoria){
 		return cs.guardarCategoria(categoria);
@@ -37,6 +40,7 @@ public class CategoriaController {
 		cs.eliminarPorId(id);
 	}
 	
+	@Valid
 	@PutMapping("/update/{id}")
 	public Categoria modificarCategoria(@PathVariable Long id, @RequestBody Categoria categoriaModificada) {
 		return cs.actualizarPorId(id, categoriaModificada);

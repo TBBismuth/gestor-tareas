@@ -4,12 +4,16 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 @Entity
 public class Categoria {
 	@Id
 	@GeneratedValue(strategy= GenerationType.IDENTITY)
 	private Long idCategoria;
+	@NotBlank(message = "El nombre de la categoría no puede estar vacío")
+	@Size(min = 3, max = 32, message = "El nombre de la categoría debe tener entre 3 y 32 caracteres")
 	private String nombre;
 	private String color; // Formate hex #RRGGBB, usado pra el frontend
 	private String icono; // Nombre del icono para librerias visuales en React Native

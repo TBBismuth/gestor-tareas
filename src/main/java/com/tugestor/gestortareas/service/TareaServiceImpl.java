@@ -32,6 +32,12 @@ public class TareaServiceImpl implements TareaService{
 		Categoria categoria = cr.findById(id)
 				.orElseThrow(() -> new RuntimeException("Categoría no encontrada con el id: " + id));
 		tarea.setCategoria(categoria);
+		if (tarea.isCompletada() && tarea.getFechaCompletada() == null) {
+			throw new RuntimeException("Una tarea completada debe incluir la fecha de finalización.");
+		}	//Validacion de completada sin fechaCompletada
+		if (tarea.getFechaCompletada() != null && tarea.getFechaCompletada().isBefore(tarea.getFechaAgregado())) {
+			throw new RuntimeException("La fecha de completado no puede ser anterior a la fecha de creación.");
+		}	//Validacion de fechaCompletada anterior a fechaAgregado
 		return tr.save(tarea);
 	}
 
@@ -69,6 +75,12 @@ public class TareaServiceImpl implements TareaService{
 			if (tareaModificada.getFechaCompletada() != null) { // Si se ha completado, y por tanto, tiene fechaCompletada
 				existente.setFechaCompletada(tareaModificada.getFechaCompletada());
 			}
+			if (existente.isCompletada() && existente.getFechaCompletada() == null) {
+				throw new RuntimeException("Una tarea completada debe incluir la fecha de finalización.");
+			}	//Validacion de completada sin fechaCompletada
+			if (existente.getFechaCompletada() != null && existente.getFechaCompletada().isBefore(existente.getFechaAgregado())) {
+				throw new RuntimeException("La fecha de completado no puede ser anterior a la fecha de creación.");
+			}	//Validacion de fechaCompletada anterior a fechaAgregado
 			return tr.save(existente);
 		}else {
 			throw new RuntimeException("No existe la tarea con ID "+ idTarea);
