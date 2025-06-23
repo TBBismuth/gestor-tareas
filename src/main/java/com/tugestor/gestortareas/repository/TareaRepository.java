@@ -1,6 +1,7 @@
 package com.tugestor.gestortareas.repository;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -16,5 +17,6 @@ public interface TareaRepository extends JpaRepository<Tarea, Long> {
 	List<Tarea> findByTiempoLessThanEqual(int tiempo);
 	List<Tarea> findByTituloContainingIgnoreCaseOrDescripcionContainingIgnoreCase(String titulo, String descripcion);
 	List<Tarea> findByCategoria_IdCategoria(Long idCategoria); // Con el "_" se indica que es un campo de la entidad Categoria (categoria.idCategoria)
+	List<Tarea> findByUsuario_IdUsuario(Long idUsuario);
 	
 }

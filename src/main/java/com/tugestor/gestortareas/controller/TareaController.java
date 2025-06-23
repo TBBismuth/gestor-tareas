@@ -94,6 +94,11 @@ public class TareaController {
 		return ts.filtrarPorCategoria(idCategoria);
 	}
 	
+	@GetMapping("/filtrar/usuario/{idUsuario}")
+	public List<Tarea> filtrarPorUsuario(@PathVariable Long idUsuario) {
+		return ts.filtrarPorUsuario(idUsuario);
+	}
+	
 	@GetMapping("/estado/{id}")
 	public Estado obtenerEstadoTarea(@PathVariable Long id) {
 		return ts.obtenerEstado(id);

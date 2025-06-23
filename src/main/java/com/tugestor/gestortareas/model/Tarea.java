@@ -9,6 +9,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.ForeignKey;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import jakarta.validation.constraints.Min;
@@ -41,17 +42,21 @@ public class Tarea {
 	private Categoria categoria;
 	private LocalDateTime fechaCompletada;
 	private boolean completada;
+	@ManyToOne // Relación muchos a uno con la entidad Usuario
+	@JoinColumn(name = "usuario_id", nullable = false)
+	private Usuario usuario;
 	
 	public Tarea() {
 		// Obligatorio para JPA
 	}
-	public Tarea(String titulo, int tiempo, Prioridad prioridad, LocalDateTime fechaEntrega, String descripcion, Categoria categoria) {
+	public Tarea(String titulo, int tiempo, Prioridad prioridad, LocalDateTime fechaEntrega, String descripcion, Categoria categoria, Usuario usuario) {
 		this.titulo = titulo;
 		this.tiempo = tiempo;
 		this.prioridad = prioridad;
 		this.fechaEntrega = fechaEntrega;
 		this.descripcion = descripcion;
 		this.categoria = categoria;
+		this.usuario = usuario;
 	}
 	
 	public Long getIdTarea() {
@@ -107,6 +112,12 @@ public class Tarea {
 	}
 	public void setCompletada(boolean completada) {
 		this.completada = completada;
+	}
+	public Usuario getUsuario() {
+		return usuario;
+	}
+	public void setUsuario(Usuario usuario) {
+		this.usuario = usuario;
 	}
 	public Estado getEstado() {
 		if(completada) {

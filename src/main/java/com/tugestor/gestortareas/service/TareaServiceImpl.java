@@ -51,7 +51,7 @@ public class TareaServiceImpl implements TareaService{
 		/*findById(id) devuelve un Optional<Tarea> donde puede haber o NO una tarea
 		 *Optional se usa para evitar el nullPointerException
 		 *orElse(null) se usa para, si el Optional tiene tarea que la devuelva, sino(orElse), devuelve null*/
-		return tr.findById(idTarea).orElse(null);
+		return tr.findById(idTarea).orElseThrow(() -> new RuntimeException("No existe la tarea con ID " + idTarea));
 	}
 
 	@Override
@@ -137,5 +137,10 @@ public class TareaServiceImpl implements TareaService{
 	public Estado obtenerEstado(Long id) {
 		return tr.findById(id).orElseThrow(() -> new RuntimeException("No existe la tarea con ID " + id))
 				.getEstado();
+	}
+
+	@Override
+	public List<Tarea> filtrarPorUsuario(Long idUsuario) {
+		return tr.findByUsuario_IdUsuario(idUsuario);
 	}
 }

@@ -23,6 +23,7 @@ public interface TareaService {
 	List<Tarea> filtrarPorPalabrasClave(String palabrasClave);
 	List<Tarea> filtrarPorCategoria(Long idCategoria);
 	Estado obtenerEstado(Long id);
+	List<Tarea> filtrarPorUsuario(Long idUsuario);
 	
 
 }
