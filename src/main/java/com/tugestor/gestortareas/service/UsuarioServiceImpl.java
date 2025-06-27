@@ -6,6 +6,7 @@ import java.util.Optional;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.tugestor.gestortareas.dto.LoginRequest;
 import com.tugestor.gestortareas.model.Usuario;
 import com.tugestor.gestortareas.repository.UsuarioRepository;
 
@@ -47,6 +48,16 @@ public class UsuarioServiceImpl implements UsuarioService{
 		Usuario usuario = ur.findById(id)
 				.orElseThrow(() -> new RuntimeException("No se encontró el usuario con ID: " + id));
 		ur.delete(usuario);
+	}
+
+	@Override
+	public Usuario login(LoginRequest login) {
+		Usuario usuario = ur.findByEmail(login.getEmail())
+				.orElseThrow(() -> new RuntimeException("No existe un usuario con el email: " + login.getEmail()));
+		if (!ps.matches(login.getPassword(), usuario.getPassword())) { //El orden de .matches importa, primero raw text y luego encoded text
+			throw new RuntimeException("La contraseña no coincide");
+		}
+		return usuario;
 	}
 
 }

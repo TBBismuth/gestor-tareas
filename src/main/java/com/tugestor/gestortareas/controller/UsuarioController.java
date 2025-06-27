@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.tugestor.gestortareas.dto.LoginRequest;
 import com.tugestor.gestortareas.model.Usuario;
 import com.tugestor.gestortareas.service.UsuarioService;
 
@@ -55,5 +56,11 @@ public class UsuarioController {
 	@DeleteMapping("/delete/{id}")
 	public void eliminarUsuario(@PathVariable Long id) {
 		us.eliminarPorId(id);
+	}
+	@PostMapping("/login")
+	@Valid
+	public Usuario loginUsuario(@RequestBody LoginRequest login) {
+		Usuario usuario = us.login(login);
+		return usuario;
 	}
 }
