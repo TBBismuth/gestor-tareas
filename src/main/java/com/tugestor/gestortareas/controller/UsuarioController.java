@@ -12,6 +12,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.tugestor.gestortareas.dto.LoginRequest;
+import com.tugestor.gestortareas.dto.LoginResponse;
+import com.tugestor.gestortareas.dto.UsuarioRequest;
+import com.tugestor.gestortareas.dto.UsuarioResponse;
 import com.tugestor.gestortareas.model.Usuario;
 import com.tugestor.gestortareas.service.UsuarioService;
 
@@ -26,24 +29,29 @@ public class UsuarioController {
 	}
 	
 	@GetMapping
-	public List<Usuario> listarUsuarios() {
-		return us.obtenerTodos();
+	public List<UsuarioResponse> listarUsuarios() {
+		List<Usuario> usuarios = us.obtenerTodos();
+		return usuarios.stream()
+				.map(UsuarioResponse::new)
+				.toList();
 	}
 	@GetMapping("/{id}")
-	public Usuario listarUsuarioId(@PathVariable Long id) {
-		return us.obtenerPorId(id);
+	public UsuarioResponse listarUsuarioId(@PathVariable Long id) {
+		Usuario usuario = us.obtenerPorId(id);
+		return new UsuarioResponse(usuario);
 	}
 	@GetMapping("/email/{email}")
-	public ResponseEntity<Usuario> listarUsuarioEmail(@PathVariable String email) {
-		return us.obtenerPorEmail(email).map(ResponseEntity::ok)
-			.orElseThrow(() -> new RuntimeException("Usuario no encontrado con email: " + email));
+	public ResponseEntity<UsuarioResponse> listarUsuarioEmail(@PathVariable String email) {
+		return us.obtenerPorEmail(email)
+				.map(usuario -> ResponseEntity.ok(new UsuarioResponse(usuario)))
+				.orElseThrow(() -> new RuntimeException("Usuario no encontrado con email: " + email));
 	/*ResponseEntity es una clase de Spring que representa una respuesta completa HTTP
 	 *Body, codigo de estado y headers*/
 	}
 	@PostMapping("/add")
 	@Valid
-	public ResponseEntity<Usuario> aniadirUsuario(@RequestBody Usuario usuario) {
-		Usuario nuevoUsuario = us.guardarUsuario(usuario);
+	public ResponseEntity<UsuarioResponse> aniadirUsuario(@RequestBody UsuarioRequest usuarioRequest) {
+		Usuario nuevoUsuario = us.guardarUsuario(usuarioRequest);
 		// Creamos una URI para el recurso recién creado (ej: /usuario/5)
 		// Esto es solo una referencia de "dónde se puede consultar este nuevo recurso"
 		URI location = URI.create("/usuario/" + nuevoUsuario.getIdUsuario());
@@ -51,7 +59,9 @@ public class UsuarioController {
 		// -Código 201 Created
 		// -Cabecera Location con la URI del nuevo usuario
 		// -Cuerpo: el usuario recién creado en formato JSON
-		return ResponseEntity.created(location).body(nuevoUsuario);
+		UsuarioResponse response = new UsuarioResponse(nuevoUsuario);
+		// UsuarioResponse es un DTO que contiene solo los datos necesarios para la respuesta
+		return ResponseEntity.created(location).body(response);
 	}
 	@DeleteMapping("/delete/{id}")
 	public void eliminarUsuario(@PathVariable Long id) {
@@ -59,8 +69,7 @@ public class UsuarioController {
 	}
 	@PostMapping("/login")
 	@Valid
-	public Usuario loginUsuario(@RequestBody LoginRequest login) {
-		Usuario usuario = us.login(login);
-		return usuario;
+	public LoginResponse loginUsuario(@RequestBody LoginRequest login) {
+		return us.login(login);
 	}
 }

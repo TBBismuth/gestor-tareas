@@ -3,12 +3,15 @@ package com.tugestor.gestortareas.service;
 import java.util.*;
 import org.springframework.stereotype.Service;
 
+import com.tugestor.gestortareas.dto.TareaRequest;
 import com.tugestor.gestortareas.model.Categoria;
 import com.tugestor.gestortareas.model.Estado;
 import com.tugestor.gestortareas.model.Prioridad;
 import com.tugestor.gestortareas.model.Tarea;
+import com.tugestor.gestortareas.model.Usuario;
 import com.tugestor.gestortareas.repository.CategoriaRepository;
 import com.tugestor.gestortareas.repository.TareaRepository;
+import com.tugestor.gestortareas.repository.UsuarioRepository;
 
 @Service
 public class TareaServiceImpl implements TareaService{
@@ -21,9 +24,11 @@ public class TareaServiceImpl implements TareaService{
 	// Inyección de dependencias a través del constructor
 	private final TareaRepository tr;
 	private final CategoriaRepository cr;
-	public TareaServiceImpl(TareaRepository tr, CategoriaRepository cr) {
+	private final UsuarioRepository ur;
+	public TareaServiceImpl(TareaRepository tr, CategoriaRepository cr, UsuarioRepository ur) {
 		this.tr = tr;
 		this.cr = cr;
+		this.ur = ur;
 	}
 
 	@Override
@@ -142,5 +147,29 @@ public class TareaServiceImpl implements TareaService{
 	@Override
 	public List<Tarea> filtrarPorUsuario(Long idUsuario) {
 		return tr.findByUsuario_IdUsuario(idUsuario);
+	}
+
+	@Override
+	public Tarea guardarTarea(TareaRequest tareaRequest) {
+		Tarea tarea = new Tarea();
+		tarea.setTitulo(tareaRequest.getTitulo());
+		tarea.setTiempo(tareaRequest.getTiempo());
+		tarea.setPrioridad(tareaRequest.getPrioridad());
+		tarea.setFechaEntrega(tareaRequest.getFechaEntrega());
+		tarea.setDescripcion(tareaRequest.getDescripcion());
+		
+		Long idCategoria = tareaRequest.getIdCategoria();
+		Categoria categoria = cr.findById(idCategoria)
+				.orElseThrow(() -> new RuntimeException("Categoría no encontrada con el id: " + idCategoria));
+		tarea.setCategoria(categoria);
+		
+		Long idUsuario = tareaRequest.getIdUsuario();
+		Usuario usuario = ur.findById(idUsuario)
+				.orElseThrow(() -> new RuntimeException("Usuario no encontrado con el id: " + idUsuario));
+		tarea.setUsuario(usuario);
+		
+		tarea.setCompletada(false);
+		tarea.setFechaCompletada(null);
+		return tr.save(tarea);
 	}
 }

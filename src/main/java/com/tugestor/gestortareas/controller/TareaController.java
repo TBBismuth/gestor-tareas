@@ -4,6 +4,8 @@ import java.util.List;
 
 import org.springframework.web.bind.annotation.*;
 
+import com.tugestor.gestortareas.dto.TareaRequest;
+import com.tugestor.gestortareas.dto.TareaResponse;
 import com.tugestor.gestortareas.model.Estado;
 import com.tugestor.gestortareas.model.Tarea;
 import com.tugestor.gestortareas.service.TareaService;
@@ -34,8 +36,9 @@ public class TareaController {
 	
 	@Valid
 	@PostMapping("/add")
-	public Tarea aniadirTarea(@RequestBody Tarea tarea){
-		return ts.guardarTarea(tarea);
+	public TareaResponse aniadirTarea(@RequestBody TareaRequest tareaRequest){
+		Tarea tarea = ts.guardarTarea(tareaRequest);
+		return new TareaResponse(tarea);
 	}
 	
 	@GetMapping("/{id}")

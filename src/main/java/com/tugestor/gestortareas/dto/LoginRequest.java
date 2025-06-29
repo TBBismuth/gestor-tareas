@@ -10,6 +10,9 @@ public class LoginRequest {
 	@NotBlank(message = "La contraseña no puede estar vacia")
 	private String password;
 	
+	public LoginRequest() {
+	}
+	
 	public String getEmail() {
 		return email;
 	}
