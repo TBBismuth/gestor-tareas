@@ -16,6 +16,7 @@ public interface TareaService {
 	Tarea obtenerPorId(Long id);
 	void eliminarPorId(Long id);
 	Tarea actualizarPorId(Long idTarea, Tarea tareaModificada);
+	Tarea actualizarPorId(Long idTarea, TareaRequest tareaRequest);
 	List<Tarea> obtenerPorTitulo();
 	List<Tarea> obtenerPorTiempo();
 	List<Tarea> obtenerPorPrioridad();

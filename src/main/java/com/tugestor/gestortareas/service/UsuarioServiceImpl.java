@@ -15,10 +15,10 @@ import com.tugestor.gestortareas.repository.UsuarioRepository;
 @Service
 public class UsuarioServiceImpl implements UsuarioService{
 	private final UsuarioRepository ur;
-	private final PasswordEncoder ps;
-	public UsuarioServiceImpl(UsuarioRepository ur, PasswordEncoder ps) {
+	private final PasswordEncoder pe;
+	public UsuarioServiceImpl(UsuarioRepository ur, PasswordEncoder pe) {
 		this.ur = ur;
-		this.ps = ps;
+		this.pe = pe;
 	}
 
 	@Override
@@ -26,7 +26,7 @@ public class UsuarioServiceImpl implements UsuarioService{
 		ur.findByEmail(usuario.getEmail()).ifPresent(temp -> {
 			throw new RuntimeException("Ya existe un usuario con el email: " + usuario.getEmail());
 		});
-		usuario.setPassword(ps.encode(usuario.getPassword()));
+		usuario.setPassword(pe.encode(usuario.getPassword()));
 		return ur.save(usuario);
 	}
 
@@ -56,7 +56,7 @@ public class UsuarioServiceImpl implements UsuarioService{
 	public LoginResponse login(LoginRequest login) {
 		Usuario usuario = ur.findByEmail(login.getEmail())
 				.orElseThrow(() -> new RuntimeException("No existe un usuario con el email: " + login.getEmail()));
-		if (!ps.matches(login.getPassword(), usuario.getPassword())) { //El orden de .matches importa, primero raw text y luego encoded text
+		if (!pe.matches(login.getPassword(), usuario.getPassword())) { //El orden de .matches importa, primero raw text y luego encoded text
 			throw new RuntimeException("La contraseña no coincide");
 		}
 		return new LoginResponse(usuario);
@@ -74,7 +74,7 @@ public class UsuarioServiceImpl implements UsuarioService{
 		ur.findByEmail(usuario.getEmail()).ifPresent(temp -> {
 			throw new RuntimeException("Ya existe un usuario con el email: " + usuario.getEmail());
 		});
-		usuario.setPassword(ps.encode(usuario.getPassword()));
+		usuario.setPassword(pe.encode(usuario.getPassword()));
 		return ur.save(usuario);
 	}
 

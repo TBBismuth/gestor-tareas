@@ -3,6 +3,11 @@ package com.tugestor.gestortareas.controller;
 import java.net.URI;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -16,6 +21,8 @@ import com.tugestor.gestortareas.dto.LoginResponse;
 import com.tugestor.gestortareas.dto.UsuarioRequest;
 import com.tugestor.gestortareas.dto.UsuarioResponse;
 import com.tugestor.gestortareas.model.Usuario;
+import com.tugestor.gestortareas.repository.UsuarioRepository;
+import com.tugestor.gestortareas.security.JwtService;
 import com.tugestor.gestortareas.service.UsuarioService;
 
 import jakarta.validation.Valid;
@@ -24,8 +31,14 @@ import jakarta.validation.Valid;
 @RequestMapping("/api/usuario")
 public class UsuarioController {
 	private final UsuarioService us;
-	public UsuarioController(UsuarioService us) {
+	private final AuthenticationManager am;
+	private final JwtService jwts;
+	private final UsuarioRepository ur;
+	public UsuarioController(UsuarioService us, AuthenticationManager am, JwtService jwts, UsuarioRepository ur) {
 		this.us = us;
+		this.am = am;
+		this.jwts = jwts;
+		this.ur= ur;
 	}
 	
 	@GetMapping
@@ -69,7 +82,28 @@ public class UsuarioController {
 	}
 	@PostMapping("/login")
 	@Valid
-	public LoginResponse loginUsuario(@RequestBody LoginRequest login) {
-		return us.login(login);
+	public ResponseEntity<LoginResponse> loginUsuario(@RequestBody LoginRequest loginRequest){
+		// Autentifico el usuario con email y pass usando CustomUserDetailsService y PasswordEncoder
+		Authentication auth = am.authenticate(
+				new UsernamePasswordAuthenticationToken(
+						loginRequest.getEmail(),
+						loginRequest.getPassword()
+						)
+				);
+		// Extraigo los detalles del usuario autentificado
+		UserDetails userDetails = (UserDetails) auth.getPrincipal();
+		// Genero el token usando JwtService
+		String jwtToken = jwts.generateToken(userDetails);
+		// Recupero el Usuario de la BBDD para obtener id y nombre
+		Usuario usuario = ur.findByEmail(userDetails.getUsername())	// El Username es el email
+				.orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado: " + userDetails.getUsername()));
+		// Construyo el LoginResponse con el id, nombre, email y token
+		LoginResponse response = new LoginResponse(
+				usuario.getIdUsuario(),
+				usuario.getNombre(),
+				usuario.getEmail(),
+				jwtToken
+				);
+		return ResponseEntity.ok(response);	// .ok devuelve HTP 200 + el contenido
 	}
 }

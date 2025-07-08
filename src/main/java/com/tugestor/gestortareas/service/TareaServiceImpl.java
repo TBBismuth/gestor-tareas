@@ -172,4 +172,42 @@ public class TareaServiceImpl implements TareaService{
 		tarea.setFechaCompletada(null);
 		return tr.save(tarea);
 	}
+
+	@Override
+	public Tarea actualizarPorId(Long idTarea, TareaRequest tareaRequest) {
+		Optional<Tarea> tareaOriginal = tr.findById(idTarea);
+		if (tareaOriginal.isPresent()) {
+			Tarea existente = tareaOriginal.get();
+			existente.setTitulo(tareaRequest.getTitulo());
+			existente.setTiempo(tareaRequest.getTiempo());
+			existente.setPrioridad(tareaRequest.getPrioridad());
+			existente.setFechaEntrega(tareaRequest.getFechaEntrega());
+			existente.setDescripcion(tareaRequest.getDescripcion());
+			// Decido si actualizar la categoría
+			if (tareaRequest.getIdCategoria() != null) {
+				Categoria categoria = cr.findById(tareaRequest.getIdCategoria())
+						.orElseThrow(() -> new RuntimeException("Categoría no encontrada con id: " + tareaRequest.getIdCategoria()));
+				existente.setCategoria(categoria);
+			}
+			// Decido si actualizar el usuario
+			if (tareaRequest.getIdUsuario() != null) {
+				Usuario usuario = ur.findById(tareaRequest.getIdUsuario())
+						.orElseThrow(() -> new RuntimeException("Usuario no encontrado con id: " + tareaRequest.getIdUsuario()));
+				existente.setUsuario(usuario);
+			}
+			existente.setCompletada(tareaRequest.isCompletada());
+			// Validar fecha de completado
+			if (tareaRequest.isCompletada() && tareaRequest.getFechaCompletada() == null) {
+				throw new RuntimeException("Una tarea completada debe incluir la fecha de finalización.");
+			}
+			if (tareaRequest.getFechaCompletada() != null && tareaRequest.getFechaCompletada().isBefore(existente.getFechaAgregado())) {
+				throw new RuntimeException("La fecha de completado no puede ser anterior a la fecha de creación.");
+			}
+			existente.setFechaCompletada(tareaRequest.getFechaCompletada());
+			return tr.save(existente);
+		} else {
+			throw new RuntimeException("No existe la tarea con ID " + idTarea);
+		}
+	}
+
 }

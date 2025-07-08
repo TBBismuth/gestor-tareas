@@ -30,8 +30,10 @@ public class TareaController {
 	}
 	
 	@GetMapping
-	public List<Tarea> listarTareas(){
-		return ts.obtenerTodas();
+	public List<TareaResponse> listarTareas(){
+		List<Tarea> tareas = ts.obtenerTodas();
+		return tareas.stream().map(TareaResponse::new)	// Convierte cada Tarea en un TareaResponse
+				.toList(); // Recoge el resultado en una nueva lista que es devuelta como respuesta
 	}
 	
 	@Valid
@@ -42,8 +44,9 @@ public class TareaController {
 	}
 	
 	@GetMapping("/{id}")
-	public Tarea listarTareaId(@PathVariable Long id) {	//Con @PathVariable indico que el {id} de la url es el valor de id
-		return ts.obtenerPorId(id);
+	public TareaResponse listarTareaId(@PathVariable Long id) {	//Con @PathVariable indico que el {id} de la url es el valor de id
+		Tarea tarea = ts.obtenerPorId(id);
+		return new TareaResponse(tarea);
 	}
 	
 	@DeleteMapping("/delete/{id}")
@@ -53,53 +56,63 @@ public class TareaController {
 	
 	@Valid
 	@PutMapping("/update/{id}")
-	public Tarea modificarTarea(@PathVariable Long id, @RequestBody Tarea tareaModificada) {
-		return ts.actualizarPorId(id, tareaModificada);
+	public TareaResponse modificarTarea(@PathVariable Long id, @RequestBody TareaRequest tareaRequest) {
+		Tarea tarea = ts.actualizarPorId(id, tareaRequest);
+		return new TareaResponse(tarea);
 	}
 	
 	@GetMapping("/titulo")
-	public List<Tarea> listarPorTitulo(){
-		return ts.obtenerPorTitulo();
+	public List<TareaResponse> listarPorTitulo(){
+		List<Tarea> tareas = ts.obtenerPorTitulo();
+		return tareas.stream().map(TareaResponse::new).toList();
 	}
 	
 	@GetMapping("/tiempo")
-	public List<Tarea> listarPorTiempo(){
-		return ts.obtenerPorTiempo();
+	public List<TareaResponse> listarPorTiempo(){
+		List<Tarea> tareas = ts.obtenerPorTiempo();
+		return tareas.stream().map(TareaResponse::new).toList();
 	}
 	
 	@GetMapping("/prioridad")
-	public List<Tarea> listarPorPrioridad(){
-		return ts.obtenerPorPrioridad();
+	public List<TareaResponse> listarPorPrioridad(){
+		List<Tarea> tareas = ts.obtenerPorPrioridad();
+		return tareas.stream().map(TareaResponse::new).toList();
 	}
 	
 	@GetMapping("/fecha")
-	public List<Tarea> listarPorFechaEntrega(){
-		return ts.obtenerPorFechaEntrega();
+	public List<TareaResponse> listarPorFechaEntrega(){
+		List<Tarea> tareas = ts.obtenerPorFechaEntrega();
+		return tareas.stream().map(TareaResponse::new).toList();
 	}
 	
 	@GetMapping("/filtrar/{prioridad}")
-	public List<Tarea> filtrarPorPrioridad(@PathVariable String prioridad) {
-		return ts.filtrarPorPrioridad(prioridad);
+	public List<TareaResponse> filtrarPorPrioridad(@PathVariable String prioridad) {
+		List<Tarea> tareas = ts.filtrarPorPrioridad(prioridad);
+		return tareas.stream().map(TareaResponse::new).toList();
 	}
 	
 	@GetMapping("/filtrar/tiempo/{tiempo}")
-	public List<Tarea> filtrarPorTiempo(@PathVariable int tiempo) {
-		return ts.filtrarPorTiempo(tiempo);
+	public List<TareaResponse> filtrarPorTiempo(@PathVariable int tiempo) {
+		List<Tarea> tareas = ts.filtrarPorTiempo(tiempo);
+		return tareas.stream().map(TareaResponse::new).toList();
 	}
 	
 	@GetMapping("/filtrar/palabras/{palabrasClave}")
-	public List<Tarea> filtrarPorPalabrasClave(@PathVariable String palabrasClave) {
-		return ts.filtrarPorPalabrasClave(palabrasClave);
+	public List<TareaResponse> filtrarPorPalabrasClave(@PathVariable String palabrasClave) {
+		List<Tarea> tareas = ts.filtrarPorPalabrasClave(palabrasClave);
+		return tareas.stream().map(TareaResponse::new).toList();
 	}
 	
 	@GetMapping("/filtrar/categoria/{idCategoria}")
-	public List<Tarea> filtrarPorCategoria(@PathVariable Long idCategoria) {
-		return ts.filtrarPorCategoria(idCategoria);
+	public List<TareaResponse> filtrarPorCategoria(@PathVariable Long idCategoria) {
+		List<Tarea> tareas = ts.filtrarPorCategoria(idCategoria);
+		return tareas.stream().map(TareaResponse::new).toList();
 	}
 	
 	@GetMapping("/filtrar/usuario/{idUsuario}")
-	public List<Tarea> filtrarPorUsuario(@PathVariable Long idUsuario) {
-		return ts.filtrarPorUsuario(idUsuario);
+	public List<TareaResponse> filtrarPorUsuario(@PathVariable Long idUsuario) {
+		List<Tarea> tareas = ts.filtrarPorUsuario(idUsuario);
+		return tareas.stream().map(TareaResponse::new).toList();
 	}
 	
 	@GetMapping("/estado/{id}")
