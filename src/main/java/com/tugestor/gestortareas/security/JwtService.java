@@ -14,6 +14,7 @@ public class JwtService {
 	@Value("${jwt.secret}")
 	private String secretKey;
 	private static final long EXPIRATION_TIME_MILLISECONDS = 24*60*60*1000;	// 24 horas
+//	private static final long EXPIRATION_TIME_MILLISECONDS = 60*1000;	// 1 minuto para pruebas
 	private static final SignatureAlgorithm SIGNATURE_ALGORITHM = SignatureAlgorithm.HS256;
 	
 	public String generateToken(UserDetails userDetails) {

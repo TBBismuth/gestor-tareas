@@ -21,39 +21,47 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 		this.jwtS = jwtS;
 		this.uds = uds;
 	}
-	
+
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
 			throws ServletException, IOException {
-		final String authHeader = request.getHeader("Authorization");	// Extraigo la linea de autorización
+		final String authHeader = request.getHeader("Authorization");
 		final String jwt;
 		final String username;
 		
-		if (authHeader == null || !authHeader.startsWith("Bearer ")) {	// Si no hay linea de autorizacion o no 
-			filterChain.doFilter(request, response);			// empieza por Baerer dejamos pasar sin hacer nada
+		if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+			filterChain.doFilter(request, response);
 			return;
 		}
-		jwt = authHeader.substring(7);			// Eliminamos el "Baerer "
-		username = jwtS.extractUsername(jwt);	// Saco el usuario (subject)
 		
-		if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-			// si tenemos un username y no está previamente autentificado entramos
-			UserDetails userDetails = this.uds.loadUserByUsername(username);
-			// Carga el usuario de la base de datos y devuelvo un UserDetails completo
-			if (jwtS.isTokenValid(jwt, userDetails)) {// Si el token es valido, no ha expirado y el username coincide
-				UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-								userDetails,
-								null,
-								userDetails.getAuthorities()
-								);
-				// authToken es un objeto que Spring utiliza para representar un usuario autenticado
-				authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-				// Pone los detalles de la peticion
-				SecurityContextHolder.getContext().setAuthentication(authToken);
-				// Guardo la peticion en el SecutiryContextHolder
+		try {
+			jwt = authHeader.substring(7);
+			username = jwtS.extractUsername(jwt);
+			
+			if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+				UserDetails userDetails = this.uds.loadUserByUsername(username);
+				if (jwtS.isTokenValid(jwt, userDetails)) {
+					UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+							userDetails,
+							null,
+							userDetails.getAuthorities()
+							);
+					authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+					SecurityContextHolder.getContext().setAuthentication(authToken);
+				} else {
+					// Token invalido por firma incorrecta o expirado
+					response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+					return;
+				}
 			}
+		} catch (Exception e) {
+			// Cualquier error al procesar el token da 401
+			response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+			return;
 		}
+
 		filterChain.doFilter(request, response);
 	}
+
 
 }

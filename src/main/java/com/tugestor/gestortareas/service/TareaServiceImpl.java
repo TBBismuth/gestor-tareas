@@ -1,9 +1,13 @@
 package com.tugestor.gestortareas.service;
 
+import java.time.LocalDateTime;
 import java.util.*;
+
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import com.tugestor.gestortareas.dto.TareaRequest;
+import com.tugestor.gestortareas.dto.TareaResponse;
 import com.tugestor.gestortareas.model.Categoria;
 import com.tugestor.gestortareas.model.Estado;
 import com.tugestor.gestortareas.model.Prioridad;
@@ -12,6 +16,8 @@ import com.tugestor.gestortareas.model.Usuario;
 import com.tugestor.gestortareas.repository.CategoriaRepository;
 import com.tugestor.gestortareas.repository.TareaRepository;
 import com.tugestor.gestortareas.repository.UsuarioRepository;
+
+import jakarta.persistence.EntityNotFoundException;
 
 @Service
 public class TareaServiceImpl implements TareaService{
@@ -32,11 +38,22 @@ public class TareaServiceImpl implements TareaService{
 	}
 
 	@Override
-	public Tarea guardarTarea(Tarea tarea) {
-		Long id = tarea.getCategoria().getIdCategoria();
+	public Tarea guardarTarea(TareaRequest tareaRequest, String emailUsuario) {
+		Usuario usuario = ur.findByEmail(emailUsuario)
+				.orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado con email: " + emailUsuario));
+		Long id = tareaRequest.getIdCategoria();
 		Categoria categoria = cr.findById(id)
 				.orElseThrow(() -> new RuntimeException("Categoría no encontrada con el id: " + id));
+		Tarea tarea = new Tarea();
+		tarea.setTitulo(tareaRequest.getTitulo());
+		tarea.setTiempo(tareaRequest.getTiempo());
+		tarea.setPrioridad(tareaRequest.getPrioridad());
+		tarea.setFechaEntrega(tareaRequest.getFechaEntrega());
+		tarea.setDescripcion(tareaRequest.getDescripcion());
+		tarea.setFechaAgregado(LocalDateTime.now());
 		tarea.setCategoria(categoria);
+		tarea.setUsuario(usuario);
+		
 		if (tarea.isCompletada() && tarea.getFechaCompletada() == null) {
 			throw new RuntimeException("Una tarea completada debe incluir la fecha de finalización.");
 		}	//Validacion de completada sin fechaCompletada
@@ -47,167 +64,148 @@ public class TareaServiceImpl implements TareaService{
 	}
 
 	@Override
-	public List<Tarea> obtenerTodas() {
-		return tr.findAll();
+	public List<Tarea> obtenerTodas(String principal) {
+		return tr.findByUsuarioEmail(principal);
 	}
 
 	@Override
-	public Tarea obtenerPorId(Long idTarea) {
+	public Tarea obtenerPorId(Long idTarea, String emailUsuario) {
+		Tarea tarea = tr.findById(idTarea)
+				.orElseThrow(() -> new EntityNotFoundException("Tarea no encontrada con id: " + idTarea));
+		if (!tarea.getUsuario().getEmail().equals(emailUsuario)) {
+			throw new AccessDeniedException("No puedes ver tareas que no son tuyas.");
+		}
 		/*findById(id) devuelve un Optional<Tarea> donde puede haber o NO una tarea
 		 *Optional se usa para evitar el nullPointerException
 		 *orElse(null) se usa para, si el Optional tiene tarea que la devuelva, sino(orElse), devuelve null*/
-		return tr.findById(idTarea).orElseThrow(() -> new RuntimeException("No existe la tarea con ID " + idTarea));
+		return tarea;
 	}
 
 	@Override
-	public void eliminarPorId(Long id) {
-		tr.deleteById(id);
+	public void eliminarPorId(Long id, String emailUsuario) {
+		Tarea tarea = tr.findById(id)
+				.orElseThrow(() -> new EntityNotFoundException("Tarea no encontrada con id: " + id));
+		if (!tarea.getUsuario().getEmail().equals(emailUsuario)) {
+			throw new AccessDeniedException("No puedes eliminar tareas que no son tuyas.");
+		}
+		tr.delete(tarea);
 	}
 	
 	@Override
-	public Tarea actualizarPorId(Long idTarea, Tarea tareaModificada) {
+	public Tarea actualizarPorId(Long idTarea, TareaRequest tareaRequest, String emailUsuario) {
 		Optional<Tarea> tareaOriginal = tr.findById(idTarea);
 		// Optional<Tarea> para evitar errores null. Puede contener una tarea o estar vacío.
 		// Si la tarea existe creo copia y sobreescribo la original. Si no, lanzamos una excepción.
-		if(tareaOriginal.isPresent()) {
+		if (tareaOriginal.isPresent()) {
 			Tarea existente = tareaOriginal.get();
-			existente.setTitulo(tareaModificada.getTitulo());
-			existente.setTiempo(tareaModificada.getTiempo());
-			existente.setPrioridad(tareaModificada.getPrioridad());
-			existente.setFechaEntrega(tareaModificada.getFechaEntrega());
-			existente.setDescripcion(tareaModificada.getDescripcion());
-			existente.setCompletada(tareaModificada.isCompletada());
-			if (tareaModificada.getFechaCompletada() != null) { // Si se ha completado, y por tanto, tiene fechaCompletada
-				existente.setFechaCompletada(tareaModificada.getFechaCompletada());
+			if (!existente.getUsuario().getEmail().equals(emailUsuario)) {
+				throw new AccessDeniedException("No tienes permiso para modificar esta tarea.");
 			}
+			existente.setTitulo(tareaRequest.getTitulo());
+			existente.setTiempo(tareaRequest.getTiempo());
+			existente.setPrioridad(tareaRequest.getPrioridad());
+			existente.setFechaEntrega(tareaRequest.getFechaEntrega());
+			existente.setDescripcion(tareaRequest.getDescripcion());
+			existente.setCompletada(tareaRequest.isCompletada());
+			// Si la tarea esta completada sin fechaCompletada, la añado
+			if (tareaRequest.getFechaCompletada() != null) {
+				existente.setFechaCompletada(tareaRequest.getFechaCompletada());
+			}	// Si esta completada pero fechaCompletada es null
 			if (existente.isCompletada() && existente.getFechaCompletada() == null) {
 				throw new RuntimeException("Una tarea completada debe incluir la fecha de finalización.");
-			}	//Validacion de completada sin fechaCompletada
+			}	// Si tiene fechaCompletada pero es posterior a fechaAgregado
 			if (existente.getFechaCompletada() != null && existente.getFechaCompletada().isBefore(existente.getFechaAgregado())) {
 				throw new RuntimeException("La fecha de completado no puede ser anterior a la fecha de creación.");
-			}	//Validacion de fechaCompletada anterior a fechaAgregado
+			}
 			return tr.save(existente);
-		}else {
-			throw new RuntimeException("No existe la tarea con ID "+ idTarea);
+		} else {
+			throw new RuntimeException("No existe la tarea con ID " + idTarea);
 		}
 	}
 	
 	@Override
-	public 	List<Tarea> obtenerPorTitulo(){
-		return tr.findAllByOrderByTituloAsc();
+	public 	List<Tarea> obtenerPorTitulo(String emailUsuario){
+		return tr.findAllByUsuarioEmailOrderByTituloAsc(emailUsuario);
 	}
 
 	@Override
-	public 	List<Tarea> obtenerPorTiempo(){
-		return tr.findAllByOrderByTiempoAsc();
+	public 	List<Tarea> obtenerPorTiempo(String emailUsuario){
+		return tr.findAllByUsuarioEmailOrderByTiempoAsc(emailUsuario);
 	}
 	
 	@Override
-	public 	List<Tarea> obtenerPorPrioridad(){
-		List<Tarea> lista = tr.findAll();
-		lista.sort(Comparator.comparing(t -> t.getPrioridad().ordinal()));
-		return lista;
+	public 	List<Tarea> obtenerPorPrioridad(String emailUsuario){
+		return tr.findAllByUsuarioEmailOrderByPrioridadAsc(emailUsuario);
 	}
 	
 	@Override
-	public List<Tarea> obtenerPorFechaEntrega(){
-		return tr.findAllByOrderByFechaEntregaAsc();
+	public List<Tarea> obtenerPorFechaEntrega(String emailUsuario){
+		return tr.findAllByUsuarioEmailOrderByFechaEntregaAsc(emailUsuario);
 	}
 	
 	@Override
-	public List<Tarea> filtrarPorPrioridad(String prioridad) {
+	public List<Tarea> filtrarPorPrioridad(String prioridad, String emailUsuario) {
 		// Convierto la cadena de prioridad a un enum Prioridad
 		Prioridad p = Prioridad.valueOf(prioridad.toUpperCase());
-		return tr.findByPrioridad(p);
+		return tr.findByUsuarioEmailAndPrioridad(emailUsuario, p);
 	}
 	
 	@Override
-	public List<Tarea> filtrarPorTiempo(int tiempo) {
-		return tr.findByTiempoLessThanEqual(tiempo);
+	public List<Tarea> filtrarPorTiempo(int tiempo, String emailUsuario) {
+		return tr.findByUsuarioEmailAndTiempoLessThanEqual(emailUsuario, tiempo);
 	}
 	
 	@Override
-	public List<Tarea> filtrarPorPalabrasClave(String palabrasClave) {
+	public List<Tarea> filtrarPorPalabrasClave(String palabrasClave, String emailUsuario) {
 		palabrasClave = palabrasClave.replace("-", " ");
-		return tr.findByTituloContainingIgnoreCaseOrDescripcionContainingIgnoreCase(palabrasClave, palabrasClave);
+		return tr.findByUsuarioEmailAndTituloContainingIgnoreCaseOrUsuarioEmailAndDescripcionContainingIgnoreCase(emailUsuario, palabrasClave, emailUsuario, palabrasClave);
 	}
-
 	
 	@Override
-	public List<Tarea> filtrarPorCategoria(Long idCategoria) {
-		return tr.findByCategoria_IdCategoria(idCategoria);
-	}
-
-	@Override
-	public Estado obtenerEstado(Long id) {
-		return tr.findById(id).orElseThrow(() -> new RuntimeException("No existe la tarea con ID " + id))
-				.getEstado();
+	public List<Tarea> filtrarPorCategoria(Long idCategoria, String emailUsuario) {
+		return tr.findByUsuarioEmailAndCategoria_IdCategoria(emailUsuario, idCategoria);
 	}
 
 	@Override
 	public List<Tarea> filtrarPorUsuario(Long idUsuario) {
 		return tr.findByUsuario_IdUsuario(idUsuario);
 	}
-
+	
 	@Override
-	public Tarea guardarTarea(TareaRequest tareaRequest) {
-		Tarea tarea = new Tarea();
-		tarea.setTitulo(tareaRequest.getTitulo());
-		tarea.setTiempo(tareaRequest.getTiempo());
-		tarea.setPrioridad(tareaRequest.getPrioridad());
-		tarea.setFechaEntrega(tareaRequest.getFechaEntrega());
-		tarea.setDescripcion(tareaRequest.getDescripcion());
-		
-		Long idCategoria = tareaRequest.getIdCategoria();
-		Categoria categoria = cr.findById(idCategoria)
-				.orElseThrow(() -> new RuntimeException("Categoría no encontrada con el id: " + idCategoria));
-		tarea.setCategoria(categoria);
-		
-		Long idUsuario = tareaRequest.getIdUsuario();
-		Usuario usuario = ur.findById(idUsuario)
-				.orElseThrow(() -> new RuntimeException("Usuario no encontrado con el id: " + idUsuario));
-		tarea.setUsuario(usuario);
-		
-		tarea.setCompletada(false);
-		tarea.setFechaCompletada(null);
-		return tr.save(tarea);
+	public Estado obtenerEstado(Long id, String emailUsuario) {
+		Tarea tarea = tr.findById(id).orElseThrow(
+				() -> new RuntimeException("No existe la tarea con ID " + id));
+		if (!tarea.getUsuario().getEmail().equals(emailUsuario)) {
+			throw new AccessDeniedException("No tienes permiso para ver el estado de esta tarea");
+		}
+		return tarea.getEstado();
+	}
+	
+	@Override
+	public TareaResponse marcarTareaCompletada(Long idTarea, String emailUsuarioQueCompleta) {
+		// Primero obtengo la tarea por su ID
+		Tarea tarea = tr.findById(idTarea).orElseThrow(
+				() -> new EntityNotFoundException("Tarea no encontrada con id: " + idTarea));
+		// Recupero el usuario autenticado por su email
+		Usuario usuarioAutenticado = ur.findByEmail(emailUsuarioQueCompleta).orElseThrow(
+				() -> new EntityNotFoundException("Usuario no encontrado con email: " + emailUsuarioQueCompleta));
+		// Verifico si el usuario autenticado es el propietario de la tarea
+		if (!tarea.getUsuario().getIdUsuario().equals(usuarioAutenticado.getIdUsuario())) {
+			throw new AccessDeniedException("No puedes completar tareas que no son tuyas.");
+		}
+		tarea.setCompletada(true);
+		tarea.setFechaCompletada(LocalDateTime.now());
+		tarea.setUsuarioQueCompleta(usuarioAutenticado);
+		tr.save(tarea);
+		return new TareaResponse(tarea);
 	}
 
 	@Override
-	public Tarea actualizarPorId(Long idTarea, TareaRequest tareaRequest) {
-		Optional<Tarea> tareaOriginal = tr.findById(idTarea);
-		if (tareaOriginal.isPresent()) {
-			Tarea existente = tareaOriginal.get();
-			existente.setTitulo(tareaRequest.getTitulo());
-			existente.setTiempo(tareaRequest.getTiempo());
-			existente.setPrioridad(tareaRequest.getPrioridad());
-			existente.setFechaEntrega(tareaRequest.getFechaEntrega());
-			existente.setDescripcion(tareaRequest.getDescripcion());
-			// Decido si actualizar la categoría
-			if (tareaRequest.getIdCategoria() != null) {
-				Categoria categoria = cr.findById(tareaRequest.getIdCategoria())
-						.orElseThrow(() -> new RuntimeException("Categoría no encontrada con id: " + tareaRequest.getIdCategoria()));
-				existente.setCategoria(categoria);
-			}
-			// Decido si actualizar el usuario
-			if (tareaRequest.getIdUsuario() != null) {
-				Usuario usuario = ur.findById(tareaRequest.getIdUsuario())
-						.orElseThrow(() -> new RuntimeException("Usuario no encontrado con id: " + tareaRequest.getIdUsuario()));
-				existente.setUsuario(usuario);
-			}
-			existente.setCompletada(tareaRequest.isCompletada());
-			// Validar fecha de completado
-			if (tareaRequest.isCompletada() && tareaRequest.getFechaCompletada() == null) {
-				throw new RuntimeException("Una tarea completada debe incluir la fecha de finalización.");
-			}
-			if (tareaRequest.getFechaCompletada() != null && tareaRequest.getFechaCompletada().isBefore(existente.getFechaAgregado())) {
-				throw new RuntimeException("La fecha de completado no puede ser anterior a la fecha de creación.");
-			}
-			existente.setFechaCompletada(tareaRequest.getFechaCompletada());
-			return tr.save(existente);
-		} else {
-			throw new RuntimeException("No existe la tarea con ID " + idTarea);
-		}
+	public List<Tarea> filtrarPorEstado(Estado estado, String emailUsuario) {
+		List<Tarea> tareasUsuario = tr.findByUsuarioEmail(emailUsuario);
+		return tareasUsuario.stream()
+				.filter(t -> t.getEstado() == estado)
+				.toList();
 	}
 
 }

@@ -26,9 +26,8 @@ public class TareaRequest {
 	@NotNull(message = "La fecha de entrega no puede ser nula")
 	@FutureOrPresent(message = "La fecha de entrega no puede haber pasado")
 	private LocalDateTime fechaEntrega;
+	private LocalDateTime fechaAgregado = LocalDateTime.now();
 	private Long idCategoria;
-	@NotNull(message = "El ID del usuario no puede ser nulo")
-	private Long idUsuario;
 	private boolean completada;
 	private LocalDateTime fechaCompletada;
 
@@ -36,15 +35,15 @@ public class TareaRequest {
 	public TareaRequest() {
 	}
 
-	public TareaRequest(String titulo, int tiempo, Prioridad prioridad, LocalDateTime fechaEntrega, String descripcion,
-			Long idCategoria, Long idUsuario) {
+	public TareaRequest(String titulo, int tiempo, Prioridad prioridad, LocalDateTime fechaEntrega, LocalDateTime fechAgregado,
+			String descripcion, Long idCategoria) {
 		this.titulo = titulo;
 		this.tiempo = tiempo;
 		this.prioridad = prioridad;
 		this.fechaEntrega = fechaEntrega;
+		this.fechaAgregado = fechAgregado;
 		this.descripcion = descripcion;
 		this.idCategoria = idCategoria;
-		this.idUsuario = idUsuario;
 	}
 	
 	public String getTitulo() {
@@ -77,23 +76,21 @@ public class TareaRequest {
 	public void setFechaEntrega(LocalDateTime fechaEntrega) {
 		this.fechaEntrega = fechaEntrega;
 	}
+	public LocalDateTime getFechaAgregado() {
+		return fechaAgregado;
+	}
+	public void setFechaAgregado(LocalDateTime fechaAgregado) {
+		this.fechaAgregado = fechaAgregado;
+	}
 	public Long getIdCategoria() {
 		return idCategoria;
 	}
 	public void setIdCategoria(Long idCategoria) {
 		this.idCategoria = idCategoria;
 	}
-	public Long getIdUsuario() {
-		return idUsuario;
-	}
-	public void setIdUsuario(Long idUsuario) {
-		this.idUsuario = idUsuario;
-	}
-
 	public boolean isCompletada() {
 		return completada;
 	}
-
 	public void setCompletada(boolean completada) {
 		this.completada = completada;
 	}

@@ -1,7 +1,9 @@
 package com.tugestor.gestortareas.controller;
 
+import java.security.Principal;
 import java.util.List;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.tugestor.gestortareas.dto.TareaRequest;
@@ -30,93 +32,108 @@ public class TareaController {
 	}
 	
 	@GetMapping
-	public List<TareaResponse> listarTareas(){
-		List<Tarea> tareas = ts.obtenerTodas();
+	public List<TareaResponse> listarTareas(Principal principal){	// Principal es una interfaz que representa al usuario autenticado
+		List<Tarea> tareas = ts.obtenerTodas(principal.getName());
 		return tareas.stream().map(TareaResponse::new)	// Convierte cada Tarea en un TareaResponse
 				.toList(); // Recoge el resultado en una nueva lista que es devuelta como respuesta
 	}
 	
 	@Valid
 	@PostMapping("/add")
-	public TareaResponse aniadirTarea(@RequestBody TareaRequest tareaRequest){
-		Tarea tarea = ts.guardarTarea(tareaRequest);
+	public TareaResponse aniadirTarea(@RequestBody TareaRequest tareaRequest, Principal principal){
+		Tarea tarea = ts.guardarTarea(tareaRequest, principal.getName());
 		return new TareaResponse(tarea);
 	}
 	
 	@GetMapping("/{id}")
-	public TareaResponse listarTareaId(@PathVariable Long id) {	//Con @PathVariable indico que el {id} de la url es el valor de id
-		Tarea tarea = ts.obtenerPorId(id);
+	public TareaResponse listarTareaId(@PathVariable Long id, Principal principal) {	//Con @PathVariable indico que el {id} de la url es el valor de id
+		Tarea tarea = ts.obtenerPorId(id, principal.getName());
 		return new TareaResponse(tarea);
 	}
 	
 	@DeleteMapping("/delete/{id}")
-	public void eliminarTarea(@PathVariable Long id) {
-		ts.eliminarPorId(id);
+	public void eliminarTarea(@PathVariable Long id, Principal principal) {
+		ts.eliminarPorId(id, principal.getName());
 	}
 	
 	@Valid
 	@PutMapping("/update/{id}")
-	public TareaResponse modificarTarea(@PathVariable Long id, @RequestBody TareaRequest tareaRequest) {
-		Tarea tarea = ts.actualizarPorId(id, tareaRequest);
+	public TareaResponse modificarTarea(@PathVariable Long id, @RequestBody TareaRequest tareaRequest, Principal principal) {
+		Tarea tarea = ts.actualizarPorId(id, tareaRequest, principal.getName());
 		return new TareaResponse(tarea);
 	}
 	
 	@GetMapping("/titulo")
-	public List<TareaResponse> listarPorTitulo(){
-		List<Tarea> tareas = ts.obtenerPorTitulo();
+	public List<TareaResponse> listarPorTitulo(Principal principal){
+		List<Tarea> tareas = ts.obtenerPorTitulo(principal.getName());
 		return tareas.stream().map(TareaResponse::new).toList();
 	}
 	
 	@GetMapping("/tiempo")
-	public List<TareaResponse> listarPorTiempo(){
-		List<Tarea> tareas = ts.obtenerPorTiempo();
+	public List<TareaResponse> listarPorTiempo(Principal principal){
+		List<Tarea> tareas = ts.obtenerPorTiempo(principal.getName());
 		return tareas.stream().map(TareaResponse::new).toList();
 	}
 	
 	@GetMapping("/prioridad")
-	public List<TareaResponse> listarPorPrioridad(){
-		List<Tarea> tareas = ts.obtenerPorPrioridad();
+	public List<TareaResponse> listarPorPrioridad(Principal principal){
+		List<Tarea> tareas = ts.obtenerPorPrioridad(principal.getName());
 		return tareas.stream().map(TareaResponse::new).toList();
 	}
 	
 	@GetMapping("/fecha")
-	public List<TareaResponse> listarPorFechaEntrega(){
-		List<Tarea> tareas = ts.obtenerPorFechaEntrega();
+	public List<TareaResponse> listarPorFechaEntrega(Principal principal){
+		List<Tarea> tareas = ts.obtenerPorFechaEntrega(principal.getName());
 		return tareas.stream().map(TareaResponse::new).toList();
 	}
 	
 	@GetMapping("/filtrar/{prioridad}")
-	public List<TareaResponse> filtrarPorPrioridad(@PathVariable String prioridad) {
-		List<Tarea> tareas = ts.filtrarPorPrioridad(prioridad);
+	public List<TareaResponse> filtrarPorPrioridad(@PathVariable String prioridad, Principal principal) {
+		List<Tarea> tareas = ts.filtrarPorPrioridad(prioridad, principal.getName());
 		return tareas.stream().map(TareaResponse::new).toList();
 	}
 	
 	@GetMapping("/filtrar/tiempo/{tiempo}")
-	public List<TareaResponse> filtrarPorTiempo(@PathVariable int tiempo) {
-		List<Tarea> tareas = ts.filtrarPorTiempo(tiempo);
+	public List<TareaResponse> filtrarPorTiempo(@PathVariable int tiempo, Principal principal) {
+		List<Tarea> tareas = ts.filtrarPorTiempo(tiempo, principal.getName());
 		return tareas.stream().map(TareaResponse::new).toList();
 	}
 	
 	@GetMapping("/filtrar/palabras/{palabrasClave}")
-	public List<TareaResponse> filtrarPorPalabrasClave(@PathVariable String palabrasClave) {
-		List<Tarea> tareas = ts.filtrarPorPalabrasClave(palabrasClave);
+	public List<TareaResponse> filtrarPorPalabrasClave(@PathVariable String palabrasClave, Principal principal) {
+		List<Tarea> tareas = ts.filtrarPorPalabrasClave(palabrasClave, principal.getName());
 		return tareas.stream().map(TareaResponse::new).toList();
 	}
 	
 	@GetMapping("/filtrar/categoria/{idCategoria}")
-	public List<TareaResponse> filtrarPorCategoria(@PathVariable Long idCategoria) {
-		List<Tarea> tareas = ts.filtrarPorCategoria(idCategoria);
+	public List<TareaResponse> filtrarPorCategoria(@PathVariable Long idCategoria, Principal principal) {
+		List<Tarea> tareas = ts.filtrarPorCategoria(idCategoria, principal.getName());
 		return tareas.stream().map(TareaResponse::new).toList();
 	}
 	
+	/* Metodo deshabilitado hasta tener roles de usuario.
+	 * Lo usaré cuando tenga un rol "admin" que pueda ver las tareas de cualquier usuario.
 	@GetMapping("/filtrar/usuario/{idUsuario}")
 	public List<TareaResponse> filtrarPorUsuario(@PathVariable Long idUsuario) {
 		List<Tarea> tareas = ts.filtrarPorUsuario(idUsuario);
 		return tareas.stream().map(TareaResponse::new).toList();
+	}*/
+	
+	@GetMapping("/filtrar/estado/{estado}")
+	public List<TareaResponse> filtrarPorEstado(@PathVariable Estado estado, Principal principal) {
+		List<Tarea> tareas = ts.filtrarPorEstado(estado, principal.getName());
+		return tareas.stream().map(TareaResponse::new).toList();
 	}
 	
 	@GetMapping("/estado/{id}")
-	public Estado obtenerEstadoTarea(@PathVariable Long id) {
-		return ts.obtenerEstado(id);
+	public Estado obtenerEstadoTarea(@PathVariable Long id, Principal principal) {
+		return ts.obtenerEstado(id, principal.getName());
 	}
+	
+	@PatchMapping("/completar/{id}")
+	public ResponseEntity<TareaResponse> completarTarea(@PathVariable Long id, Principal principal){
+		TareaResponse tareaResponse = ts.marcarTareaCompletada(id, principal.getName());
+		return ResponseEntity.ok(tareaResponse);
+	}
+	
 }

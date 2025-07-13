@@ -3,6 +3,7 @@ package com.tugestor.gestortareas.model;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
@@ -89,5 +90,19 @@ public class Usuario {
 	public void setVerificado(boolean verificado) {
 		this.verificado = verificado;
 	}
+	
+	// Estas funciones son para evitar problemas de serialización
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+		Usuario usuario = (Usuario) o;
+		return Objects.equals(idUsuario, usuario.idUsuario);
+	}
+	@Override
+	public int hashCode() {
+		return Objects.hash(idUsuario);
+	}
+
 
 }

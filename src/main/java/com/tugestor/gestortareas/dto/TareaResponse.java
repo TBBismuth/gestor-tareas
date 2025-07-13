@@ -20,13 +20,14 @@ public class TareaResponse {
 	private Long idCategoria;
 	private Long idUsuario;
 	private String estado;
+	private String emailUsuarioQueCompleta;
 
 	public TareaResponse() {
 	}
 	public TareaResponse(Long idTarea, String titulo, String descripcion, int tiempo, Prioridad prioridad,
 			LocalDateTime fechaEntrega, LocalDateTime fechaAgregado, boolean completada,
 			LocalDateTime fechaCompletada, String categoriaNombre, Long idCategoria,
-			Long idUsuario, String estado) {
+			Long idUsuario, String estado, String emailUsuarioQueCompleta) {
 		this.idTarea = idTarea;
 		this.titulo = titulo;
 		this.descripcion = descripcion;
@@ -40,6 +41,7 @@ public class TareaResponse {
 		this.idCategoria = idCategoria;
 		this.idUsuario = idUsuario;
 		this.estado = estado;
+		this.emailUsuarioQueCompleta = emailUsuarioQueCompleta;
 	}
 	public TareaResponse(Tarea tarea) {
 		this.idTarea = tarea.getIdTarea();
@@ -55,8 +57,8 @@ public class TareaResponse {
 		this.categoriaNombre = tarea.getCategoria() != null ? tarea.getCategoria().getNombre() : null;
 		this.idUsuario = tarea.getUsuario() != null ? tarea.getUsuario().getIdUsuario() : null;
 		this.estado = tarea.getEstado().name();
+		this.emailUsuarioQueCompleta = tarea.getUsuarioQueCompleta() != null ? tarea.getUsuarioQueCompleta().getEmail() : null;
 	}
-
 
 	public Long getIdTarea() {
 		return idTarea;
@@ -135,5 +137,11 @@ public class TareaResponse {
 	}
 	public void setEstado(String estado) {
 		this.estado = estado;
+	}
+	public String getEmailUsuarioQueCompleta() {
+		return emailUsuarioQueCompleta;
+	}
+	public void setEmailUsuarioQueCompleta(String emailUsuarioQueCompleta) {
+		this.emailUsuarioQueCompleta = emailUsuarioQueCompleta;
 	}
 }

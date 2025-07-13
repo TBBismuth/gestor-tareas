@@ -44,6 +44,9 @@ public class Tarea {
 	@ManyToOne // Relación muchos a uno con la entidad Usuario
 	@JoinColumn(name = "usuario_id", nullable = false)
 	private Usuario usuario;
+	@ManyToOne
+	@JoinColumn(name = "usuario_que_completa_id")
+	private Usuario usuarioQueCompleta;
 	
 	public Tarea() {
 		// Obligatorio para JPA
@@ -82,6 +85,9 @@ public class Tarea {
 	public LocalDateTime getFechaAgregado() {
 		return fechaAgregado;
 	}
+	public void setFechaAgregado(LocalDateTime fechaAgregado) {
+		this.fechaAgregado = fechaAgregado;
+	}
 	public LocalDateTime getFechaEntrega() {
 		return fechaEntrega;
 	}
@@ -117,6 +123,12 @@ public class Tarea {
 	}
 	public void setUsuario(Usuario usuario) {
 		this.usuario = usuario;
+	}
+	public Usuario getUsuarioQueCompleta() {
+		return usuarioQueCompleta;
+	}
+	public void setUsuarioQueCompleta(Usuario usuarioQueCompleta) {
+		this.usuarioQueCompleta = usuarioQueCompleta;
 	}
 	public Estado getEstado() {
 		if(completada) {
