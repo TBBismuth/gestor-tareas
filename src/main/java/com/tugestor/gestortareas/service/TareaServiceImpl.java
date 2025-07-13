@@ -1,5 +1,6 @@
 package com.tugestor.gestortareas.service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -206,6 +207,13 @@ public class TareaServiceImpl implements TareaService{
 		return tareasUsuario.stream()
 				.filter(t -> t.getEstado() == estado)
 				.toList();
+	}
+
+	@Override
+	public List<Tarea> obtenerTareasHoy(String emailUsuarioCreador) {
+		LocalDateTime inicioHoy = LocalDate.now().atStartOfDay();
+		LocalDateTime inicioManiana = inicioHoy.plusDays(1);
+		return tr.findByUsuarioEmailAndFechaEntregaBetween(emailUsuarioCreador, inicioHoy, inicioManiana);
 	}
 
 }

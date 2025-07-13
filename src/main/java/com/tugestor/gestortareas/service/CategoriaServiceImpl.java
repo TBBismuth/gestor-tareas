@@ -3,11 +3,14 @@ package com.tugestor.gestortareas.service;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import com.tugestor.gestortareas.dto.CategoriaRequest;
 import com.tugestor.gestortareas.model.Categoria;
 import com.tugestor.gestortareas.repository.CategoriaRepository;
+
+import jakarta.persistence.EntityNotFoundException;
 
 @Service
 public class CategoriaServiceImpl implements CategoriaService {
@@ -29,7 +32,12 @@ public class CategoriaServiceImpl implements CategoriaService {
 
 	@Override
 	public void eliminarPorId(Long id) {
-		cr.deleteById(id);
+		Categoria categoria = cr.findById(id)
+				.orElseThrow(() -> new EntityNotFoundException("Categoría no encontrada con id: " + id));
+		if (categoria.isProtegida()) {
+			throw new AccessDeniedException("No se puede eliminar una categoría base.");
+		}
+		cr.delete(categoria);
 	}
 
 	@Override

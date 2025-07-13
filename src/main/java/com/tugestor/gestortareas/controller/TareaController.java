@@ -136,4 +136,10 @@ public class TareaController {
 		return ResponseEntity.ok(tareaResponse);
 	}
 	
+	@GetMapping("/hoy")
+	public List<TareaResponse> listarTareasHoy(Principal principal) {
+		List<Tarea> tareas = ts.obtenerTareasHoy(principal.getName());
+		return tareas.stream().map(TareaResponse::new).toList();
+	}
+	
 }

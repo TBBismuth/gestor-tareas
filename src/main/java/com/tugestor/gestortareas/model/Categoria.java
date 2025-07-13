@@ -1,5 +1,6 @@
 package com.tugestor.gestortareas.model;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -17,15 +18,19 @@ public class Categoria {
 	private String nombre;
 	private String color; // Formate hex #RRGGBB, usado pra el frontend
 	private String icono; // Nombre del icono para librerias visuales en React Native
+	@Column(nullable = false)
+	private boolean protegida;
+
 	
 	public Categoria() {
 		// Constructor por defecto para JPA
 	}
 
-	public Categoria(String nombre, String color, String icono) {
+	public Categoria(String nombre, String color, String icono, boolean protegida) {
 		this.nombre = nombre;
 		this.color = color;
 		this.icono = icono;
+		this.protegida = protegida;
 	}
 	
 	public Long getIdCategoria() {
@@ -48,6 +53,12 @@ public class Categoria {
 	}
 	public void setIcono(String icono) {
 		this.icono = icono;
+	}
+	public boolean isProtegida() {
+		return protegida;
+	}
+	public void setProtegida(boolean protegida) {
+		this.protegida = protegida;
 	}
 	
 	
