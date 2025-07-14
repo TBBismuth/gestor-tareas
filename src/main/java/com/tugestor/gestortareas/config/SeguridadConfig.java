@@ -31,7 +31,18 @@ public class SeguridadConfig {
 	public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception{
 		http.csrf(csrf -> csrf.disable())	// Desactiva CSRF porque mi API es stateless (sin sesiones)
 		.authorizeHttpRequests(auth -> auth
-				.requestMatchers("/api/usuario/add", "/api/usuario/login").permitAll()	// Solo registro y login sin autentificacion
+				.requestMatchers(
+						"/api/usuario/add",
+						"/api/usuario/login",
+						"/swagger-ui/**",
+						"/v3/api-docs",
+						"/v3/api-docs/**",
+						"/swagger-resources/**",
+						"/swagger-ui.html",
+						"/webjars/**",
+						"/documentacion-api",
+						"/documentacion-api/**"
+						).permitAll()// Solo registro, login y documentacion sin autentificacion
 				.anyRequest().authenticated()											// el resto rquiere JWT
 		)
 		.sessionManagement(session -> session		// Indica que NO se creará sesion de usuario y cada peticion es stateless

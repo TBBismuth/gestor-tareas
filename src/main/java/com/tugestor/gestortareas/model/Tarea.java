@@ -32,7 +32,6 @@ public class Tarea {
 	@Enumerated(EnumType.STRING)
 	private Prioridad prioridad;
 	private LocalDateTime fechaAgregado = LocalDateTime.now();
-	@FutureOrPresent(message = "La fecha de entrega no puede haber pasado")
 	private LocalDateTime fechaEntrega;
 	@Size(max = 1000, message = "La descripción no puede exceder los 1000 caracteres")
 	private String descripcion;

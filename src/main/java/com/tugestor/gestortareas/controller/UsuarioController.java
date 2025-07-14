@@ -25,6 +25,11 @@ import com.tugestor.gestortareas.repository.UsuarioRepository;
 import com.tugestor.gestortareas.security.JwtService;
 import com.tugestor.gestortareas.service.UsuarioService;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.Parameters;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 
 @RestController
@@ -42,18 +47,49 @@ public class UsuarioController {
 	}
 	
 	@GetMapping
+	@Operation(
+			summary = "Listar todos los usuarios",
+			description = "Devuelve un listado con todos los usuarios registrados."
+			)
+	@ApiResponses({
+		@ApiResponse(responseCode = "200", description = "Listado de usuarios obtenido correctamente")
+	})
 	public List<UsuarioResponse> listarUsuarios() {
 		List<Usuario> usuarios = us.obtenerTodos();
 		return usuarios.stream()
 				.map(UsuarioResponse::new)
 				.toList();
 	}
+	
 	@GetMapping("/{id}")
+	@Operation(
+			summary = "Obtener usuario por ID",
+			description = "Devuelve la información de un usuario según su ID."
+			)
+	@Parameters({
+		@Parameter(name = "id", description = "ID del usuario", example = "3")
+	})
+	@ApiResponses({
+		@ApiResponse(responseCode = "200", description = "Usuario encontrado correctamente"),
+		@ApiResponse(responseCode = "404", description = "Usuario no encontrado")
+	})
 	public UsuarioResponse listarUsuarioId(@PathVariable Long id) {
 		Usuario usuario = us.obtenerPorId(id);
 		return new UsuarioResponse(usuario);
 	}
+	
 	@GetMapping("/email/{email}")
+	@Operation(
+			summary = "Obtener usuario por email",
+			description = "Devuelve la información de un usuario según su dirección de email."
+			)
+	@Parameters({
+		@Parameter(name = "email", description = "Email del usuario", example = "usuario@ejemplo.com")
+	})
+	@ApiResponses({
+		@ApiResponse(responseCode = "200", description = "Usuario encontrado correctamente"),
+		@ApiResponse(responseCode = "404", description = "Usuario no encontrado")
+	})
 	public ResponseEntity<UsuarioResponse> listarUsuarioEmail(@PathVariable String email) {
 		return us.obtenerPorEmail(email)
 				.map(usuario -> ResponseEntity.ok(new UsuarioResponse(usuario)))
@@ -61,8 +97,17 @@ public class UsuarioController {
 	/*ResponseEntity es una clase de Spring que representa una respuesta completa HTTP
 	 *Body, codigo de estado y headers*/
 	}
+	
 	@PostMapping("/add")
 	@Valid
+	@Operation(
+			summary = "Registrar un nuevo usuario",
+			description = "Crea un nuevo usuario con los datos proporcionados y devuelve su información."
+			)
+	@ApiResponses({
+		@ApiResponse(responseCode = "201", description = "Usuario creado correctamente"),
+		@ApiResponse(responseCode = "400", description = "Datos del usuario inválidos")
+	})
 	public ResponseEntity<UsuarioResponse> aniadirUsuario(@RequestBody UsuarioRequest usuarioRequest) {
 		Usuario nuevoUsuario = us.guardarUsuario(usuarioRequest);
 		// Creamos una URI para el recurso recién creado (ej: /usuario/5)
@@ -76,12 +121,33 @@ public class UsuarioController {
 		// UsuarioResponse es un DTO que contiene solo los datos necesarios para la respuesta
 		return ResponseEntity.created(location).body(response);
 	}
+
 	@DeleteMapping("/delete/{id}")
+	@Operation(
+			summary = "Eliminar un usuario",
+			description = "Elimina el usuario indicado por su ID."
+			)
+	@Parameters({
+		@Parameter(name = "id", description = "ID del usuario a eliminar", example = "4")
+	})
+	@ApiResponses({
+		@ApiResponse(responseCode = "204", description = "Usuario eliminado correctamente"),
+		@ApiResponse(responseCode = "404", description = "Usuario no encontrado")
+	})
 	public void eliminarUsuario(@PathVariable Long id) {
 		us.eliminarPorId(id);
 	}
+
 	@PostMapping("/login")
 	@Valid
+	@Operation(
+			summary = "Autenticar usuario y obtener JWT",
+			description = "Verifica las credenciales del usuario y devuelve un token JWT si son correctas."
+			)
+	@ApiResponses({
+		@ApiResponse(responseCode = "200", description = "Autenticación exitosa"),
+		@ApiResponse(responseCode = "401", description = "Credenciales inválidas")
+	})
 	public ResponseEntity<LoginResponse> loginUsuario(@RequestBody LoginRequest loginRequest){
 		// Autentifico el usuario con email y pass usando CustomUserDetailsService y PasswordEncoder
 		Authentication auth = am.authenticate(

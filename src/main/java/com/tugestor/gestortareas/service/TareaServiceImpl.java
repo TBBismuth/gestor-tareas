@@ -19,6 +19,7 @@ import com.tugestor.gestortareas.repository.TareaRepository;
 import com.tugestor.gestortareas.repository.UsuarioRepository;
 
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.validation.ValidationException;
 
 @Service
 public class TareaServiceImpl implements TareaService{
@@ -61,6 +62,9 @@ public class TareaServiceImpl implements TareaService{
 		if (tarea.getFechaCompletada() != null && tarea.getFechaCompletada().isBefore(tarea.getFechaAgregado())) {
 			throw new RuntimeException("La fecha de completado no puede ser anterior a la fecha de creación.");
 		}	//Validacion de fechaCompletada anterior a fechaAgregado
+		if (tarea.getFechaEntrega() != null && tarea.getFechaEntrega().isBefore(LocalDateTime.now())) {
+			throw new ValidationException("La fecha de entrega no puede haber pasado.");
+		}	// Validacion de fechaEntrega no pasada
 		return tr.save(tarea);
 	}
 
@@ -117,6 +121,9 @@ public class TareaServiceImpl implements TareaService{
 			}	// Si tiene fechaCompletada pero es posterior a fechaAgregado
 			if (existente.getFechaCompletada() != null && existente.getFechaCompletada().isBefore(existente.getFechaAgregado())) {
 				throw new RuntimeException("La fecha de completado no puede ser anterior a la fecha de creación.");
+			}
+			if (existente.getFechaEntrega() != null && existente.getFechaEntrega().isBefore(LocalDateTime.now())) {
+				throw new ValidationException("La fecha de entrega no puede haber pasado.");
 			}
 			return tr.save(existente);
 		} else {
@@ -189,7 +196,7 @@ public class TareaServiceImpl implements TareaService{
 				() -> new EntityNotFoundException("Tarea no encontrada con id: " + idTarea));
 		// Recupero el usuario autenticado por su email
 		Usuario usuarioAutenticado = ur.findByEmail(emailUsuarioQueCompleta).orElseThrow(
-				() -> new EntityNotFoundException("Usuario no encontrado con email: " + emailUsuarioQueCompleta));
+				() -> new EntityNotFoundException("Usuario no encontrado con email: " + emailUsuarioQueCompleta));		
 		// Verifico si el usuario autenticado es el propietario de la tarea
 		if (!tarea.getUsuario().getIdUsuario().equals(usuarioAutenticado.getIdUsuario())) {
 			throw new AccessDeniedException("No puedes completar tareas que no son tuyas.");
