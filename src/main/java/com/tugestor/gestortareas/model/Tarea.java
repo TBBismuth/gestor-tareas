@@ -13,7 +13,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.FutureOrPresent;
 
 
 @Entity	// Anotación de JPA para indicar que esta clase es una entidad
@@ -58,6 +57,9 @@ public class Tarea {
 		this.descripcion = descripcion;
 		this.categoria = categoria;
 		this.usuario = usuario;
+	}
+	public Tarea(Long idTarea) {	// Constructor para tests
+		this.idTarea = idTarea;
 	}
 	
 	public Long getIdTarea() {

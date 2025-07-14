@@ -25,12 +25,14 @@ public class Categoria {
 	public Categoria() {
 		// Constructor por defecto para JPA
 	}
-
 	public Categoria(String nombre, String color, String icono, boolean protegida) {
 		this.nombre = nombre;
 		this.color = color;
 		this.icono = icono;
 		this.protegida = protegida;
+	}
+	public Categoria(Long idCategoria) {	// Constructor para tests
+		this.idCategoria = idCategoria;
 	}
 	
 	public Long getIdCategoria() {

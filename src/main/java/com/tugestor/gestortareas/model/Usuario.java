@@ -53,6 +53,9 @@ public class Usuario {
 		this.activo = activo;
 		this.verificado = verificado;
 	}
+	public Usuario(Long idUsuario) {	// Constructor para tests
+		this.idUsuario = idUsuario;
+	}
 
 	public Long getIdUsuario() {
 		return idUsuario;

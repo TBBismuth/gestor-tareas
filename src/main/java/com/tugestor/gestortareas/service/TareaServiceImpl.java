@@ -55,6 +55,7 @@ public class TareaServiceImpl implements TareaService{
 		tarea.setFechaAgregado(LocalDateTime.now());
 		tarea.setCategoria(categoria);
 		tarea.setUsuario(usuario);
+		tarea.setCompletada(tareaRequest.isCompletada());
 		
 		if (tarea.isCompletada() && tarea.getFechaCompletada() == null) {
 			throw new RuntimeException("Una tarea completada debe incluir la fecha de finalización.");
