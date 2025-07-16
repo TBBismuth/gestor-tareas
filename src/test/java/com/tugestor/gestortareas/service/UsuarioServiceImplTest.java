@@ -5,15 +5,11 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -22,25 +18,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.tugestor.gestortareas.dto.LoginRequest;
 import com.tugestor.gestortareas.dto.LoginResponse;
-import com.tugestor.gestortareas.dto.TareaRequest;
-import com.tugestor.gestortareas.dto.TareaResponse;
 import com.tugestor.gestortareas.dto.UsuarioRequest;
-import com.tugestor.gestortareas.model.Categoria;
-import com.tugestor.gestortareas.model.Estado;
-import com.tugestor.gestortareas.model.Prioridad;
-import com.tugestor.gestortareas.model.Tarea;
 import com.tugestor.gestortareas.model.Usuario;
-import com.tugestor.gestortareas.repository.CategoriaRepository;
-import com.tugestor.gestortareas.repository.TareaRepository;
 import com.tugestor.gestortareas.repository.UsuarioRepository;
-
-import jakarta.persistence.EntityNotFoundException;
-import jakarta.validation.ValidationException;
 
 @ExtendWith(MockitoExtension.class)
 public class UsuarioServiceImplTest {
