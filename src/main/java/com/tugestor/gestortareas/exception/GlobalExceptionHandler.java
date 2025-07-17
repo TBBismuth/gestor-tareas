@@ -84,6 +84,4 @@ public class GlobalExceptionHandler {
 		error.put("error", "Credenciales inválidas.");	// Mensaje generico para no revelar si es usuario o contraseña incorrectos
 		return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
 	}
-
-
 }
