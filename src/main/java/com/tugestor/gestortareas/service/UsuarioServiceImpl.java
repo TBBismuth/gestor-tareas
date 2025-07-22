@@ -13,6 +13,8 @@ import com.tugestor.gestortareas.exception.EmailDuplicadoException;
 import com.tugestor.gestortareas.model.Usuario;
 import com.tugestor.gestortareas.repository.UsuarioRepository;
 
+import jakarta.persistence.EntityNotFoundException;
+
 @Service
 public class UsuarioServiceImpl implements UsuarioService{
 	private final UsuarioRepository ur;
@@ -38,7 +40,7 @@ public class UsuarioServiceImpl implements UsuarioService{
 
 	@Override
 	public Usuario obtenerPorId(Long id) {
-		return ur.findById(id).orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + id));
+		return ur.findById(id).orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado con ID: " + id));
 	}
 
 	@Override
