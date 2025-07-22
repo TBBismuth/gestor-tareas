@@ -99,7 +99,6 @@ public class UsuarioController {
 	}
 	
 	@PostMapping("/add")
-	@Valid
 	@Operation(
 			summary = "Registrar un nuevo usuario",
 			description = "Crea un nuevo usuario con los datos proporcionados y devuelve su información."
@@ -108,7 +107,7 @@ public class UsuarioController {
 		@ApiResponse(responseCode = "201", description = "Usuario creado correctamente"),
 		@ApiResponse(responseCode = "400", description = "Datos del usuario inválidos")
 	})
-	public ResponseEntity<UsuarioResponse> aniadirUsuario(@RequestBody UsuarioRequest usuarioRequest) {
+	public ResponseEntity<UsuarioResponse> aniadirUsuario(@Valid @RequestBody UsuarioRequest usuarioRequest) {
 		Usuario nuevoUsuario = us.guardarUsuario(usuarioRequest);
 		// Creamos una URI para el recurso recién creado (ej: /usuario/5)
 		// Esto es solo una referencia de "dónde se puede consultar este nuevo recurso"
@@ -139,7 +138,6 @@ public class UsuarioController {
 	}
 
 	@PostMapping("/login")
-	@Valid
 	@Operation(
 			summary = "Autenticar usuario y obtener JWT",
 			description = "Verifica las credenciales del usuario y devuelve un token JWT si son correctas."
@@ -148,7 +146,7 @@ public class UsuarioController {
 		@ApiResponse(responseCode = "200", description = "Autenticación exitosa"),
 		@ApiResponse(responseCode = "401", description = "Credenciales inválidas")
 	})
-	public ResponseEntity<LoginResponse> loginUsuario(@RequestBody LoginRequest loginRequest){
+	public ResponseEntity<LoginResponse> loginUsuario(@Valid @RequestBody LoginRequest loginRequest){
 		// Autentifico el usuario con email y pass usando CustomUserDetailsService y PasswordEncoder
 		Authentication auth = am.authenticate(
 				new UsernamePasswordAuthenticationToken(

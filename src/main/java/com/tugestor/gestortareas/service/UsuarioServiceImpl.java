@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import com.tugestor.gestortareas.dto.LoginRequest;
 import com.tugestor.gestortareas.dto.LoginResponse;
 import com.tugestor.gestortareas.dto.UsuarioRequest;
+import com.tugestor.gestortareas.exception.EmailDuplicadoException;
 import com.tugestor.gestortareas.model.Usuario;
 import com.tugestor.gestortareas.repository.UsuarioRepository;
 
@@ -24,7 +25,7 @@ public class UsuarioServiceImpl implements UsuarioService{
 	@Override
 	public Usuario guardarUsuario(Usuario usuario) {
 		ur.findByEmail(usuario.getEmail()).ifPresent(temp -> {
-			throw new RuntimeException("Ya existe un usuario con el email: " + usuario.getEmail());
+			throw new EmailDuplicadoException("Ya existe un usuario con el email: " + usuario.getEmail());
 		});
 		usuario.setPassword(pe.encode(usuario.getPassword()));
 		return ur.save(usuario);
@@ -72,7 +73,7 @@ public class UsuarioServiceImpl implements UsuarioService{
 				false);
 		
 		ur.findByEmail(usuario.getEmail()).ifPresent(temp -> {
-			throw new RuntimeException("Ya existe un usuario con el email: " + usuario.getEmail());
+			throw new EmailDuplicadoException("Ya existe un usuario con el email: " + usuario.getEmail());
 		});
 		usuario.setPassword(pe.encode(usuario.getPassword()));
 		return ur.save(usuario);

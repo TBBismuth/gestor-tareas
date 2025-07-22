@@ -143,7 +143,7 @@ class UsuarioControllerTest {
 		UsuarioRequest request = new UsuarioRequest();
 		request.setNombre("Nuevo usuario");
 		request.setEmail("nuevo@ejemplo.com");
-		request.setPassword("password123");
+		request.setPassword("Password123");
 
 		Usuario usuario = new Usuario(1L);
 		usuario.setNombre("Nuevo usuario");

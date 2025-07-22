@@ -6,11 +6,15 @@ import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+
+
 
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ConstraintViolationException;
@@ -84,4 +88,19 @@ public class GlobalExceptionHandler {
 		error.put("error", "Credenciales inválidas.");	// Mensaje generico para no revelar si es usuario o contraseña incorrectos
 		return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
 	}
+	
+	@ExceptionHandler(EmailDuplicadoException.class)
+	@ResponseStatus(HttpStatus.BAD_REQUEST)
+	public ErrorResponse handleEmailDuplicadoException(EmailDuplicadoException ex) {
+		return new ErrorResponse(HttpStatus.BAD_REQUEST.value(), ex.getMessage());
+	}
+	
+	@ExceptionHandler(BadCredentialsException.class)
+	@ResponseStatus(HttpStatus.UNAUTHORIZED)
+	public Map<String, String> handleBadCredentials(BadCredentialsException ex) {
+	    Map<String, String> error = new HashMap<>();
+	    error.put("error", "Credenciales inválidas.");
+	    return error;
+	}
+
 }

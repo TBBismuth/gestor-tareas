@@ -1,9 +1,12 @@
-package com.tugestor.gestortareas.exception;
+package com.tugestor.gestortareas.controller;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+
+import org.springframework.context.annotation.Profile;
 import org.springframework.web.bind.annotation.*;
 
+@Profile("test")
 @RestController
 @RequestMapping("/error")
 public class TestValidationController {

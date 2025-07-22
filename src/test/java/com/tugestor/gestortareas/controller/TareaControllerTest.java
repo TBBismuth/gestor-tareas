@@ -259,7 +259,10 @@ class TareaControllerTest {
 		// Arrange
 		TareaRequest request = new TareaRequest();
 		request.setTitulo("Tarea actualizada");
-
+		request.setTiempo(30);
+		request.setPrioridad(Prioridad.MEDIA);
+		request.setFechaEntrega(LocalDateTime.now().plusDays(1));
+		
 		when(tareaService.actualizarPorId(eq(99L), any(TareaRequest.class), anyString()))
 		.thenThrow(new EntityNotFoundException("No encontrada"));
 

@@ -47,7 +47,6 @@ public class CategoriaController {
 		// .toList() recoge el resultado en una nueva lista que es devuelta como respuesta
 	}
 
-	@Valid
 	@PostMapping("/add")
 	@Operation(
 			summary = "Añadir una nueva categoría",
@@ -57,7 +56,7 @@ public class CategoriaController {
 		@ApiResponse(responseCode = "200", description = "Categoría creada correctamente"),
 		@ApiResponse(responseCode = "400", description = "Datos de la categoría inválidos")
 	})
-	public CategoriaResponse aniadirCategoria(@RequestBody CategoriaRequest categoriaRequest){
+	public CategoriaResponse aniadirCategoria(@Valid @RequestBody CategoriaRequest categoriaRequest){
 		Categoria categoria = cs.guardarCategoria(categoriaRequest);
 		return new CategoriaResponse(categoria);
 	}
@@ -78,7 +77,6 @@ public class CategoriaController {
 		cs.eliminarPorId(id);
 	}
 	
-	@Valid
 	@PutMapping("/update/{id}")
 	@Operation(
 			summary = "Modificar una categoría",
@@ -92,7 +90,7 @@ public class CategoriaController {
 		@ApiResponse(responseCode = "400", description = "Datos de la categoría inválidos"),
 		@ApiResponse(responseCode = "404", description = "Categoría no encontrada")
 	})
-	public CategoriaResponse modificarCategoria(@PathVariable Long id, @RequestBody CategoriaRequest categoriaRequest) {
+	public CategoriaResponse modificarCategoria(@PathVariable Long id,@Valid @RequestBody CategoriaRequest categoriaRequest) {
 		Categoria categoria = cs.actualizarCategoria(id, categoriaRequest);
 		return new CategoriaResponse(categoria);
 	}

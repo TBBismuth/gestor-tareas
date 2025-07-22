@@ -51,7 +51,6 @@ public class TareaController {
 				.toList(); // Recoge el resultado en una nueva lista que es devuelta como respuesta
 	}
 
-	@Valid
 	@PostMapping("/add")
 	@Operation(
 			summary = "Añadir una nueva tarea",
@@ -62,7 +61,7 @@ public class TareaController {
 		@ApiResponse(responseCode = "400", description = "Datos de la tarea inválidos"),
 		@ApiResponse(responseCode = "401", description = "No autenticado o token inválido")
 	})
-	public TareaResponse aniadirTarea(@RequestBody TareaRequest tareaRequest, Principal principal){
+	public TareaResponse aniadirTarea(@Valid @RequestBody TareaRequest tareaRequest, Principal principal){
 		Tarea tarea = ts.guardarTarea(tareaRequest, principal.getName());
 		return new TareaResponse(tarea);
 	}
@@ -102,7 +101,7 @@ public class TareaController {
 		ts.eliminarPorId(id, principal.getName());
 	}
 
-	@Valid
+	
 	@PutMapping("/update/{id}")
 	@Operation(
 			summary = "Modificar una tarea existente",
@@ -117,7 +116,7 @@ public class TareaController {
 		@ApiResponse(responseCode = "401", description = "No autenticado o token inválido"),
 		@ApiResponse(responseCode = "403", description = "Tarea no pertenece al usuario")
 	})
-	public TareaResponse modificarTarea(@PathVariable Long id, @RequestBody TareaRequest tareaRequest, Principal principal) {
+	public TareaResponse modificarTarea(@PathVariable Long id,@Valid @RequestBody TareaRequest tareaRequest, Principal principal) {
 		Tarea tarea = ts.actualizarPorId(id, tareaRequest, principal.getName());
 		return new TareaResponse(tarea);
 	}
