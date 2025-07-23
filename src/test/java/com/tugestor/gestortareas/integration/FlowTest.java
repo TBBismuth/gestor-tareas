@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.MethodOrderer;
@@ -22,11 +23,16 @@ import org.springframework.test.annotation.Commit;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tugestor.gestortareas.dto.LoginRequest;
 import com.tugestor.gestortareas.dto.UsuarioRequest;
+import com.tugestor.gestortareas.model.Categoria;
+import com.tugestor.gestortareas.repository.CategoriaRepository;
+
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -39,6 +45,10 @@ public class FlowTest {
 
 	@Autowired
 	private ObjectMapper objectMapper;
+	
+	@Autowired
+	private CategoriaRepository categoriaRepository;
+
 
 	@Test
 	@Order(1)
@@ -334,9 +344,382 @@ public class FlowTest {
 	            .header("Authorization", "Bearer " + token))
 	        .andExpect(status().isUnauthorized());
 	}
+	
+	@Test
+	@Order(12)
+	void listarCategorias_autenticado() throws Exception {
+	    // Registro y login
+	    UsuarioRequest registro = new UsuarioRequest();
+	    registro.setNombre("Categorias");
+	    registro.setEmail("cat@flow.com");
+	    registro.setPassword("Password123");
 
+	    mockMvc.perform(post("/api/usuario/add")
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(registro)))
+	        .andExpect(status().isCreated());
 
+	    LoginRequest login = new LoginRequest();
+	    login.setEmail("cat@flow.com");
+	    login.setPassword("Password123");
 
+	    String loginResponse = mockMvc.perform(post("/api/usuario/login")
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(login)))
+	        .andReturn().getResponse().getContentAsString();
 
+	    String token = objectMapper.readTree(loginResponse).get("token").asText();
+
+	    // Llamada autenticada al listado
+	    mockMvc.perform(get("/api/categoria")
+	            .header("Authorization", "Bearer " + token))
+	        .andExpect(status().isOk());
+	}
+	
+	@Test
+	@Order(13)
+	void crearCategoria_validaEInvalida() throws Exception {
+	    // Registro y login
+	    UsuarioRequest registro = new UsuarioRequest();
+	    registro.setNombre("CatCreator");
+	    registro.setEmail("catcreator@flow.com");
+	    registro.setPassword("Password123");
+
+	    mockMvc.perform(post("/api/usuario/add")
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(registro)))
+	        .andExpect(status().isCreated());
+
+	    LoginRequest login = new LoginRequest();
+	    login.setEmail("catcreator@flow.com");
+	    login.setPassword("Password123");
+
+	    String loginResponse = mockMvc.perform(post("/api/usuario/login")
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(login)))
+	        .andReturn().getResponse().getContentAsString();
+
+	    String token = objectMapper.readTree(loginResponse).get("token").asText();
+
+	    // Categoría válida
+	    Map<String, String> categoriaValida = new HashMap<>();
+	    categoriaValida.put("nombre", "Valida");
+
+	    mockMvc.perform(post("/api/categoria/add")
+	            .header("Authorization", "Bearer " + token)
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(categoriaValida)))
+	        .andExpect(status().isOk());
+
+	    // Categoría inválida (nombre vacío)
+	    Map<String, String> categoriaInvalida = new HashMap<>();
+	    categoriaInvalida.put("nombre", "");
+
+	    mockMvc.perform(post("/api/categoria/add")
+	            .header("Authorization", "Bearer " + token)
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(categoriaInvalida)))
+	        .andExpect(status().isBadRequest());
+	}
+	
+	@Test
+	@Order(14)
+	void crearCategoria_nombreDuplicado() throws Exception {
+	    // Registro y login
+	    UsuarioRequest registro = new UsuarioRequest();
+	    registro.setNombre("DupCat");
+	    registro.setEmail("dupcat@flow.com");
+	    registro.setPassword("Password123");
+
+	    mockMvc.perform(post("/api/usuario/add")
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(registro)))
+	        .andExpect(status().isCreated());
+
+	    LoginRequest login = new LoginRequest();
+	    login.setEmail("dupcat@flow.com");
+	    login.setPassword("Password123");
+
+	    String loginResponse = mockMvc.perform(post("/api/usuario/login")
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(login)))
+	        .andReturn().getResponse().getContentAsString();
+
+	    String token = objectMapper.readTree(loginResponse).get("token").asText();
+
+	    // Primera categoría
+	    Map<String, String> cat1 = new HashMap<>();
+	    cat1.put("nombre", "Repetida");
+
+	    mockMvc.perform(post("/api/categoria/add")
+	            .header("Authorization", "Bearer " + token)
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(cat1)))
+	        .andExpect(status().isOk());
+
+	    // Segunda categoría con el mismo nombre
+	    mockMvc.perform(post("/api/categoria/add")
+	            .header("Authorization", "Bearer " + token)
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(cat1)))
+	        .andExpect(status().isOk()); // <- adaptaremos si devuelve 400
+	}
+	
+	@Test
+	@Order(15)
+	void editarCategoria_validaInvalidaNoExistente() throws Exception {
+	    // Registro y login
+	    UsuarioRequest registro = new UsuarioRequest();
+	    registro.setNombre("CatEditor");
+	    registro.setEmail("cateditor@flow.com");
+	    registro.setPassword("Password123");
+
+	    mockMvc.perform(post("/api/usuario/add")
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(registro)))
+	        .andExpect(status().isCreated());
+
+	    LoginRequest login = new LoginRequest();
+	    login.setEmail("cateditor@flow.com");
+	    login.setPassword("Password123");
+
+	    String loginResponse = mockMvc.perform(post("/api/usuario/login")
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(login)))
+	        .andReturn().getResponse().getContentAsString();
+
+	    String token = objectMapper.readTree(loginResponse).get("token").asText();
+
+	    // Crear categoría base
+	    Map<String, String> cat = new HashMap<>();
+	    cat.put("nombre", "Base");
+
+	    String catResp = mockMvc.perform(post("/api/categoria/add")
+	            .header("Authorization", "Bearer " + token)
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(cat)))
+	        .andReturn().getResponse().getContentAsString();
+
+	    int idCategoria = objectMapper.readTree(catResp).get("idCategoria").asInt();
+
+	    // Edición válida
+	    Map<String, String> catEdit = new HashMap<>();
+	    catEdit.put("nombre", "Editada");
+
+	    mockMvc.perform(put("/api/categoria/update/" + idCategoria)
+	            .header("Authorization", "Bearer " + token)
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(catEdit)))
+	        .andExpect(status().isOk());
+
+	    // Edición inválida (nombre vacío)
+	    catEdit.put("nombre", "");
+
+	    mockMvc.perform(put("/api/categoria/update/" + idCategoria)
+	            .header("Authorization", "Bearer " + token)
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(catEdit)))
+	        .andExpect(status().isBadRequest());
+
+	    // Edición de categoría inexistente
+	    catEdit.put("nombre", "Cualquiera");
+
+	    mockMvc.perform(put("/api/categoria/update/999999")
+	            .header("Authorization", "Bearer " + token)
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(catEdit)))
+	        .andExpect(status().isNotFound());
+	}
+	
+	@Test
+	@Order(16)
+	void eliminarCategoria_normal() throws Exception {
+	    // Registro y login
+	    UsuarioRequest registro = new UsuarioRequest();
+	    registro.setNombre("CatDelete");
+	    registro.setEmail("catdelete@flow.com");
+	    registro.setPassword("Password123");
+
+	    mockMvc.perform(post("/api/usuario/add")
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(registro)))
+	        .andExpect(status().isCreated());
+
+	    LoginRequest login = new LoginRequest();
+	    login.setEmail("catdelete@flow.com");
+	    login.setPassword("Password123");
+
+	    String loginResponse = mockMvc.perform(post("/api/usuario/login")
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(login)))
+	        .andReturn().getResponse().getContentAsString();
+
+	    String token = objectMapper.readTree(loginResponse).get("token").asText();
+
+	    // Crear categoría
+	    Map<String, String> categoria = new HashMap<>();
+	    categoria.put("nombre", "Borrar");
+
+	    String catResponse = mockMvc.perform(post("/api/categoria/add")
+	            .header("Authorization", "Bearer " + token)
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(categoria)))
+	        .andExpect(status().isOk())
+	        .andReturn().getResponse().getContentAsString();
+
+	    int idCategoria = objectMapper.readTree(catResponse).get("idCategoria").asInt();
+
+	    // Eliminar categoría
+	    mockMvc.perform(delete("/api/categoria/delete/" + idCategoria)
+	            .header("Authorization", "Bearer " + token))
+	        .andExpect(status().isOk());
+	}
+	
+	@Test
+	@Order(17)
+	void eliminarCategoria_protegida() throws Exception {
+	    // Insertar categoría protegida directamente
+	    Categoria cat = new Categoria();
+	    cat.setNombre("PROTEGIDA_TEST");
+	    cat.setProtegida(true);
+	    Categoria protegida = categoriaRepository.save(cat);
+
+	    // Registro y login
+	    UsuarioRequest registro = new UsuarioRequest();
+	    registro.setNombre("CatProtected");
+	    registro.setEmail("catprotected@flow.com");
+	    registro.setPassword("Password123");
+
+	    mockMvc.perform(post("/api/usuario/add")
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(registro)))
+	        .andExpect(status().isCreated());
+
+	    LoginRequest login = new LoginRequest();
+	    login.setEmail("catprotected@flow.com");
+	    login.setPassword("Password123");
+
+	    String loginResponse = mockMvc.perform(post("/api/usuario/login")
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(login)))
+	        .andReturn().getResponse().getContentAsString();
+
+	    String token = objectMapper.readTree(loginResponse).get("token").asText();
+
+	    // Intentar eliminar
+	    mockMvc.perform(delete("/api/categoria/delete/" + protegida.getIdCategoria())
+	            .header("Authorization", "Bearer " + token))
+	        .andExpect(status().isForbidden());
+	}
+	
+	@Test
+	@Order(18)
+	void eliminarCategoria_conTareasAsociadas() throws Exception {
+	    // Registro y login
+	    UsuarioRequest registro = new UsuarioRequest();
+	    registro.setNombre("CatCascade");
+	    registro.setEmail("catcascade@flow.com");
+	    registro.setPassword("Password123");
+
+	    mockMvc.perform(post("/api/usuario/add")
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(registro)))
+	        .andExpect(status().isCreated());
+
+	    LoginRequest login = new LoginRequest();
+	    login.setEmail("catcascade@flow.com");
+	    login.setPassword("Password123");
+
+	    String loginResponse = mockMvc.perform(post("/api/usuario/login")
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(login)))
+	        .andReturn().getResponse().getContentAsString();
+
+	    String token = objectMapper.readTree(loginResponse).get("token").asText();
+
+	    // Crear categoría
+	    Map<String, String> categoria = new HashMap<>();
+	    categoria.put("nombre", "Asociada");
+
+	    String catResponse = mockMvc.perform(post("/api/categoria/add")
+	            .header("Authorization", "Bearer " + token)
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(categoria)))
+	        .andExpect(status().isOk())
+	        .andReturn().getResponse().getContentAsString();
+
+	    int idCategoria = objectMapper.readTree(catResponse).get("idCategoria").asInt();
+
+	    // Crear tarea con esa categoría
+	    Map<String, Object> tarea = new HashMap<>();
+	    tarea.put("titulo", "Tarea con categoría");
+	    tarea.put("descripcion", "Debe sobrevivir sin categoría");
+	    tarea.put("tiempo", 30);
+	    tarea.put("fechaEntrega", "2099-12-31T23:59:00");
+	    tarea.put("prioridad", "MEDIA");
+	    tarea.put("idCategoria", idCategoria);
+
+	    mockMvc.perform(post("/api/tarea/add")
+	            .header("Authorization", "Bearer " + token)
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(tarea)))
+	        .andExpect(status().isOk());
+
+	    // Eliminar categoría
+	    mockMvc.perform(delete("/api/categoria/delete/" + idCategoria)
+	            .header("Authorization", "Bearer " + token))
+	        .andExpect(status().isOk());
+
+	    // Consultar tareas y verificar que sigue viva
+	    mockMvc.perform(get("/api/tarea")
+	            .header("Authorization", "Bearer " + token))
+	        .andExpect(status().isOk())
+	        .andExpect(jsonPath("$[0].titulo").value("Tarea con categoría"));
+	}
+	
+	@Test
+	@Order(19)
+	void buscarCategoria_porNombreParcial() throws Exception {
+	    // Registro y login
+	    UsuarioRequest registro = new UsuarioRequest();
+	    registro.setNombre("CatSearch");
+	    registro.setEmail("catsearch@flow.com");
+	    registro.setPassword("Password123");
+
+	    mockMvc.perform(post("/api/usuario/add")
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(registro)))
+	        .andExpect(status().isCreated());
+
+	    LoginRequest login = new LoginRequest();
+	    login.setEmail("catsearch@flow.com");
+	    login.setPassword("Password123");
+
+	    String loginResponse = mockMvc.perform(post("/api/usuario/login")
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(login)))
+	        .andReturn().getResponse().getContentAsString();
+
+	    String token = objectMapper.readTree(loginResponse).get("token").asText();
+
+	    // Crear categorías con nombre común
+	    for (String nombre : List.of("Viaje", "Videojuegos", "Vida", "Varios")) {
+	        Map<String, String> cat = new HashMap<>();
+	        cat.put("nombre", nombre);
+
+	        mockMvc.perform(post("/api/categoria/add")
+	                .header("Authorization", "Bearer " + token)
+	                .contentType(MediaType.APPLICATION_JSON)
+	                .content(objectMapper.writeValueAsString(cat)))
+	            .andExpect(status().isOk());
+	    }
+
+	    // Buscar por nombre parcial "Vi"
+	    mockMvc.perform(get("/api/categoria/nombre/Vi")
+	            .header("Authorization", "Bearer " + token))
+	        .andExpect(status().isOk())
+	        .andExpect(jsonPath("$").isArray())
+	        .andExpect(jsonPath("$.length()").value(3));
+	}
 
 }

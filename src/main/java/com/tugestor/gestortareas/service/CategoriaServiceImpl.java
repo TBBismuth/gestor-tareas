@@ -8,7 +8,9 @@ import org.springframework.stereotype.Service;
 
 import com.tugestor.gestortareas.dto.CategoriaRequest;
 import com.tugestor.gestortareas.model.Categoria;
+import com.tugestor.gestortareas.model.Tarea;
 import com.tugestor.gestortareas.repository.CategoriaRepository;
+import com.tugestor.gestortareas.repository.TareaRepository;
 
 import jakarta.persistence.EntityNotFoundException;
 
@@ -16,8 +18,10 @@ import jakarta.persistence.EntityNotFoundException;
 public class CategoriaServiceImpl implements CategoriaService {
 	
 	private final CategoriaRepository cr;
-	public CategoriaServiceImpl(CategoriaRepository cr) {
+	private final TareaRepository tareaRepository;
+	public CategoriaServiceImpl(CategoriaRepository cr, TareaRepository tareaRepository) {
 		this.cr = cr;
+		this.tareaRepository = tareaRepository;
 	}
 	
 	@Override
@@ -37,6 +41,14 @@ public class CategoriaServiceImpl implements CategoriaService {
 		if (categoria.isProtegida()) {
 			throw new AccessDeniedException("No se puede eliminar una categoría base.");
 		}
+		// Desvincular tareas asociadas
+		List<Tarea> tareasAsociadas = tareaRepository.findByCategoria_IdCategoria(id);
+
+		for (Tarea tarea : tareasAsociadas) {
+		    tarea.setCategoria(null);
+		    tareaRepository.save(tarea);
+		}
+
 		cr.delete(categoria);
 	}
 
@@ -80,7 +92,7 @@ public class CategoriaServiceImpl implements CategoriaService {
 			categoria.setIcono(categoriaRequest.getIcono());
 			return cr.save(categoria);
 		}else {
-			throw new RuntimeException("Categoría no encontrada con el id: " + id);
+			throw new EntityNotFoundException("Categoría no encontrada con el id: " + id);
 		}
 	}
 
