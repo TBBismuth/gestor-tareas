@@ -46,6 +46,10 @@ public class TareaServiceImpl implements TareaService{
 		Long id = tareaRequest.getIdCategoria();
 		Categoria categoria = cr.findById(id)
 				.orElseThrow(() -> new RuntimeException("Categoría no encontrada con el id: " + id));
+
+		// Validación coherente completado/fechaCompletada
+		validarCoherenciaCompletado(tareaRequest.isCompletada(), tareaRequest.getFechaCompletada());
+
 		Tarea tarea = new Tarea();
 		tarea.setTitulo(tareaRequest.getTitulo());
 		tarea.setTiempo(tareaRequest.getTiempo());
@@ -56,18 +60,17 @@ public class TareaServiceImpl implements TareaService{
 		tarea.setCategoria(categoria);
 		tarea.setUsuario(usuario);
 		tarea.setCompletada(tareaRequest.isCompletada());
-		
-		if (tarea.isCompletada() && tarea.getFechaCompletada() == null) {
-			throw new RuntimeException("Una tarea completada debe incluir la fecha de finalización.");
-		}	//Validacion de completada sin fechaCompletada
+		tarea.setFechaCompletada(tareaRequest.getFechaCompletada());
+
 		if (tarea.getFechaCompletada() != null && tarea.getFechaCompletada().isBefore(tarea.getFechaAgregado())) {
 			throw new RuntimeException("La fecha de completado no puede ser anterior a la fecha de creación.");
-		}	//Validacion de fechaCompletada anterior a fechaAgregado
+		}
 		if (tarea.getFechaEntrega() != null && tarea.getFechaEntrega().isBefore(LocalDateTime.now())) {
 			throw new ValidationException("La fecha de entrega no puede haber pasado.");
-		}	// Validacion de fechaEntrega no pasada
+		}
 		return tr.save(tarea);
 	}
+
 
 	@Override
 	public List<Tarea> obtenerTodas(String principal) {
@@ -96,42 +99,45 @@ public class TareaServiceImpl implements TareaService{
 		}
 		tr.delete(tarea);
 	}
-	
+
 	@Override
 	public Tarea actualizarPorId(Long idTarea, TareaRequest tareaRequest, String emailUsuario) {
 		Optional<Tarea> tareaOriginal = tr.findById(idTarea);
-		// Optional<Tarea> para evitar errores null. Puede contener una tarea o estar vacío.
-		// Si la tarea existe creo copia y sobreescribo la original. Si no, lanzamos una excepción.
+
 		if (tareaOriginal.isPresent()) {
 			Tarea existente = tareaOriginal.get();
+
 			if (!existente.getUsuario().getEmail().equals(emailUsuario)) {
 				throw new AccessDeniedException("No tienes permiso para modificar esta tarea.");
 			}
+
+			// Validación coherente antes de actualizar
+			validarCoherenciaCompletado(tareaRequest.isCompletada(), tareaRequest.getFechaCompletada());
+
 			existente.setTitulo(tareaRequest.getTitulo());
 			existente.setTiempo(tareaRequest.getTiempo());
 			existente.setPrioridad(tareaRequest.getPrioridad());
 			existente.setFechaEntrega(tareaRequest.getFechaEntrega());
 			existente.setDescripcion(tareaRequest.getDescripcion());
 			existente.setCompletada(tareaRequest.isCompletada());
-			// Si la tarea esta completada sin fechaCompletada, la añado
-			if (tareaRequest.getFechaCompletada() != null) {
-				existente.setFechaCompletada(tareaRequest.getFechaCompletada());
-			}	// Si esta completada pero fechaCompletada es null
-			if (existente.isCompletada() && existente.getFechaCompletada() == null) {
-				throw new RuntimeException("Una tarea completada debe incluir la fecha de finalización.");
-			}	// Si tiene fechaCompletada pero es posterior a fechaAgregado
-			if (existente.getFechaCompletada() != null && existente.getFechaCompletada().isBefore(existente.getFechaAgregado())) {
+			existente.setFechaCompletada(tareaRequest.getFechaCompletada());
+
+			if (existente.getFechaCompletada() != null &&
+					existente.getFechaCompletada().isBefore(existente.getFechaAgregado())) {
 				throw new RuntimeException("La fecha de completado no puede ser anterior a la fecha de creación.");
 			}
-			if (existente.getFechaEntrega() != null && existente.getFechaEntrega().isBefore(LocalDateTime.now())) {
+
+			if (existente.getFechaEntrega() != null &&
+					existente.getFechaEntrega().isBefore(LocalDateTime.now())) {
 				throw new ValidationException("La fecha de entrega no puede haber pasado.");
 			}
+
 			return tr.save(existente);
 		} else {
 			throw new RuntimeException("No existe la tarea con ID " + idTarea);
 		}
 	}
-	
+
 	@Override
 	public 	List<Tarea> obtenerPorTitulo(String emailUsuario){
 		return tr.findAllByUsuarioEmailOrderByTituloAsc(emailUsuario);
@@ -223,5 +229,15 @@ public class TareaServiceImpl implements TareaService{
 		LocalDateTime inicioManiana = inicioHoy.plusDays(1);
 		return tr.findByUsuarioEmailAndFechaEntregaBetween(emailUsuarioCreador, inicioHoy, inicioManiana);
 	}
+	
+	private void validarCoherenciaCompletado(boolean completada, LocalDateTime fechaCompletada) {
+		if (completada && fechaCompletada == null) {
+			throw new RuntimeException("Una tarea completada debe incluir la fecha de finalización.");
+		}
+		if (!completada && fechaCompletada != null) {
+			throw new RuntimeException("No se puede asignar una fecha completada a una tarea no completada.");
+		}
+	}
+
 
 }

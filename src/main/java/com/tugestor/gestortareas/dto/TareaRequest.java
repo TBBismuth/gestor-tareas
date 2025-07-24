@@ -2,6 +2,7 @@ package com.tugestor.gestortareas.dto;
 
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.tugestor.gestortareas.model.Prioridad;
 
 import jakarta.persistence.EnumType;

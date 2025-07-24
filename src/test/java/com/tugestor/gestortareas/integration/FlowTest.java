@@ -721,5 +721,875 @@ public class FlowTest {
 	        .andExpect(jsonPath("$").isArray())
 	        .andExpect(jsonPath("$.length()").value(3));
 	}
+	
+	@Test
+	@Order(20)
+	void listarTareas_delUsuario() throws Exception {
+	    // Registro y login
+	    UsuarioRequest registro = new UsuarioRequest();
+	    registro.setNombre("TaskLister");
+	    registro.setEmail("tasklister@flow.com");
+	    registro.setPassword("Password123");
+
+	    mockMvc.perform(post("/api/usuario/add")
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(registro)))
+	        .andExpect(status().isCreated());
+
+	    LoginRequest login = new LoginRequest();
+	    login.setEmail("tasklister@flow.com");
+	    login.setPassword("Password123");
+
+	    String loginResponse = mockMvc.perform(post("/api/usuario/login")
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(login)))
+	        .andReturn().getResponse().getContentAsString();
+
+	    String token = objectMapper.readTree(loginResponse).get("token").asText();
+
+	    // Primer listado: sin tareas
+	    mockMvc.perform(get("/api/tarea")
+	            .header("Authorization", "Bearer " + token))
+	        .andExpect(status().isOk())
+	        .andExpect(jsonPath("$.length()").value(0));
+
+	    // Crear categoría
+	    Map<String, String> categoria = new HashMap<>();
+	    categoria.put("nombre", "Tareas");
+
+	    String catResponse = mockMvc.perform(post("/api/categoria/add")
+	            .header("Authorization", "Bearer " + token)
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(categoria)))
+	        .andReturn().getResponse().getContentAsString();
+
+	    int idCategoria = objectMapper.readTree(catResponse).get("idCategoria").asInt();
+
+	    // Crear una tarea
+	    Map<String, Object> tarea = new HashMap<>();
+	    tarea.put("titulo", "Tarea simple");
+	    tarea.put("descripcion", "Una sola tarea para probar");
+	    tarea.put("tiempo", 45);
+	    tarea.put("fechaEntrega", "2099-12-31T23:59:00");
+	    tarea.put("prioridad", "ALTA");
+	    tarea.put("idCategoria", idCategoria);
+
+	    mockMvc.perform(post("/api/tarea/add")
+	            .header("Authorization", "Bearer " + token)
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(tarea)))
+	        .andExpect(status().isOk());
+
+	    // Segundo listado: con una tarea
+	    mockMvc.perform(get("/api/tarea")
+	            .header("Authorization", "Bearer " + token))
+	        .andExpect(status().isOk())
+	        .andExpect(jsonPath("$.length()").value(1))
+	        .andExpect(jsonPath("$[0].titulo").value("Tarea simple"));
+	}
+	
+	@Test
+	@Order(21)
+	void crearTarea_valida() throws Exception {
+	    // Registro y login
+	    UsuarioRequest registro = new UsuarioRequest();
+	    registro.setNombre("TaskCreator");
+	    registro.setEmail("taskcreator@flow.com");
+	    registro.setPassword("Password123");
+
+	    mockMvc.perform(post("/api/usuario/add")
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(registro)))
+	        .andExpect(status().isCreated());
+
+	    LoginRequest login = new LoginRequest();
+	    login.setEmail("taskcreator@flow.com");
+	    login.setPassword("Password123");
+
+	    String loginResponse = mockMvc.perform(post("/api/usuario/login")
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(login)))
+	        .andReturn().getResponse().getContentAsString();
+
+	    String token = objectMapper.readTree(loginResponse).get("token").asText();
+
+	    // Crear categoría
+	    Map<String, String> categoria = new HashMap<>();
+	    categoria.put("nombre", "Trabajo");
+
+	    String catResponse = mockMvc.perform(post("/api/categoria/add")
+	            .header("Authorization", "Bearer " + token)
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(categoria)))
+	        .andExpect(status().isOk())
+	        .andReturn().getResponse().getContentAsString();
+
+	    int idCategoria = objectMapper.readTree(catResponse).get("idCategoria").asInt();
+
+	    // Crear tarea
+	    Map<String, Object> tarea = new HashMap<>();
+	    tarea.put("titulo", "Nueva tarea");
+	    tarea.put("descripcion", "Tarea creada correctamente");
+	    tarea.put("tiempo", 60);
+	    tarea.put("fechaEntrega", "2099-12-31T12:00:00");
+	    tarea.put("prioridad", "BAJA");
+	    tarea.put("idCategoria", idCategoria);
+
+	    mockMvc.perform(post("/api/tarea/add")
+	            .header("Authorization", "Bearer " + token)
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(tarea)))
+	        .andExpect(status().isOk())
+	        .andExpect(jsonPath("$.titulo").value("Nueva tarea"))
+	        .andExpect(jsonPath("$.completada").value(false));
+	}
+	
+	@Test
+	@Order(22)
+	void crearTarea_categoriaInexistente() throws Exception {
+	    // Registro y login
+	    UsuarioRequest registro = new UsuarioRequest();
+	    registro.setNombre("CatNotFound");
+	    registro.setEmail("catnotfound@flow.com");
+	    registro.setPassword("Password123");
+
+	    mockMvc.perform(post("/api/usuario/add")
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(registro)))
+	        .andExpect(status().isCreated());
+
+	    LoginRequest login = new LoginRequest();
+	    login.setEmail("catnotfound@flow.com");
+	    login.setPassword("Password123");
+
+	    String loginResponse = mockMvc.perform(post("/api/usuario/login")
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(login)))
+	        .andReturn().getResponse().getContentAsString();
+
+	    String token = objectMapper.readTree(loginResponse).get("token").asText();
+
+	    // Intentar crear tarea con categoría inválida
+	    Map<String, Object> tarea = new HashMap<>();
+	    tarea.put("titulo", "Categoría inválida");
+	    tarea.put("descripcion", "La categoría no existe");
+	    tarea.put("tiempo", 30);
+	    tarea.put("fechaEntrega", "2099-12-31T12:00:00");
+	    tarea.put("prioridad", "MEDIA");
+	    tarea.put("idCategoria", 999999L); // ID inexistente
+
+	    mockMvc.perform(post("/api/tarea/add")
+	            .header("Authorization", "Bearer " + token)
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(tarea)))
+	        .andExpect(status().isBadRequest());
+	}
+	
+	@Test
+	@Order(23)
+	void crearTarea_datosInvalidos_individuales() throws Exception {
+	    // Registro y login
+	    UsuarioRequest registro = new UsuarioRequest();
+	    registro.setNombre("InvalidFields");
+	    registro.setEmail("invalidfields@flow.com");
+	    registro.setPassword("Password123");
+
+	    mockMvc.perform(post("/api/usuario/add")
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(registro)))
+	        .andExpect(status().isCreated());
+
+	    LoginRequest login = new LoginRequest();
+	    login.setEmail("invalidfields@flow.com");
+	    login.setPassword("Password123");
+
+	    String loginResponse = mockMvc.perform(post("/api/usuario/login")
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(login)))
+	        .andReturn().getResponse().getContentAsString();
+
+	    String token = objectMapper.readTree(loginResponse).get("token").asText();
+
+	    // Crear categoría válida para usar en los tests
+	    Map<String, String> categoria = new HashMap<>();
+	    categoria.put("nombre", "ValidCat");
+
+	    String catResponse = mockMvc.perform(post("/api/categoria/add")
+	            .header("Authorization", "Bearer " + token)
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(categoria)))
+	        .andExpect(status().isOk())
+	        .andReturn().getResponse().getContentAsString();
+
+	    int idCategoria = objectMapper.readTree(catResponse).get("idCategoria").asInt();
+
+	    // 1. Título vacío
+	    Map<String, Object> tarea1 = new HashMap<>();
+	    tarea1.put("titulo", "");
+	    tarea1.put("descripcion", "desc");
+	    tarea1.put("tiempo", 10);
+	    tarea1.put("fechaEntrega", "2099-12-31T12:00:00");
+	    tarea1.put("prioridad", "MEDIA");
+	    tarea1.put("idCategoria", idCategoria);
+
+	    mockMvc.perform(post("/api/tarea/add")
+	            .header("Authorization", "Bearer " + token)
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(tarea1)))
+	        .andExpect(status().isBadRequest());
+
+	    // 2. Tiempo <= 0
+	    Map<String, Object> tarea2 = new HashMap<>();
+	    tarea2.put("titulo", "Título");
+	    tarea2.put("descripcion", "desc");
+	    tarea2.put("tiempo", 0);
+	    tarea2.put("fechaEntrega", "2099-12-31T12:00:00");
+	    tarea2.put("prioridad", "MEDIA");
+	    tarea2.put("idCategoria", idCategoria);
+
+	    mockMvc.perform(post("/api/tarea/add")
+	            .header("Authorization", "Bearer " + token)
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(tarea2)))
+	        .andExpect(status().isBadRequest());
+
+	    // 3. Fecha de entrega pasada
+	    Map<String, Object> tarea3 = new HashMap<>();
+	    tarea3.put("titulo", "Título");
+	    tarea3.put("descripcion", "desc");
+	    tarea3.put("tiempo", 10);
+	    tarea3.put("fechaEntrega", "2000-01-01T00:00:00");
+	    tarea3.put("prioridad", "MEDIA");
+	    tarea3.put("idCategoria", idCategoria);
+
+	    mockMvc.perform(post("/api/tarea/add")
+	            .header("Authorization", "Bearer " + token)
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(tarea3)))
+	        .andExpect(status().isBadRequest());
+
+	    // 4. Prioridad inválida
+	    Map<String, Object> tarea4 = new HashMap<>();
+	    tarea4.put("titulo", "Título");
+	    tarea4.put("descripcion", "desc");
+	    tarea4.put("tiempo", 10);
+	    tarea4.put("fechaEntrega", "2099-12-31T12:00:00");
+	    tarea4.put("prioridad", "ALTÍSIMA"); // inválido
+	    tarea4.put("idCategoria", idCategoria);
+
+	    mockMvc.perform(post("/api/tarea/add")
+	            .header("Authorization", "Bearer " + token)
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(tarea4)))
+	        .andExpect(status().isBadRequest());
+	}
+	
+	@Test
+	@Order(24)
+	void crearTarea_completadaSinFechaCompletado() throws Exception {
+	    // Registro y login
+	    UsuarioRequest registro = new UsuarioRequest();
+	    registro.setNombre("SinFechaCompletado");
+	    registro.setEmail("sinfecha@flow.com");
+	    registro.setPassword("Password123");
+
+	    mockMvc.perform(post("/api/usuario/add")
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(registro)))
+	        .andExpect(status().isCreated());
+
+	    LoginRequest login = new LoginRequest();
+	    login.setEmail("sinfecha@flow.com");
+	    login.setPassword("Password123");
+
+	    String loginResponse = mockMvc.perform(post("/api/usuario/login")
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(login)))
+	        .andReturn().getResponse().getContentAsString();
+
+	    String token = objectMapper.readTree(loginResponse).get("token").asText();
+
+	    // Crear categoría
+	    Map<String, String> categoria = new HashMap<>();
+	    categoria.put("nombre", "Valida");
+
+	    String catResponse = mockMvc.perform(post("/api/categoria/add")
+	            .header("Authorization", "Bearer " + token)
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(categoria)))
+	        .andExpect(status().isOk())
+	        .andReturn().getResponse().getContentAsString();
+
+	    int idCategoria = objectMapper.readTree(catResponse).get("idCategoria").asInt();
+
+	    // Intentar crear tarea completada sin fechaCompletado
+	    Map<String, Object> tarea = new HashMap<>();
+	    tarea.put("titulo", "Completada sin fecha");
+	    tarea.put("descripcion", "Esto no debe permitirse");
+	    tarea.put("tiempo", 30);
+	    tarea.put("fechaEntrega", "2099-12-31T12:00:00");
+	    tarea.put("prioridad", "MEDIA");
+	    tarea.put("completada", true); // pero sin fechaCompletado
+	    tarea.put("idCategoria", idCategoria);
+
+	    mockMvc.perform(post("/api/tarea/add")
+	            .header("Authorization", "Bearer " + token)
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(tarea)))
+	        .andExpect(status().isBadRequest());
+	}
+	
+	@Test
+	@Order(25)
+	void crearTarea_completadaConFechaCompletado() throws Exception {
+	    // Registro y login
+	    UsuarioRequest registro = new UsuarioRequest();
+	    registro.setNombre("CompletaDeInicio");
+	    registro.setEmail("completainicio@flow.com");
+	    registro.setPassword("Password123");
+
+	    mockMvc.perform(post("/api/usuario/add")
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(registro)))
+	        .andExpect(status().isCreated());
+
+	    LoginRequest login = new LoginRequest();
+	    login.setEmail("completainicio@flow.com");
+	    login.setPassword("Password123");
+
+	    String loginResponse = mockMvc.perform(post("/api/usuario/login")
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(login)))
+	        .andReturn().getResponse().getContentAsString();
+
+	    String token = objectMapper.readTree(loginResponse).get("token").asText();
+
+	    // Crear categoría
+	    Map<String, String> categoria = new HashMap<>();
+	    categoria.put("nombre", "Completa");
+
+	    String catResponse = mockMvc.perform(post("/api/categoria/add")
+	            .header("Authorization", "Bearer " + token)
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(categoria)))
+	        .andExpect(status().isOk())
+	        .andReturn().getResponse().getContentAsString();
+
+	    int idCategoria = objectMapper.readTree(catResponse).get("idCategoria").asInt();
+
+	    // Intentar crear tarea ya completada
+	    Map<String, Object> tarea = new HashMap<>();
+	    tarea.put("titulo", "Completada desde inicio");
+	    tarea.put("descripcion", "Esto no se permite");
+	    tarea.put("tiempo", 45);
+	    tarea.put("fechaEntrega", "2099-12-31T12:00:00");
+	    tarea.put("prioridad", "MEDIA");
+	    tarea.put("completada", true);
+	    tarea.put("fechaCompletado", "2099-12-01T10:00:00");
+	    tarea.put("idCategoria", idCategoria);
+
+	    mockMvc.perform(post("/api/tarea/add")
+	            .header("Authorization", "Bearer " + token)
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(tarea)))
+	        .andExpect(status().isBadRequest());
+	}
+	
+	@Test
+	@Order(26)
+	void obtenerTarea_porId_variantes() throws Exception {
+	    // Usuario A: propietario de la tarea
+	    UsuarioRequest userA = new UsuarioRequest();
+	    userA.setNombre("Dueño");
+	    userA.setEmail("dueno@flow.com");
+	    userA.setPassword("Password123");
+
+	    mockMvc.perform(post("/api/usuario/add")
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(userA)))
+	        .andExpect(status().isCreated());
+
+	    LoginRequest loginA = new LoginRequest();
+	    loginA.setEmail("dueno@flow.com");
+	    loginA.setPassword("Password123");
+
+	    String loginResponseA = mockMvc.perform(post("/api/usuario/login")
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(loginA)))
+	        .andReturn().getResponse().getContentAsString();
+
+	    String tokenA = objectMapper.readTree(loginResponseA).get("token").asText();
+
+	    // Crear categoría
+	    Map<String, String> categoria = new HashMap<>();
+	    categoria.put("nombre", "Consulta");
+
+	    String catResponse = mockMvc.perform(post("/api/categoria/add")
+	            .header("Authorization", "Bearer " + tokenA)
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(categoria)))
+	        .andExpect(status().isOk())
+	        .andReturn().getResponse().getContentAsString();
+
+	    int idCategoria = objectMapper.readTree(catResponse).get("idCategoria").asInt();
+
+	    // Crear tarea
+	    Map<String, Object> tarea = new HashMap<>();
+	    tarea.put("titulo", "Consulta por ID");
+	    tarea.put("descripcion", "Debe poder accederse");
+	    tarea.put("tiempo", 30);
+	    tarea.put("fechaEntrega", "2099-12-31T12:00:00");
+	    tarea.put("prioridad", "MEDIA");
+	    tarea.put("idCategoria", idCategoria);
+
+	    String tareaResponse = mockMvc.perform(post("/api/tarea/add")
+	            .header("Authorization", "Bearer " + tokenA)
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(tarea)))
+	        .andExpect(status().isOk())
+	        .andReturn().getResponse().getContentAsString();
+
+	    long idTarea = objectMapper.readTree(tareaResponse).get("idTarea").asLong();
+
+	    // ✅ Acceso a tarea propia
+	    mockMvc.perform(get("/api/tarea/" + idTarea)
+	            .header("Authorization", "Bearer " + tokenA))
+	        .andExpect(status().isOk())
+	        .andExpect(jsonPath("$.titulo").value("Consulta por ID"));
+
+	    // ❌ Tarea inexistente
+	    mockMvc.perform(get("/api/tarea/999999")
+	            .header("Authorization", "Bearer " + tokenA))
+	        .andExpect(status().isNotFound());
+
+	    // Usuario B: intenta acceder a tarea de otro
+	    UsuarioRequest userB = new UsuarioRequest();
+	    userB.setNombre("Ajeno");
+	    userB.setEmail("ajeno@flow.com");
+	    userB.setPassword("Password123");
+
+	    mockMvc.perform(post("/api/usuario/add")
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(userB)))
+	        .andExpect(status().isCreated());
+
+	    LoginRequest loginB = new LoginRequest();
+	    loginB.setEmail("ajeno@flow.com");
+	    loginB.setPassword("Password123");
+
+	    String loginResponseB = mockMvc.perform(post("/api/usuario/login")
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(loginB)))
+	        .andReturn().getResponse().getContentAsString();
+
+	    String tokenB = objectMapper.readTree(loginResponseB).get("token").asText();
+
+	    // ❌ Acceso a tarea ajena
+	    mockMvc.perform(get("/api/tarea/" + idTarea)
+	            .header("Authorization", "Bearer " + tokenB))
+	        .andExpect(status().isForbidden());
+	}
+	
+	@Test
+	@Order(27)
+	void editarTarea_propiaConDatosValidos() throws Exception {
+	    // Registro y login
+	    UsuarioRequest registro = new UsuarioRequest();
+	    registro.setNombre("Editor");
+	    registro.setEmail("editor@flow.com");
+	    registro.setPassword("Password123");
+
+	    mockMvc.perform(post("/api/usuario/add")
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(registro)))
+	        .andExpect(status().isCreated());
+
+	    LoginRequest login = new LoginRequest();
+	    login.setEmail("editor@flow.com");
+	    login.setPassword("Password123");
+
+	    String loginResponse = mockMvc.perform(post("/api/usuario/login")
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(login)))
+	        .andReturn().getResponse().getContentAsString();
+
+	    String token = objectMapper.readTree(loginResponse).get("token").asText();
+
+	    // Crear categoría
+	    Map<String, String> categoria = new HashMap<>();
+	    categoria.put("nombre", "Editar");
+
+	    String catResponse = mockMvc.perform(post("/api/categoria/add")
+	            .header("Authorization", "Bearer " + token)
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(categoria)))
+	        .andReturn().getResponse().getContentAsString();
+
+	    int idCategoria = objectMapper.readTree(catResponse).get("idCategoria").asInt();
+
+	    // Crear tarea original
+	    Map<String, Object> tarea = new HashMap<>();
+	    tarea.put("titulo", "Original");
+	    tarea.put("descripcion", "Antes de editar");
+	    tarea.put("tiempo", 30);
+	    tarea.put("fechaEntrega", "2099-12-31T12:00:00");
+	    tarea.put("prioridad", "MEDIA");
+	    tarea.put("idCategoria", idCategoria);
+
+	    String tareaResponse = mockMvc.perform(post("/api/tarea/add")
+	            .header("Authorization", "Bearer " + token)
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(tarea)))
+	        .andReturn().getResponse().getContentAsString();
+
+	    long idTarea = objectMapper.readTree(tareaResponse).get("idTarea").asLong();
+
+	    // Editar la tarea
+	    Map<String, Object> modificacion = new HashMap<>();
+	    modificacion.put("titulo", "Modificada");
+	    modificacion.put("descripcion", "Después de editar");
+	    modificacion.put("tiempo", 45);
+	    modificacion.put("fechaEntrega", "2099-12-31T12:00:00");
+	    modificacion.put("prioridad", "ALTA");
+	    modificacion.put("idCategoria", idCategoria);
+
+	    mockMvc.perform(put("/api/tarea/update/" + idTarea)
+	            .header("Authorization", "Bearer " + token)
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(modificacion)))
+	        .andExpect(status().isOk())
+	        .andExpect(jsonPath("$.titulo").value("Modificada"))
+	        .andExpect(jsonPath("$.prioridad").value("ALTA"));
+	}
+	
+	@Test
+	@Order(28)
+	void editarTarea_completarConFechaValida() throws Exception {
+	    // Registro y login
+	    UsuarioRequest registro = new UsuarioRequest();
+	    registro.setNombre("Completable");
+	    registro.setEmail("completable@flow.com");
+	    registro.setPassword("Password123");
+
+	    mockMvc.perform(post("/api/usuario/add")
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(registro)))
+	        .andExpect(status().isCreated());
+
+	    LoginRequest login = new LoginRequest();
+	    login.setEmail("completable@flow.com");
+	    login.setPassword("Password123");
+
+	    String loginResponse = mockMvc.perform(post("/api/usuario/login")
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(login)))
+	        .andReturn().getResponse().getContentAsString();
+
+	    String token = objectMapper.readTree(loginResponse).get("token").asText();
+
+	    // Crear categoría
+	    Map<String, String> categoria = new HashMap<>();
+	    categoria.put("nombre", "Completar");
+
+	    String catResponse = mockMvc.perform(post("/api/categoria/add")
+	            .header("Authorization", "Bearer " + token)
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(categoria)))
+	        .andExpect(status().isOk())
+	        .andReturn().getResponse().getContentAsString();
+
+	    int idCategoria = objectMapper.readTree(catResponse).get("idCategoria").asInt();
+
+	    // Crear tarea
+	    Map<String, Object> tarea = new HashMap<>();
+	    tarea.put("titulo", "A completar");
+	    tarea.put("descripcion", "Aún no está completada");
+	    tarea.put("tiempo", 40);
+	    tarea.put("fechaEntrega", "2099-12-31T12:00:00");
+	    tarea.put("prioridad", "BAJA");
+	    tarea.put("idCategoria", idCategoria);
+
+	    String tareaResponse = mockMvc.perform(post("/api/tarea/add")
+	            .header("Authorization", "Bearer " + token)
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(tarea)))
+	        .andExpect(status().isOk())
+	        .andReturn().getResponse().getContentAsString();
+
+	    long idTarea = objectMapper.readTree(tareaResponse).get("idTarea").asLong();
+
+	    // Editar: marcar como completada con fecha válida
+	    Map<String, Object> modificacion = new HashMap<>();
+	    modificacion.put("titulo", "A completar");
+	    modificacion.put("descripcion", "Ya está completada");
+	    modificacion.put("tiempo", 40);
+	    modificacion.put("fechaEntrega", "2099-12-31T12:00:00");
+	    modificacion.put("prioridad", "BAJA");
+	    modificacion.put("completada", true);
+	    modificacion.put("fechaCompletada", "2099-10-01T10:00:00"); // CORREGIDO: femenino
+	    modificacion.put("idCategoria", idCategoria);
+
+	    mockMvc.perform(put("/api/tarea/update/" + idTarea)
+	            .header("Authorization", "Bearer " + token)
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(modificacion)))
+	        .andExpect(status().isOk())
+	        .andExpect(jsonPath("$.completada").value(true))
+	        .andExpect(jsonPath("$.fechaCompletada").value("2099-10-01T10:00:00"));
+	}
+	
+	@Test
+	@Order(29)
+	void editarTarea_incompletaConFechaCompletada_debeFallar() throws Exception {
+	    // Registro y login
+	    UsuarioRequest registro = new UsuarioRequest();
+	    registro.setNombre("Incongruente");
+	    registro.setEmail("incongruente@flow.com");
+	    registro.setPassword("Password123");
+
+	    mockMvc.perform(post("/api/usuario/add")
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(registro)))
+	        .andExpect(status().isCreated());
+
+	    LoginRequest login = new LoginRequest();
+	    login.setEmail("incongruente@flow.com");
+	    login.setPassword("Password123");
+
+	    String loginResponse = mockMvc.perform(post("/api/usuario/login")
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(login)))
+	        .andReturn().getResponse().getContentAsString();
+
+	    String token = objectMapper.readTree(loginResponse).get("token").asText();
+
+	    // Crear categoría
+	    Map<String, String> categoria = new HashMap<>();
+	    categoria.put("nombre", "Incoherente");
+
+	    String catResponse = mockMvc.perform(post("/api/categoria/add")
+	            .header("Authorization", "Bearer " + token)
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(categoria)))
+	        .andExpect(status().isOk())
+	        .andReturn().getResponse().getContentAsString();
+
+	    int idCategoria = objectMapper.readTree(catResponse).get("idCategoria").asInt();
+
+	    // Crear tarea válida
+	    Map<String, Object> tarea = new HashMap<>();
+	    tarea.put("titulo", "Caso incoherente");
+	    tarea.put("descripcion", "No está completada");
+	    tarea.put("tiempo", 30);
+	    tarea.put("fechaEntrega", "2099-12-31T12:00:00");
+	    tarea.put("prioridad", "MEDIA");
+	    tarea.put("idCategoria", idCategoria);
+
+	    String tareaResponse = mockMvc.perform(post("/api/tarea/add")
+	            .header("Authorization", "Bearer " + token)
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(tarea)))
+	        .andExpect(status().isOk())
+	        .andReturn().getResponse().getContentAsString();
+
+	    long idTarea = objectMapper.readTree(tareaResponse).get("idTarea").asLong();
+
+	    // Intentar editar: completada = false con fechaCompletada ≠ null
+	    Map<String, Object> modificacion = new HashMap<>();
+	    modificacion.put("titulo", "Incoherente editada");
+	    modificacion.put("descripcion", "Intento inválido");
+	    modificacion.put("tiempo", 30);
+	    modificacion.put("fechaEntrega", "2099-12-31T12:00:00");
+	    modificacion.put("prioridad", "MEDIA");
+	    modificacion.put("completada", false);
+	    modificacion.put("fechaCompletada", "2099-10-01T10:00:00");
+	    modificacion.put("idCategoria", idCategoria);
+
+	    mockMvc.perform(put("/api/tarea/update/" + idTarea)
+	            .header("Authorization", "Bearer " + token)
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(modificacion)))
+	        .andExpect(status().isBadRequest())
+	        .andExpect(jsonPath("$.error").value("No se puede asignar una fecha completada a una tarea no completada."));
+	}
+	
+	@Test
+	@Order(30)
+	void editarTarea_fechaEntregaPasada_debeFallar() throws Exception {
+	    // Registro y login
+	    UsuarioRequest registro = new UsuarioRequest();
+	    registro.setNombre("Anticipado");
+	    registro.setEmail("anticipado@flow.com");
+	    registro.setPassword("Password123");
+
+	    mockMvc.perform(post("/api/usuario/add")
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(registro)))
+	        .andExpect(status().isCreated());
+
+	    LoginRequest login = new LoginRequest();
+	    login.setEmail("anticipado@flow.com");
+	    login.setPassword("Password123");
+
+	    String loginResponse = mockMvc.perform(post("/api/usuario/login")
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(login)))
+	        .andReturn().getResponse().getContentAsString();
+
+	    String token = objectMapper.readTree(loginResponse).get("token").asText();
+
+	    // Crear categoría
+	    Map<String, String> categoria = new HashMap<>();
+	    categoria.put("nombre", "Pasado");
+
+	    String catResponse = mockMvc.perform(post("/api/categoria/add")
+	            .header("Authorization", "Bearer " + token)
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(categoria)))
+	        .andExpect(status().isOk())
+	        .andReturn().getResponse().getContentAsString();
+
+	    int idCategoria = objectMapper.readTree(catResponse).get("idCategoria").asInt();
+
+	    // Crear tarea válida
+	    Map<String, Object> tarea = new HashMap<>();
+	    tarea.put("titulo", "Valida inicial");
+	    tarea.put("descripcion", "Será invalidada");
+	    tarea.put("tiempo", 20);
+	    tarea.put("fechaEntrega", "2099-12-31T12:00:00");
+	    tarea.put("prioridad", "ALTA");
+	    tarea.put("idCategoria", idCategoria);
+
+	    String tareaResponse = mockMvc.perform(post("/api/tarea/add")
+	            .header("Authorization", "Bearer " + token)
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(tarea)))
+	        .andExpect(status().isOk())
+	        .andReturn().getResponse().getContentAsString();
+
+	    long idTarea = objectMapper.readTree(tareaResponse).get("idTarea").asLong();
+
+	    // Intentar modificar con fecha en el pasado
+	    Map<String, Object> modificacion = new HashMap<>();
+	    modificacion.put("titulo", "Invalida");
+	    modificacion.put("descripcion", "Fecha inválida");
+	    modificacion.put("tiempo", 20);
+	    modificacion.put("fechaEntrega", "2000-01-01T10:00:00"); // Fecha en el pasado
+	    modificacion.put("prioridad", "ALTA");
+	    modificacion.put("completada", false);
+	    modificacion.put("fechaCompletada", null);
+	    modificacion.put("idCategoria", idCategoria);
+
+	    mockMvc.perform(put("/api/tarea/update/" + idTarea)
+	            .header("Authorization", "Bearer " + token)
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(modificacion)))
+	        .andExpect(status().isBadRequest())
+	        .andExpect(jsonPath("$.fechaEntrega").value("La fecha de entrega no puede haber pasado"));
+	}
+	
+	@Test
+	@Order(31)
+	void eliminarTarea_propiaInexistenteAjena() throws Exception {
+	    // Usuario 1 (propietario de la tarea)
+	    UsuarioRequest u1 = new UsuarioRequest();
+	    u1.setNombre("Propietario");
+	    u1.setEmail("propietario@flow.com");
+	    u1.setPassword("Password123");
+
+	    mockMvc.perform(post("/api/usuario/add")
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(u1)))
+	        .andExpect(status().isCreated());
+
+	    LoginRequest login1 = new LoginRequest();
+	    login1.setEmail("propietario@flow.com");
+	    login1.setPassword("Password123");
+
+	    String loginResp1 = mockMvc.perform(post("/api/usuario/login")
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(login1)))
+	        .andReturn().getResponse().getContentAsString();
+
+	    String token1 = objectMapper.readTree(loginResp1).get("token").asText();
+
+	    // Crear categoría
+	    Map<String, String> categoria = new HashMap<>();
+	    categoria.put("nombre", "Eliminar");
+
+	    String catResp = mockMvc.perform(post("/api/categoria/add")
+	            .header("Authorization", "Bearer " + token1)
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(categoria)))
+	        .andReturn().getResponse().getContentAsString();
+
+	    int idCategoria = objectMapper.readTree(catResp).get("idCategoria").asInt();
+
+	    // Crear tarea
+	    Map<String, Object> tarea = new HashMap<>();
+	    tarea.put("titulo", "Tarea para borrar");
+	    tarea.put("descripcion", "Temporal");
+	    tarea.put("tiempo", 15);
+	    tarea.put("fechaEntrega", "2099-12-31T12:00:00");
+	    tarea.put("prioridad", "BAJA");
+	    tarea.put("idCategoria", idCategoria);
+
+	    String tareaResp = mockMvc.perform(post("/api/tarea/add")
+	            .header("Authorization", "Bearer " + token1)
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(tarea)))
+	        .andReturn().getResponse().getContentAsString();
+
+	    long idTarea = objectMapper.readTree(tareaResp).get("idTarea").asLong();
+
+	    // Eliminar tarea propia
+	    mockMvc.perform(delete("/api/tarea/delete/" + idTarea)
+	            .header("Authorization", "Bearer " + token1))
+	        .andExpect(status().isOk());
+
+	    // Intentar eliminar tarea inexistente (ya eliminada)
+	    mockMvc.perform(delete("/api/tarea/delete/" + idTarea)
+	            .header("Authorization", "Bearer " + token1))
+	        .andExpect(status().isNotFound());
+
+	    // Crear usuario 2 (que intentará eliminar una tarea ajena)
+	    UsuarioRequest u2 = new UsuarioRequest();
+	    u2.setNombre("Intruso");
+	    u2.setEmail("intruso@flow.com");
+	    u2.setPassword("Password123");
+
+	    mockMvc.perform(post("/api/usuario/add")
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(u2)))
+	        .andExpect(status().isCreated());
+
+	    LoginRequest login2 = new LoginRequest();
+	    login2.setEmail("intruso@flow.com");
+	    login2.setPassword("Password123");
+
+	    String loginResp2 = mockMvc.perform(post("/api/usuario/login")
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(login2)))
+	        .andReturn().getResponse().getContentAsString();
+
+	    String token2 = objectMapper.readTree(loginResp2).get("token").asText();
+
+	    // Usuario 1 crea nueva tarea
+	    String tareaResp2 = mockMvc.perform(post("/api/tarea/add")
+	            .header("Authorization", "Bearer " + token1)
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(objectMapper.writeValueAsString(tarea)))
+	        .andReturn().getResponse().getContentAsString();
+
+	    long idTareaAjena = objectMapper.readTree(tareaResp2).get("idTarea").asLong();
+
+	    // Usuario 2 intenta eliminarla
+	    mockMvc.perform(delete("/api/tarea/delete/" + idTareaAjena)
+	            .header("Authorization", "Bearer " + token2))
+	        .andExpect(status().isForbidden());
+	}
+
+
+
 
 }
