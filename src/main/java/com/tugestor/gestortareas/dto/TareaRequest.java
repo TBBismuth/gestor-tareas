@@ -24,8 +24,8 @@ public class TareaRequest {
 	private Prioridad prioridad;
 	@Size(max = 1000, message = "La descripción no puede exceder los 1000 caracteres")
 	private String descripcion;
-	@NotNull(message = "La fecha de entrega no puede ser nula")
-	@FutureOrPresent(message = "La fecha de entrega no puede haber pasado")
+	//@NotNull(message = "La fecha de entrega no puede ser nula")
+	//@FutureOrPresent(message = "La fecha de entrega no puede haber pasado")
 	private LocalDateTime fechaEntrega;
 	private LocalDateTime fechaAgregado = LocalDateTime.now();
 	private Long idCategoria;

@@ -132,20 +132,24 @@ public class Tarea {
 		this.usuarioQueCompleta = usuarioQueCompleta;
 	}
 	public Estado getEstado() {
-		if(completada) {
-			if(fechaCompletada.isAfter(fechaAgregado)) {
+		if (fechaEntrega == null) {
+			return Estado.SIN_FECHA;
+		}
+		if (completada) {
+			if (fechaCompletada.isAfter(fechaAgregado)) {
 				return Estado.COMPLETADA_CON_RETRASO;
-			}else {
+			} else {
 				return Estado.COMPLETADA;
 			}
-		}else {
-			if(LocalDateTime.now().isAfter(fechaEntrega)) {
+		} else {
+			if (LocalDateTime.now().isAfter(fechaEntrega)) {
 				return Estado.VENCIDA;
-			}else {
+			} else {
 				return Estado.EN_CURSO;
 			}
 		}
 	}
+
 	
 
 }

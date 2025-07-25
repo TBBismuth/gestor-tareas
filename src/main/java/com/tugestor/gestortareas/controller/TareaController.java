@@ -256,7 +256,7 @@ public class TareaController {
 	@GetMapping("/filtrar/estado/{estado}")
 	@Operation(
 			summary = "Filtrar tareas por estado",
-			description = "Devuelve las tareas del usuario autenticado que tienen el estado especificado (COMPLETADA, EN_CURSO, VENCIDA, COMPLETADA_CON_RETRASO)."
+			description = "Devuelve las tareas del usuario autenticado que tienen el estado especificado (COMPLETADA, EN_CURSO, VENCIDA, COMPLETADA_CON_RETRASO, SIN_FECHA)."
 			)
 	@Parameters({
 		@Parameter(name = "estado", description = "Estado de la tarea", example = "EN_CURSO")
