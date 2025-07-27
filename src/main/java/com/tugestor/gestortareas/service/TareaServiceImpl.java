@@ -149,9 +149,12 @@ public class TareaServiceImpl implements TareaService{
 	}
 	
 	@Override
-	public 	List<Tarea> obtenerPorPrioridad(String emailUsuario){
-		return tr.findAllByUsuarioEmailOrderByPrioridadAsc(emailUsuario);
+	public List<Tarea> obtenerPorPrioridad(String emailUsuario){
+		List<Tarea> tareas = tr.findAllByUsuarioEmail(emailUsuario);
+		tareas.sort(Comparator.comparingInt((Tarea t) -> t.getPrioridad().ordinal()).reversed());
+		return tareas;
 	}
+
 	
 	@Override
 	public List<Tarea> obtenerPorFechaEntrega(String emailUsuario){

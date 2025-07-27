@@ -23,6 +23,7 @@ import jakarta.validation.Valid;
 @RequestMapping("/api/tarea")	//Ruta base para los metodos del controlador
 public class TareaController {
 	
+	
 	/* (TareaService ts = new TareaServiceImpl();)
 	 * Spring, al detectar que TareaServiceImpl es un @Service(IMPORTANTE) y que el controlador necesita TareaService,
 	 * automatiza esta asignacion internamente inyectando la dependencia*/
@@ -101,7 +102,6 @@ public class TareaController {
 		ts.eliminarPorId(id, principal.getName());
 	}
 
-	
 	@PutMapping("/update/{id}")
 	@Operation(
 			summary = "Modificar una tarea existente",
