@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -23,6 +24,7 @@ import org.springframework.security.access.AccessDeniedException;
 import com.tugestor.gestortareas.dto.CategoriaRequest;
 import com.tugestor.gestortareas.model.Categoria;
 import com.tugestor.gestortareas.repository.CategoriaRepository;
+import com.tugestor.gestortareas.repository.TareaRepository;
 
 import jakarta.persistence.EntityNotFoundException;
 
@@ -30,6 +32,8 @@ import jakarta.persistence.EntityNotFoundException;
 public class CategoriaServiceImplTest {
 	@Mock
 	private CategoriaRepository cr;
+	@Mock
+	private TareaRepository tr;
 	@InjectMocks
 	private CategoriaServiceImpl csimpl;
 	
@@ -103,6 +107,7 @@ public class CategoriaServiceImplTest {
 		categoria.setProtegida(false);
 
 		when(cr.findById(idCategoria)).thenReturn(Optional.of(categoria));
+		when(tr.findByCategoria_IdCategoria(idCategoria)).thenReturn(Collections.emptyList());
 
 		// Act
 		csimpl.eliminarPorId(idCategoria);
@@ -110,6 +115,7 @@ public class CategoriaServiceImplTest {
 		// Assert
 		verify(cr, times(1)).delete(categoria);
 	}
+
 	@Test
 	void eliminarPorId_lanzaExcepcionSiNoExiste() {
 		// Arrange

@@ -14,6 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -673,9 +674,9 @@ public class TareaServiceImplTest {
 		tarea2.setTitulo("Tarea baja");
 		tarea2.setPrioridad(Prioridad.BAJA);
 
-		List<Tarea> lista = List.of(tarea1, tarea2);
+		List<Tarea> lista = new ArrayList<>(List.of(tarea1, tarea2));
 
-		when(tr.findAllByUsuarioEmailOrderByPrioridadAsc(emailUsuario)).thenReturn(lista);
+		when(tr.findAllByUsuarioEmail(emailUsuario)).thenReturn(lista);
 
 		// Act
 		List<Tarea> resultado = tsimpl.obtenerPorPrioridad(emailUsuario);
@@ -686,14 +687,14 @@ public class TareaServiceImplTest {
 		assertEquals(Prioridad.ALTA, resultado.get(0).getPrioridad());
 		assertEquals(Prioridad.BAJA, resultado.get(1).getPrioridad());
 
-		verify(tr, times(1)).findAllByUsuarioEmailOrderByPrioridadAsc(emailUsuario);
+		verify(tr, times(1)).findAllByUsuarioEmail(emailUsuario);
 	}
 	@Test
 	void obtenerPorPrioridad_listaVacia() {
 		// Arrange
 		String emailUsuario = "user@ejemplo.com";
 
-		when(tr.findAllByUsuarioEmailOrderByPrioridadAsc(emailUsuario)).thenReturn(List.of());
+		when(tr.findAllByUsuarioEmail(emailUsuario)).thenReturn(new ArrayList<>());
 
 		// Act
 		List<Tarea> resultado = tsimpl.obtenerPorPrioridad(emailUsuario);
@@ -702,7 +703,7 @@ public class TareaServiceImplTest {
 		assertNotNull(resultado);
 		assertTrue(resultado.isEmpty());
 
-		verify(tr, times(1)).findAllByUsuarioEmailOrderByPrioridadAsc(emailUsuario);
+		verify(tr, times(1)).findAllByUsuarioEmail(emailUsuario);
 	}
 	
 	@Test

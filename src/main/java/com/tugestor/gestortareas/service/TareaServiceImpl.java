@@ -154,7 +154,6 @@ public class TareaServiceImpl implements TareaService{
 		tareas.sort(Comparator.comparingInt((Tarea t) -> t.getPrioridad().ordinal()).reversed());
 		return tareas;
 	}
-
 	
 	@Override
 	public List<Tarea> obtenerPorFechaEntrega(String emailUsuario){
