@@ -1,46 +1,65 @@
+# --- BACKEND (carpeta: backend/) ---
+
 # Java - default
-*.class
-*.log
-*.ctxt
-.mtj.tmp/
-*.jar
-*.war
-*.nar
-*.ear
-*.zip
-*.tar.gz
-*.rar
-hs_err_pid*
-replay_pid*
+backend/*.class
+backend/*.log
+backend/*.ctxt
+backend/.mtj.tmp/
+backend/*.jar
+backend/*.war
+backend/*.nar
+backend/*.ear
+backend/*.zip
+backend/*.tar.gz
+backend/*.rar
+backend/hs_err_pid*
+backend/replay_pid*
 
 # Eclipse-specific (just for me [Author] to work)
-# .classpath
-# .settings/
+# backend/.classpath
+# backend/.settings/
 
 # IDE comunes (in case I open the proyect with IntelliJ)
-.idea/
-*.iml
+backend/.idea/
+backend/*.iml
 
 # Maven build
-target/
-pom.xml.tag
-pom.xml.releaseBackup
-pom.xml.versionsBackup
-pom.xml.next
-release.properties
-dependency-reduced-pom.xml
-buildNumber.properties
-.mvn/timing.properties
-.mvn/wrapper/maven-wrapper.jar
+backend/target/
+backend/pom.xml.tag
+backend/pom.xml.releaseBackup
+backend/pom.xml.versionsBackup
+backend/pom.xml.next
+backend/release.properties
+backend/dependency-reduced-pom.xml
+backend/buildNumber.properties
+backend/.mvn/timing.properties
+backend/.mvn/wrapper/maven-wrapper.jar
 
 # Test reports
-target/surefire-reports/
-*.txt
+backend/target/surefire-reports/
+backend/*.txt
 
-# Sistema operativo
+# Sistema operativo (para todo el proyecto)
 .DS_Store
 Thumbs.db
 ehthumbs.db
 
 # Personal config (replaced by application-example.properties)
-src/main/resources/application.properties
+backend/src/main/resources/application.properties
+
+# --- FRONTEND (carpeta: frontend/frontend-gestor-tareas/) ---
+
+# Node modules
+frontend/frontend-gestor-tareas/node_modules/
+
+# Build outputs
+frontend/frontend-gestor-tareas/dist/
+
+# Vite cache
+frontend/frontend-gestor-tareas/.vite/
+
+# System files / lock files
+frontend/frontend-gestor-tareas/.env
+frontend/frontend-gestor-tareas/.DS_Store
+frontend/frontend-gestor-tareas/yarn.lock
+frontend/frontend-gestor-tareas/package-lock.json
