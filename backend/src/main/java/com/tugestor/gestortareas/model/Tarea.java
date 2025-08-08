@@ -133,23 +133,15 @@ public class Tarea {
 	}
 	public Estado getEstado() {
 		if (fechaEntrega == null) {
-			return Estado.SIN_FECHA;
+			return completada ? Estado.COMPLETADA : Estado.SIN_FECHA;
 		}
 		if (completada) {
-			if (fechaCompletada.isAfter(fechaAgregado)) {
-				return Estado.COMPLETADA_CON_RETRASO;
-			} else {
-				return Estado.COMPLETADA;
-			}
-		} else {
-			if (LocalDateTime.now().isAfter(fechaEntrega)) {
-				return Estado.VENCIDA;
-			} else {
-				return Estado.EN_CURSO;
-			}
+			// Retraso solo si se completa DESPUÉS de la fecha de entrega
+			return (fechaCompletada != null && fechaCompletada.isAfter(fechaEntrega))
+					? Estado.COMPLETADA_CON_RETRASO
+							: Estado.COMPLETADA;
 		}
+		return LocalDateTime.now().isAfter(fechaEntrega) ? Estado.VENCIDA : Estado.EN_CURSO;
 	}
-
 	
-
 }
