@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Card from "../components/base/Card";
-import Campo from "../components/base/Campo";
-import Boton from "../components/base/Boton";
-import api from "../services/api";
+import BaseCard from "../components/base/BaseCard";
+import BaseField from "../components/base/BaseField";
+import BaseButton from "../components/base/BaseButton";
+import api from "../services/apiClient";
 
 export default function Login() {
     const [email, setEmail] = useState("");
@@ -29,10 +29,10 @@ export default function Login() {
 
     return (
         <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50">
-            <Card className="w-full max-w-sm">
+            <BaseCard className="w-full max-w-sm">
                 <h1 className="mb-4 text-xl font-semibold">Iniciar sesión</h1>
                 <form onSubmit={handleSubmit}>
-                    <Campo
+                    <BaseField
                         id="email"
                         label="Email"
                         requerido
@@ -41,7 +41,7 @@ export default function Login() {
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="tú@correo.com"
                     />
-                    <Campo
+                    <BaseField
                         id="password"
                         label="Contraseña"
                         requerido
@@ -51,9 +51,9 @@ export default function Login() {
                         placeholder="••••••••"
                     />
                     {error && <p className="text-red-600 text-sm mt-2">{error}</p>}
-                    <Boton type="submit" className="w-full mt-2">Entrar</Boton>
+                    <BaseButton type="submit" className="w-full mt-2">Entrar</BaseButton>
                 </form>
-            </Card>
+            </BaseCard>
         </div>
     );
 }

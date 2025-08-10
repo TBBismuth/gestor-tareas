@@ -1,5 +1,5 @@
-import Boton from "./base/Boton";
-import { clearToken } from "../services/auth";
+import Boton from "./base/BaseButton";
+import { clearToken } from "../services/authService";
 import { useNavigate } from "react-router-dom";
 
 export default function Header() {
