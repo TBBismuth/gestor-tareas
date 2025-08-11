@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import AppHeader from "../components/AppHeader";
-import { getTareas } from "../services/taskService";
-import { addTarea } from "../services/taskService";
+import { getTareas, addTarea, updateTarea } from "../services/taskService";
 import BaseButton from "../components/base/BaseButton";
 import { PRIORIDAD_BG, ESTADO_BG, pick } from "../styles/themeColors";
 import BaseModal from "../components/base/BaseModal";
@@ -12,6 +11,10 @@ import BaseInput from "../components/base/BaseInput";
 import BaseTextarea from "../components/base/BaseTextarea";
 import SelectPrioridad from "../components/base/SelectPrioridad";
 import SelectCategoria from "../components/base/SelectCategoria";
+import AddCategoriaModal from "../components/AddCategoriaModal";
+
+// NUEVO: categorías para pintar icono/nombre
+import { getCategorias } from "../services/categoriaService";
 
 export default function Home() {
     const [tareas, setTareas] = useState([]);
@@ -19,6 +22,11 @@ export default function Home() {
     const [error, setError] = useState("");
     const [tareasExpandidas, setTareasExpandidas] = useState([]);
     const [BaseModalNuevaTarea, setBaseModalNuevaTarea] = useState(false);
+    const [openAddCat, setOpenAddCat] = useState(false);
+    const [catReloadKey, setCatReloadKey] = useState(0);
+
+    // NUEVO: mapa id->categoria para icono/nombre
+    const [categoriasMap, setCategoriasMap] = useState({});
 
     // Estado del formulario "Nueva tarea"
     const [nuevaTarea, setNuevaTarea] = useState({
@@ -31,6 +39,27 @@ export default function Home() {
     });
     const [errorNuevaTarea, setErrorNuevaTarea] = useState("");
 
+    // Estado del modal de edición
+    const [editOpen, setEditOpen] = useState(false);
+    const [tareaEdit, setTareaEdit] = useState({
+        idTarea: null,
+        titulo: "",
+        descripcion: "",
+        tiempo: "",
+        prioridad: "",
+        fechaEntrega: "",
+        idCategoria: "",
+    });
+    const [errorEditar, setErrorEditar] = useState("");
+
+
+    // 👇 Util para mostrar enums de forma friendly (e.g. EN_CURSO -> En curso)
+    const pretty = (txt) =>
+        typeof txt === "string"
+            ? txt.toLowerCase().replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase())
+            : txt;
+
+    // Cargar tareas
     useEffect(() => {
         let cancelado = false;
         (async () => {
@@ -47,6 +76,27 @@ export default function Home() {
         })();
         return () => {
             cancelado = true;
+        };
+    }, []);
+
+    // Cargar categorías una vez y crear mapa id -> {nombre, icono, color}
+    useEffect(() => {
+        let cancel = false;
+        (async () => {
+            try {
+                const data = await getCategorias(); // esta función devuelve el array directamente
+                if (cancel) return;
+                const map = {};
+                (Array.isArray(data) ? data : []).forEach((c) => {
+                    map[c.idCategoria] = { nombre: c.nombre, icono: c.icono, color: c.color };
+                });
+                setCategoriasMap(map);
+            } catch (e) {
+                console.error("No se pudieron cargar categorías", e);
+            }
+        })();
+        return () => {
+            cancel = true;
         };
     }, []);
 
@@ -93,29 +143,47 @@ export default function Home() {
                         const cPrioridad = pick(PRIORIDAD_BG, t.prioridad);
                         const cEstado = pick(ESTADO_BG, t.estado);
 
+                        // Categoría desde el mapa (si existe)
+                        const cat = categoriasMap[t.idCategoria] || null;
+
                         return (
                             <div
                                 key={t.idTarea}
-                                className="rounded-lg border overflow-hidden shadow-sm cursor-pointer"
+                                className="relative rounded-lg border overflow-hidden shadow-sm cursor-pointer"
                                 onClick={() => toggleExpandir(t.idTarea)}
                             >
-                                {/* CABECERA: diagonal ↗ (135deg) */}
+                                {/* FONDO ÚNICO: barra (colapsado) o flecha (expandido) */}
                                 <div
-                                    className="relative"
+                                    className="absolute inset-0"
                                     style={{
-                                        background: `linear-gradient(135deg, ${cPrioridad} 50%, ${cEstado} 50%)`,
+                                        backgroundImage: `linear-gradient(135deg, ${cPrioridad} 50%, ${cEstado} 50%), linear-gradient(225deg, ${cEstado} 50%, ${cPrioridad} 50%)`,
+                                        backgroundSize: expandida ? "100% 50%, 100% 50%" : "100% 100%, 0 0",
+                                        backgroundPosition: "top left, bottom left",
+                                        backgroundRepeat: "no-repeat",
                                     }}
-                                >
-                                    <div className="relative p-4 bg-white/80">
+                                />
+
+                                {/* CONTENIDO */}
+                                <div className="relative">
+                                    {/* Cabecera */}
+                                    <div className="p-4 bg-white/80">
                                         <div className="flex justify-between items-start">
                                             <div>
-                                                <h3 className="text-lg font-semibold text-gray-800">
-                                                    {t.titulo}
-                                                </h3>
+                                                <div className="flex items-center gap-2">
+                                                    <h3 className="text-lg font-semibold text-gray-800">{t.titulo}</h3>
+                                                    {/* Icono de categoría en cabecera (si existe) */}
+                                                    {cat?.icono && (
+                                                        <span
+                                                            className="text-xl leading-none"
+                                                            title={cat?.nombre || t?.categoriaNombre || "Categoría"}
+                                                        >
+                                                            {cat.icono}
+                                                        </span>
+                                                    )}
+                                                </div>
+
                                                 {expandida && t.descripcion && (
-                                                    <p className="text-sm text-gray-600 mt-1">
-                                                        {t.descripcion}
-                                                    </p>
+                                                    <p className="text-sm text-gray-600 mt-1">{t.descripcion}</p>
                                                 )}
                                             </div>
                                             {t.fechaEntrega && (
@@ -125,29 +193,61 @@ export default function Home() {
                                             )}
                                         </div>
                                     </div>
-                                </div>
 
-                                {/* CONTENIDO EXPANDIDO: diagonal invertida ↙ (225deg) y SIN bordes internos */}
-                                {expandida && (
-                                    <div
-                                        className="relative text-sm text-gray-800"
-                                        style={{
-                                            background: `linear-gradient(225deg, ${cEstado} 50%, ${cPrioridad} 50%)`,
-                                        }}
-                                    >
-                                        <div className="relative z-10 p-3 bg-white/80">
-                                            <p>
-                                                <strong>Prioridad:</strong> {t.prioridad}
-                                            </p>
-                                            <p>
-                                                <strong>Estado:</strong> {t.estado}
-                                            </p>
-                                            <p>
-                                                <strong>Tiempo estimado:</strong> {t.tiempo}h
-                                            </p>
+                                    {/* Detalle expandido */}
+                                    {expandida && (
+                                        <div className="text-sm text-gray-800">
+                                            <div className="relative z-10 p-3 bg-white/80">
+                                                <p>
+                                                    <strong>Prioridad:</strong> {pretty(t.prioridad)}
+                                                </p>
+                                                <p>
+                                                    <strong>Estado:</strong> {pretty(t.estado)}
+                                                </p>
+                                                <p>
+                                                    <strong>Tiempo estimado:</strong> {t.tiempo}min
+                                                </p>
+                                                {(cat || t?.categoriaNombre) && (
+                                                    <p>
+                                                        <strong>Categoría:</strong>
+                                                        <span className="ml-1">
+                                                            {cat?.icono ? `${cat.icono} ` : ""}
+                                                            {cat?.nombre || t?.categoriaNombre}
+                                                        </span>
+                                                    </p>
+                                                )}
+
+                                                {/* Pie con botón Editar */}
+                                                <div className="mt-3 flex justify-end">
+                                                    <BaseButton
+                                                        size="sm"
+                                                        variant="primary"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation(); // evitar colapsar
+                                                            setErrorEditar("");
+                                                            setTareaEdit({
+                                                                idTarea: t.idTarea,
+                                                                titulo: t.titulo || "",
+                                                                descripcion: t.descripcion || "",
+                                                                tiempo: String(t.tiempo ?? ""), // mantener como string en input
+                                                                prioridad: t.prioridad || "",
+                                                                fechaEntrega: t.fechaEntrega
+                                                                    ? new Date(t.fechaEntrega).toISOString().slice(0, 16) // yyyy-MM-ddTHH:mm
+                                                                    : "",
+                                                                idCategoria: t.idCategoria ? String(t.idCategoria) : "",
+                                                            });
+                                                            setEditOpen(true);
+                                                        }}
+                                                    >
+                                                        Editar
+                                                    </BaseButton>
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
-                                )}
+                                    )}
+
+
+                                </div>
                             </div>
                         );
                     })}
@@ -175,15 +275,17 @@ export default function Home() {
                             e.preventDefault();
                             setErrorNuevaTarea("");
 
-                            // 🔎 TRACE 1: el submit salta
                             console.log("[NuevaTarea] SUBMIT disparado. Estado:", nuevaTarea);
 
                             // Validación mínima
-                            if (!nuevaTarea.titulo?.trim()) return setErrorNuevaTarea("El título es obligatorio.");
-                            if (!nuevaTarea.prioridad) return setErrorNuevaTarea("La prioridad es obligatoria.");
+                            if (!nuevaTarea.titulo?.trim())
+                                return setErrorNuevaTarea("El título es obligatorio.");
+                            if (!nuevaTarea.prioridad)
+                                return setErrorNuevaTarea("La prioridad es obligatoria.");
                             if (!nuevaTarea.tiempo || Number.isNaN(Number(nuevaTarea.tiempo)))
                                 return setErrorNuevaTarea("El tiempo (min) es obligatorio y numérico.");
-                            if (!nuevaTarea.idCategoria) return setErrorNuevaTarea("La categoría es obligatoria.");
+                            if (!nuevaTarea.idCategoria)
+                                return setErrorNuevaTarea("La categoría es obligatoria.");
 
                             const payload = {
                                 titulo: nuevaTarea.titulo.trim(),
@@ -195,14 +297,13 @@ export default function Home() {
                                         ? `${nuevaTarea.fechaEntrega}:00`
                                         : nuevaTarea.fechaEntrega,
                             };
-                            if (nuevaTarea.idCategoria) payload.idCategoria = Number(nuevaTarea.idCategoria);
+                            if (nuevaTarea.idCategoria)
+                                payload.idCategoria = Number(nuevaTarea.idCategoria);
 
-                            // 🔎 TRACE 2: payload que vamos a enviar
                             console.log("[NuevaTarea] Payload POST /api/tarea/add:", payload);
 
                             try {
-                                const resp = await addTarea(payload); // debe apuntar a "/tarea/add" porque apiClient.baseURL === "/api"
-                                // 🔎 TRACE 3: respuesta OK
+                                const resp = await addTarea(payload);
                                 console.log("[NuevaTarea] OK:", resp?.status, resp?.data);
 
                                 const { data } = await getTareas();
@@ -218,61 +319,73 @@ export default function Home() {
                                 });
                                 setBaseModalNuevaTarea(false);
                             } catch (err) {
-                                // 🔎 TRACE 4: error detallado
                                 console.error("[NuevaTarea] ERROR POST:", {
                                     message: err?.message,
                                     status: err?.response?.status,
                                     data: err?.response?.data,
-                                    url: err?.config?.baseURL + err?.config?.url, // debe verse "/api/tarea/add"
+                                    url: err?.config?.baseURL + err?.config?.url,
                                     method: err?.config?.method,
                                 });
-                                setErrorNuevaTarea(err?.response?.data?.message || "No se pudo crear la tarea.");
+                                setErrorNuevaTarea(
+                                    err?.response?.data?.message || "No se pudo crear la tarea."
+                                );
                             }
                         }}
-
                         className="space-y-4"
                     >
-                        {/* Título -> usa BaseField sin children (inyecta BaseInput) */}
+                        {/* Título */}
                         <BaseField
                             id="titulo"
                             label="Título"
                             requerido
                             placeholder="Ej.: Comprar pan"
                             value={nuevaTarea.titulo}
-                            onChange={(e) => setNuevaTarea((s) => ({ ...s, titulo: e.target.value }))}
+                            onChange={(e) =>
+                                setNuevaTarea((s) => ({ ...s, titulo: e.target.value }))
+                            }
                             required
                         />
 
-                        {/* Descripción -> BaseField con BaseTextarea como children */}
+                        {/* Descripción */}
                         <BaseField id="descripcion" label="Descripción">
                             <BaseTextarea
                                 id="descripcion"
                                 rows={4}
                                 placeholder="Detalles opcionales…"
                                 value={nuevaTarea.descripcion}
-                                onChange={(e) => setNuevaTarea((s) => ({ ...s, descripcion: e.target.value }))}
+                                onChange={(e) =>
+                                    setNuevaTarea((s) => ({ ...s, descripcion: e.target.value }))
+                                }
                             />
                         </BaseField>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {/* Prioridad -> BaseField con SelectPrioridad como children */}
+                            {/* Prioridad */}
                             <BaseField id="prioridad" label="Prioridad" requerido>
                                 <SelectPrioridad
                                     id="prioridad"
                                     value={nuevaTarea.prioridad}
-                                    onChange={(e) => setNuevaTarea((s) => ({ ...s, prioridad: e.target.value }))}
+                                    onChange={(e) =>
+                                        setNuevaTarea((s) => ({ ...s, prioridad: e.target.value }))
+                                    }
                                     required
                                 />
                             </BaseField>
 
-                            {/* Categoría -> BaseField con SelectCategoria + botón */}
+                            {/* Categoría */}
                             <BaseField id="categoria" label="Categoría" requerido>
                                 <div className="flex gap-2 items-end">
                                     <div className="flex-1">
                                         <SelectCategoria
+                                            key={catReloadKey}
                                             id="categoria"
                                             value={nuevaTarea.idCategoria}
-                                            onChange={(e) => setNuevaTarea((s) => ({ ...s, idCategoria: e.target.value }))}
+                                            onChange={(e) =>
+                                                setNuevaTarea((s) => ({
+                                                    ...s,
+                                                    idCategoria: e.target.value,
+                                                }))
+                                            }
                                             required
                                         />
                                     </div>
@@ -280,7 +393,7 @@ export default function Home() {
                                         type="button"
                                         variant="secondary"
                                         size="sm"
-                                        onClick={() => console.log("TODO: abrir modal Añadir categoría")}
+                                        onClick={() => setOpenAddCat(true)}
                                         title="Añadir nueva categoría"
                                     >
                                         + Añadir
@@ -290,7 +403,7 @@ export default function Home() {
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {/* Fecha de entrega -> BaseField con input datetime-local como children */}
+                            {/* Fecha de entrega (opcional) */}
                             <BaseField id="fechaEntrega" label="Fecha de entrega">
                                 <input
                                     id="fechaEntrega"
@@ -298,12 +411,15 @@ export default function Home() {
                                     className="px-3 py-2 border rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
                                     value={nuevaTarea.fechaEntrega}
                                     onChange={(e) =>
-                                        setNuevaTarea((s) => ({ ...s, fechaEntrega: e.target.value }))
+                                        setNuevaTarea((s) => ({
+                                            ...s,
+                                            fechaEntrega: e.target.value,
+                                        }))
                                     }
                                 />
                             </BaseField>
 
-                            {/* Tiempo (min) -> BaseField sin children (usa BaseInput) */}
+                            {/* Tiempo (min) */}
                             <BaseField
                                 id="tiempo"
                                 label="Tiempo (min)"
@@ -312,12 +428,16 @@ export default function Home() {
                                 min="1"
                                 placeholder="ej.: 30"
                                 value={nuevaTarea.tiempo}
-                                onChange={(e) => setNuevaTarea((s) => ({ ...s, tiempo: e.target.value }))}
+                                onChange={(e) =>
+                                    setNuevaTarea((s) => ({ ...s, tiempo: e.target.value }))
+                                }
                                 required
                             />
                         </div>
 
-                        {errorNuevaTarea && <p className="text-sm text-red-600">{errorNuevaTarea}</p>}
+                        {errorNuevaTarea && (
+                            <p className="text-sm text-red-600">{errorNuevaTarea}</p>
+                        )}
 
                         <div className="flex justify-end gap-3 pt-2">
                             <BaseButton
@@ -343,7 +463,160 @@ export default function Home() {
                         </div>
                     </form>
                 </BaseModal>
+                {/* Modal: Editar tarea */}
+                <BaseModal
+                    open={editOpen}
+                    onClose={() => {
+                        setEditOpen(false);
+                        setErrorEditar("");
+                    }}
+                    title="Editar tarea"
+                >
+                    <form
+                        onSubmit={async (e) => {
+                            e.preventDefault();
+                            setErrorEditar("");
 
+                            if (!tareaEdit.idTarea) return setErrorEditar("ID de tarea no válido.");
+                            if (!tareaEdit.titulo?.trim()) return setErrorEditar("El título es obligatorio.");
+                            if (!tareaEdit.prioridad) return setErrorEditar("La prioridad es obligatoria.");
+                            if (!tareaEdit.tiempo || Number.isNaN(Number(tareaEdit.tiempo)))
+                                return setErrorEditar("El tiempo (min) es obligatorio y numérico.");
+                            if (!tareaEdit.idCategoria) return setErrorEditar("La categoría es obligatoria.");
+
+                            const payload = {
+                                titulo: tareaEdit.titulo.trim(),
+                                descripcion: (tareaEdit.descripcion || "").trim(),
+                                tiempo: Number(tareaEdit.tiempo),
+                                prioridad: tareaEdit.prioridad,
+                                fechaEntrega:
+                                    tareaEdit.fechaEntrega?.length === 16
+                                        ? `${tareaEdit.fechaEntrega}:00`
+                                        : tareaEdit.fechaEntrega || null, // opcional
+                                idCategoria: Number(tareaEdit.idCategoria),
+                            };
+
+                            try {
+                                await updateTarea(tareaEdit.idTarea, payload);
+                                const { data } = await getTareas();
+                                setTareas(Array.isArray(data) ? data : []);
+                                setEditOpen(false);
+                            } catch (err) {
+                                console.error("[EditarTarea] ERROR PUT:", {
+                                    message: err?.message,
+                                    status: err?.response?.status,
+                                    data: err?.response?.data,
+                                    url: err?.config?.baseURL + err?.config?.url,
+                                    method: err?.config?.method,
+                                });
+                                setErrorEditar(err?.response?.data?.message || "No se pudo actualizar la tarea.");
+                            }
+                        }}
+                        className="space-y-4"
+                    >
+                        {/* Título */}
+                        <BaseField
+                            id="edit_titulo"
+                            label="Título"
+                            requerido
+                            placeholder="Ej.: Comprar pan"
+                            value={tareaEdit.titulo}
+                            onChange={(e) => setTareaEdit((s) => ({ ...s, titulo: e.target.value }))}
+                            required
+                        />
+
+                        {/* Descripción */}
+                        <BaseField id="edit_descripcion" label="Descripción">
+                            <BaseTextarea
+                                id="edit_descripcion"
+                                rows={4}
+                                placeholder="Detalles opcionales…"
+                                value={tareaEdit.descripcion}
+                                onChange={(e) => setTareaEdit((s) => ({ ...s, descripcion: e.target.value }))}
+                            />
+                        </BaseField>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {/* Prioridad */}
+                            <BaseField id="edit_prioridad" label="Prioridad" requerido>
+                                <SelectPrioridad
+                                    id="edit_prioridad"
+                                    value={tareaEdit.prioridad}
+                                    onChange={(e) => setTareaEdit((s) => ({ ...s, prioridad: e.target.value }))}
+                                    required
+                                />
+                            </BaseField>
+
+                            {/* Categoría */}
+                            <BaseField id="edit_categoria" label="Categoría" requerido>
+                                <SelectCategoria
+                                    id="edit_categoria"
+                                    value={tareaEdit.idCategoria}
+                                    onChange={(e) => setTareaEdit((s) => ({ ...s, idCategoria: e.target.value }))}
+                                    required
+                                />
+                            </BaseField>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {/* Fecha de entrega (opcional) */}
+                            <BaseField id="edit_fechaEntrega" label="Fecha de entrega">
+                                <input
+                                    id="edit_fechaEntrega"
+                                    type="datetime-local"
+                                    className="px-3 py-2 border rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                    value={tareaEdit.fechaEntrega}
+                                    onChange={(e) => setTareaEdit((s) => ({ ...s, fechaEntrega: e.target.value }))}
+                                />
+                            </BaseField>
+
+                            {/* Tiempo (min) */}
+                            <BaseField
+                                id="edit_tiempo"
+                                label="Tiempo (min)"
+                                requerido
+                                type="number"
+                                min="1"
+                                placeholder="ej.: 30"
+                                value={tareaEdit.tiempo}
+                                onChange={(e) => setTareaEdit((s) => ({ ...s, tiempo: e.target.value }))}
+                                required
+                            />
+                        </div>
+
+                        {errorEditar && <p className="text-sm text-red-600">{errorEditar}</p>}
+
+                        <div className="flex justify-end gap-3 pt-2">
+                            <BaseButton
+                                variant="secondary"
+                                type="button"
+                                onClick={() => {
+                                    setEditOpen(false);
+                                    setErrorEditar("");
+                                }}
+                            >
+                                Cancelar
+                            </BaseButton>
+
+                            <BaseButton type="submit">Guardar cambios</BaseButton>
+                        </div>
+                    </form>
+                </BaseModal>
+
+                {/* Modal: Añadir categoría */}
+                <AddCategoriaModal
+                    open={openAddCat}
+                    onClose={() => setOpenAddCat(false)}
+                    onCreated={(cat) => {
+                        // seleccionar la nueva categoría y recargar el selector
+                        setNuevaTarea((s) => ({
+                            ...s,
+                            idCategoria: String(cat.idCategoria ?? cat.id),
+                        }));
+                        setCatReloadKey((k) => k + 1);
+                        setOpenAddCat(false);
+                    }}
+                />
             </main>
         </div>
     );

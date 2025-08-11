@@ -1,4 +1,4 @@
-import Card from "./base/Card";
+import BaseCard from "./base/BaseCard";
 import { PRIORIDAD_BG, ESTADO_BG, pick } from "../styles/themeColors";
 
 export default function CardTarea({ titulo, descripcion, fechaEntrega, categoria, prioridad, estado }) {
