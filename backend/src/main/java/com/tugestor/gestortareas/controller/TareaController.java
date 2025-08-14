@@ -177,7 +177,7 @@ public class TareaController {
 		return tareas.stream().map(TareaResponse::new).toList();
 	}
 
-	@GetMapping("/filtrar/{prioridad}")
+	@GetMapping("/filtrar/prioridad/{prioridad}")
 	@Operation(
 			summary = "Filtrar tareas por prioridad",
 			description = "Devuelve las tareas del usuario autenticado que tienen la prioridad especificada."

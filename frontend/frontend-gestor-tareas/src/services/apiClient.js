@@ -8,11 +8,18 @@ const api = axios.create({
 
 // Interceptor para añadir Authorization a cada request
 api.interceptors.request.use((config) => {
+    // No añadir token si es la ruta de login
+    if (config.url && config.url.includes("/usuario/login")) {
+        return config;
+    }
+
     const token = getToken();
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;
     }
+
     return config;
 });
+
 
 export default api;

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import AppHeader from "../components/AppHeader";
-import { getTareas, addTarea, updateTarea } from "../services/taskService";
+import { getTareas, addTarea, updateTarea, getTareasOrdenadas } from "../services/taskService";
 import BaseButton from "../components/base/BaseButton";
 import { PRIORIDAD_BG, ESTADO_BG, pick } from "../styles/themeColors";
 import BaseModal from "../components/base/BaseModal";
@@ -8,10 +8,12 @@ import BaseModal from "../components/base/BaseModal";
 // NUEVOS IMPORTS (componentes base para el formulario)
 import BaseField from "../components/base/BaseField";
 import BaseInput from "../components/base/BaseInput";
+import BaseSelect from "../components/base/BaseSelect";
 import BaseTextarea from "../components/base/BaseTextarea";
 import SelectPrioridad from "../components/base/SelectPrioridad";
 import SelectCategoria from "../components/base/SelectCategoria";
 import AddCategoriaModal from "../components/AddCategoriaModal";
+import { filtrarTareas } from "../services/taskService";
 
 // NUEVO: categorías para pintar icono/nombre
 import { getCategorias } from "../services/categoriaService";
@@ -27,6 +29,11 @@ export default function Home() {
 
     // NUEVO: mapa id->categoria para icono/nombre
     const [categoriasMap, setCategoriasMap] = useState({});
+
+    const [ordenActual, setOrdenActual] = useState("");
+    const [tipoFiltro, setTipoFiltro] = useState("");
+    const [valorFiltro, setValorFiltro] = useState("");
+
 
     // Estado del formulario "Nueva tarea"
     const [nuevaTarea, setNuevaTarea] = useState({
@@ -100,6 +107,40 @@ export default function Home() {
         };
     }, []);
 
+    // Cargar tareas ordenadas según el orden seleccionado
+    useEffect(() => {
+        async function cargarTareasOrdenadas() {
+            if (!ordenActual) return;
+
+            try {
+                const response = await getTareasOrdenadas(ordenActual);
+                setTareas(response);
+            } catch (err) {
+                console.error("Error al obtener tareas ordenadas:", err);
+            }
+        }
+
+        cargarTareasOrdenadas();
+    }, [ordenActual]);
+
+    // Aplicar filtro de tareas según tipo y valor
+    useEffect(() => {
+        async function aplicarFiltro() {
+            if (!tipoFiltro || !valorFiltro) return;
+
+            try {
+                console.log("Aplicando filtro:", tipoFiltro, valorFiltro);
+
+                const resultado = await filtrarTareas(tipoFiltro, valorFiltro);
+                setTareas(resultado);
+            } catch (err) {
+                console.error("Error al aplicar filtro:", err);
+            }
+        }
+
+        aplicarFiltro();
+    }, [tipoFiltro, valorFiltro]);
+
     const toggleExpandir = (id) =>
         setTareasExpandidas((prev) =>
             prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
@@ -115,11 +156,96 @@ export default function Home() {
                 <div className="flex justify-between mb-4">
                     <h2 className="text-xl font-bold text-green-700">Tus tareas</h2>
                     <div className="flex gap-2 items-start">
-                        <BaseButton
-                            onClick={() => setBaseModalNuevaTarea(true)}
-                            variant="success"
-                            size="sm"
+                        <BaseSelect
+                            name="orden"
+                            value={ordenActual}
+                            onChange={(e) => setOrdenActual(e.target.value)}
+                            className="w-38"
                         >
+                            <option value="" disabled>Ordenar por</option>
+                            <option value="titulo">Título</option>
+                            <option value="tiempo">Tiempo estimado</option>
+                            <option value="prioridad">Prioridad</option>
+                            <option value="hoy">Tareas de hoy</option>
+                        </BaseSelect>
+                        <BaseSelect
+                            name="tipoFiltro"
+                            value={tipoFiltro}
+                            onChange={(e) => setTipoFiltro(e.target.value)}
+                            className="w-32"
+                        >
+                            <option value="" disabled>Filtrar por</option>
+                            <option value="prioridad">Prioridad</option>
+                            <option value="estado">Estado</option>
+                            <option value="categoria">Categoría</option>
+                            <option value="tiempo">Tiempo máximo</option>
+                            <option value="palabras">Palabras clave</option>
+                        </BaseSelect>
+                        {tipoFiltro === "prioridad" && (
+                            <BaseSelect
+                                name="valorFiltro"
+                                value={valorFiltro}
+                                onChange={(e) => setValorFiltro(e.target.value)}
+                                className="w-30"
+                            >
+                                <option value="" disabled>Prioridad</option>
+                                <option value="BAJA">Baja</option>
+                                <option value="MEDIA">Media</option>
+                                <option value="ALTA">Alta</option>
+                                <option value="IMPRESCINDIBLE">Imprescindible</option>
+                            </BaseSelect>
+                        )}
+                        {tipoFiltro === "estado" && (
+                            <BaseSelect
+                                name="valorFiltro"
+                                value={valorFiltro}
+                                onChange={(e) => setValorFiltro(e.target.value)}
+                                className="w-40"
+                            >
+                                <option value="" disabled>Estado</option>
+                                <option value="EN_CURSO">En curso</option>
+                                <option value="COMPLETADA">Completada</option>
+                                <option value="COMPLETADA_CON_RETRASO">Completada con retraso</option>
+                                <option value="VENCIDA">Vencida</option>
+                                <option value="SIN_FECHA">Sin fecha</option>
+                            </BaseSelect>
+                        )}
+                        {tipoFiltro === "categoria" && (
+                            <BaseSelect
+                                name="valorFiltro"
+                                value={valorFiltro}
+                                onChange={(e) => setValorFiltro(e.target.value)}
+                                className="w-64"
+                            >
+                                <option value="" disabled>Categoría</option>
+                                {Object.entries(categoriasMap).map(([id, cat]) => (
+                                    <option key={id} value={id}>
+                                        {cat.icono ? `${cat.icono} ` : ""}{cat.nombre}
+                                    </option>
+                                ))}
+                            </BaseSelect>
+                        )}
+                        {tipoFiltro === "tiempo" && (
+                            <BaseInput
+                                name="valorFiltro"
+                                value={valorFiltro}
+                                onChange={(e) => setValorFiltro(e.target.value)}
+                                type="number"
+                                placeholder="Minutos"
+                                className="w-40"
+                            />
+                        )}
+                        {tipoFiltro === "palabras" && (
+                            <BaseInput
+                                name="valorFiltro"
+                                value={valorFiltro}
+                                onChange={(e) => setValorFiltro(e.target.value)}
+                                placeholder="Buscar palabras clave..."
+                                className="w-64"
+                            />
+                        )}
+
+                        <BaseButton onClick={() => setBaseModalNuevaTarea(true)} variant="success" size="sm">
                             Nueva tarea
                         </BaseButton>
                         <BaseButton onClick={expandirTodas} variant="primary" size="sm">

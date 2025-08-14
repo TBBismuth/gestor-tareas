@@ -19,7 +19,7 @@ export default function BaseSelect({
             disabled={disabled}
             // Forzamos el aspecto nativo del select en todos los navegadores
             style={{ appearance: "auto", WebkitAppearance: "menulist", MozAppearance: "menulist" }}
-            className={`border p-2 w-full cursor-pointer ${className}`}
+            className={`border p-2 cursor-pointer ${className}`}
             {...props}
         >
             {children}
