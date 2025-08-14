@@ -4,6 +4,8 @@ import { getTareas, addTarea, updateTarea, getTareasOrdenadas } from "../service
 import BaseButton from "../components/base/BaseButton";
 import { PRIORIDAD_BG, ESTADO_BG, pick } from "../styles/themeColors";
 import BaseModal from "../components/base/BaseModal";
+import Sidebar from "../components/Sidebar";
+import { useNavigate } from "react-router-dom";
 
 // NUEVOS IMPORTS (componentes base para el formulario)
 import BaseField from "../components/base/BaseField";
@@ -149,10 +151,17 @@ export default function Home() {
     const expandirTodas = () => setTareasExpandidas(tareas.map((t) => t.idTarea));
     const colapsarTodas = () => setTareasExpandidas([]);
 
+    const navigate = useNavigate();
+    function handleLogout() {
+        localStorage.removeItem("token");
+        navigate("/");
+    }
+
+
     return (
-        <div className="min-h-screen bg-green-50">
-            <AppHeader />
-            <main className="max-w-5xl mx-auto px-4 py-6">
+        <div className="flex">
+            <Sidebar onLogout={handleLogout} />
+            <main className="flex-1 min-h-screen bg-green-50 p-6">
                 <div className="flex justify-between mb-4">
                     <h2 className="text-xl font-bold text-green-700">Tus tareas</h2>
                     <div className="flex gap-2 items-start">
@@ -245,13 +254,13 @@ export default function Home() {
                             />
                         )}
 
-                        <BaseButton onClick={() => setBaseModalNuevaTarea(true)} variant="success" size="sm">
+                        <BaseButton onClick={() => setBaseModalNuevaTarea(true)} variant="success" size="md">
                             Nueva tarea
                         </BaseButton>
-                        <BaseButton onClick={expandirTodas} variant="primary" size="sm">
+                        <BaseButton onClick={expandirTodas} variant="primary" size="md">
                             Expandir todas
                         </BaseButton>
-                        <BaseButton onClick={colapsarTodas} variant="secondary" size="sm">
+                        <BaseButton onClick={colapsarTodas} variant="secondary" size="md">
                             Colapsar todas
                         </BaseButton>
                     </div>
@@ -745,5 +754,6 @@ export default function Home() {
                 />
             </main>
         </div>
+
     );
 }
