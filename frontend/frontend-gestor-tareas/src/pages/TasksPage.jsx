@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import AppHeader from "../components/AppHeader";
-import { getTareas, addTarea, updateTarea, getTareasOrdenadas } from "../services/taskService";
+import { getTareas, addTarea, updateTarea, getTareasOrdenadas, completarTarea, deleteTarea } from "../services/taskService";
 import BaseButton from "../components/base/BaseButton";
 import { PRIORIDAD_BG, ESTADO_BG, pick } from "../styles/themeColors";
 import BaseModal from "../components/base/BaseModal";
@@ -157,6 +157,29 @@ export default function Home() {
         navigate("/");
     }
 
+    async function handleCompletar(idTarea) {
+        try {
+            await completarTarea(idTarea);
+            const { data } = await getTareas();
+            setTareas(Array.isArray(data) ? data : []);
+        } catch (err) {
+            console.error("[Completar] ERROR:", err);
+            alert("No se pudo completar la tarea.");
+        }
+    }
+
+    async function handleEliminar(idTarea, titulo = "") {
+        const ok = window.confirm(`¿Eliminar la tarea "${titulo}"? Esta acción es irreversible.`);
+        if (!ok) return;
+        try {
+            await deleteTarea(idTarea);
+            const { data } = await getTareas();
+            setTareas(Array.isArray(data) ? data : []);
+        } catch (err) {
+            console.error("[Eliminar] ERROR:", err);
+            alert("No se pudo eliminar la tarea.");
+        }
+    }
 
     return (
         <div className="flex">
@@ -352,8 +375,23 @@ export default function Home() {
                                                     </p>
                                                 )}
 
-                                                {/* Pie con botón Editar */}
-                                                <div className="mt-3 flex justify-end">
+                                                {/* Pie con botones: Eliminar, Completar, Editar */}
+                                                <div className="mt-3 flex justify-end gap-2">
+                                                    <BaseButton
+                                                        size="sm"
+                                                        variant="success"
+                                                        title={t.completada ? "Tarea ya completada" : "Completar tarea"}
+                                                        disabled={t.completada}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            if (!t.completada) {
+                                                                handleCompletar(t.idTarea);
+                                                            }
+                                                        }}
+                                                    >
+                                                        {t.completada ? "Completada" : "Completar"}
+                                                    </BaseButton>
+
                                                     <BaseButton
                                                         size="sm"
                                                         variant="primary"
@@ -375,6 +413,18 @@ export default function Home() {
                                                         }}
                                                     >
                                                         Editar
+                                                    </BaseButton>
+
+                                                    <BaseButton
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        title="Eliminar tarea"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation(); // evitar colapsar
+                                                            handleEliminar(t.idTarea, t.titulo || "");
+                                                        }}
+                                                    >
+                                                        🗑️
                                                     </BaseButton>
                                                 </div>
                                             </div>
@@ -409,8 +459,6 @@ export default function Home() {
                         onSubmit={async (e) => {
                             e.preventDefault();
                             setErrorNuevaTarea("");
-
-                            console.log("[NuevaTarea] SUBMIT disparado. Estado:", nuevaTarea);
 
                             // Validación mínima
                             if (!nuevaTarea.titulo?.trim())
@@ -617,7 +665,7 @@ export default function Home() {
                             if (!tareaEdit.prioridad) return setErrorEditar("La prioridad es obligatoria.");
                             if (!tareaEdit.tiempo || Number.isNaN(Number(tareaEdit.tiempo)))
                                 return setErrorEditar("El tiempo (min) es obligatorio y numérico.");
-                            if (!tareaEdit.idCategoria) return setErrorEditar("La categoría es obligatoria.");
+                            //if (!tareaEdit.idCategoria) return setErrorEditar("La categoría es obligatoria.");
 
                             const payload = {
                                 titulo: tareaEdit.titulo.trim(),
@@ -628,7 +676,11 @@ export default function Home() {
                                     tareaEdit.fechaEntrega?.length === 16
                                         ? `${tareaEdit.fechaEntrega}:00`
                                         : tareaEdit.fechaEntrega || null, // opcional
-                                idCategoria: Number(tareaEdit.idCategoria),
+                                idCategoria:
+                                    tareaEdit.idCategoria === "" || tareaEdit.idCategoria === undefined
+                                        ? null
+                                        : Number(tareaEdit.idCategoria),
+
                             };
 
                             try {
@@ -683,13 +735,26 @@ export default function Home() {
                             </BaseField>
 
                             {/* Categoría */}
-                            <BaseField id="edit_categoria" label="Categoría" requerido>
-                                <SelectCategoria
-                                    id="edit_categoria"
-                                    value={tareaEdit.idCategoria}
-                                    onChange={(e) => setTareaEdit((s) => ({ ...s, idCategoria: e.target.value }))}
-                                    required
-                                />
+                            <BaseField id="edit_categoria" label="Categoría">
+                                <div className="flex gap-2 items-end">
+                                    <div className="flex-1">
+                                        <SelectCategoria
+                                            id="edit_categoria"
+                                            value={tareaEdit.idCategoria}
+                                            onChange={(e) => setTareaEdit((s) => ({ ...s, idCategoria: e.target.value }))}
+
+                                        />
+                                    </div>
+                                    <BaseButton
+                                        type="button"
+                                        variant="secondary"
+                                        size="sm"
+                                        onClick={() => setOpenAddCat(true)}
+                                        title="Añadir nueva categoría"
+                                    >
+                                        + Añadir
+                                    </BaseButton>
+                                </div>
                             </BaseField>
                         </div>
 

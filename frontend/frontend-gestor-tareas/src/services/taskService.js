@@ -66,12 +66,12 @@ export async function filtrarTareas(tipo, valor) {
     return response.data;
 }
 
-
+export async function completarTarea(id) {
+    const { data } = await api.patch(`/tarea/completar/${id}`);
+    return data;
+}
 
 // (opcional según lo que uses más adelante)
-export function completarTarea(id) {
-    return apiClient.patch(`/tarea/completar/${id}`);
-}
 export function deleteTarea(id) {
     return apiClient.delete(`/tarea/delete/${id}`);
 }

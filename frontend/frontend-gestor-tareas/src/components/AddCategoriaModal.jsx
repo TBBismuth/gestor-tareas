@@ -1,14 +1,25 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import BaseModal from "./base/BaseModal";
 import BaseField from "./base/BaseField";
 import BaseInput from "./base/BaseInput";
 import BaseButton from "./base/BaseButton";
 import { addCategoria } from "../services/categoriaService";
 import BaseIconSelect from "./base/BaseIconSelect";
+import { updateCategoria } from "../services/categoriaService";
 
-export default function AddCategoriaModal({ open, onClose, onCreated }) {
+export default function AddCategoriaModal({ open, onClose, onCreated, initialData }) {
     const [form, setForm] = useState({ nombre: "", color: "", icono: "" });
     const [error, setError] = useState("");
+
+    useEffect(() => {
+        if (initialData) {
+            setForm({
+                nombre: initialData.nombre || "",
+                color: initialData.color || "",
+                icono: initialData.icono || ""
+            });
+        }
+    }, [initialData]);
 
     const reset = () => {
         setForm({ nombre: "", color: "", icono: "" });
@@ -29,21 +40,33 @@ export default function AddCategoriaModal({ open, onClose, onCreated }) {
             return;
         }
 
-        // Construir payload: mínimo 'nombre'; 'color' e 'icono' son opcionales
-        const payload = { nombre: form.nombre.trim() };
-        if (form.color) payload.color = form.color;     // ej.: #ff0000
-        if (form.icono?.trim()) payload.icono = form.icono.trim();
+        const payload = {
+            nombre: form.nombre.trim(),
+            color: form.color,
+            icono: form.icono?.trim() || ""
+        };
 
         try {
-            const { data } = await addCategoria(payload); // POST /api/categoria/add
-            // Avisar arriba para refrescar el selector y seleccionar la nueva
+            let data;
+
+            if (initialData?.idCategoria) {
+                // Modo edición
+                const res = await updateCategoria(initialData.idCategoria, payload);
+                data = res.data;
+            } else {
+                // Modo creación
+                const res = await addCategoria(payload);
+                data = res.data;
+            }
+
             onCreated?.(data);
             handleClose();
         } catch (err) {
             console.error(err);
-            setError(err?.response?.data?.message || "No se pudo crear la categoría.");
+            setError(err?.response?.data?.message || "No se pudo guardar la categoría.");
         }
     };
+
 
     return (
         <BaseModal open={open} onClose={handleClose} title="Añadir categoría">
@@ -83,9 +106,10 @@ export default function AddCategoriaModal({ open, onClose, onCreated }) {
                     <BaseButton type="button" variant="secondary" onClick={handleClose}>
                         Cancelar
                     </BaseButton>
-                    <BaseButton type="submit">Crear</BaseButton>
+                    <BaseButton type="submit">{initialData ? "Guardar" : "Crear"}</BaseButton>
                 </div>
             </form>
         </BaseModal>
+
     );
 }

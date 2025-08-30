@@ -9,6 +9,7 @@ const variants = {
 };
 
 const sizes = {
+    xs: "px-1.5 py-0.5 text-xs min-h-[22px]",
     sm: "px-2 py-1 text-sm min-h-[28px]",
     md: "px-4 py-2 text-base min-h-[36px]",
     lg: "px-6 py-3 text-lg min-h-[44px]",
@@ -22,12 +23,14 @@ export default function Boton({
     variant = "primary",
     size = "md",
     disabled = false,
+    ...props
 }) {
     return (
         <button
             type={type}
             onClick={onClick}
             disabled={disabled}
+            {...props}
             className={`
         rounded font-semibold transition-colors duration-200
         focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-400

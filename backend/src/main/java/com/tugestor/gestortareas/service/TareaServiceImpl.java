@@ -110,7 +110,9 @@ public class TareaServiceImpl implements TareaService{
 			if (!existente.getUsuario().getEmail().equals(emailUsuario)) {
 				throw new AccessDeniedException("No tienes permiso para modificar esta tarea.");
 			}
-
+			Long id = tareaRequest.getIdCategoria();
+			Categoria categoria = cr.findById(id)
+					.orElseThrow(() -> new RuntimeException("Categoría no encontrada con el id: " + id));
 			// Validación coherente antes de actualizar
 			validarCoherenciaCompletado(tareaRequest.isCompletada(), tareaRequest.getFechaCompletada());
 
@@ -121,6 +123,7 @@ public class TareaServiceImpl implements TareaService{
 			existente.setDescripcion(tareaRequest.getDescripcion());
 			existente.setCompletada(tareaRequest.isCompletada());
 			existente.setFechaCompletada(tareaRequest.getFechaCompletada());
+			existente.setCategoria(categoria);
 
 			if (existente.getFechaCompletada() != null &&
 					existente.getFechaCompletada().isBefore(existente.getFechaAgregado())) {
