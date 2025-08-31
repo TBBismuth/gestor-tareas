@@ -9,7 +9,7 @@ const api = axios.create({
 // Interceptor para añadir Authorization a cada request
 api.interceptors.request.use((config) => {
     // No añadir token si es la ruta de login
-    if (config.url && config.url.includes("/usuario/login")) {
+    if (config.url && config.url.includes("/usuario/login") || config.url.includes("/usuario/add")) {
         return config;
     }
 
@@ -20,6 +20,5 @@ api.interceptors.request.use((config) => {
 
     return config;
 });
-
 
 export default api;
