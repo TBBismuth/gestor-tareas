@@ -30,6 +30,9 @@ export async function getTareasOrdenadas(criterio) {
         case "hoy":
             url += "/hoy";
             break;
+        case "fecha":
+            url += "/fecha";
+            break;
         default:
             break;
     }

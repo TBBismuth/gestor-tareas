@@ -151,6 +151,29 @@ export default function Home() {
     const expandirTodas = () => setTareasExpandidas(tareas.map((t) => t.idTarea));
     const colapsarTodas = () => setTareasExpandidas([]);
 
+    const resetControles = async () => {
+        try {
+            // Limpia los selects controlados
+            setOrdenActual("");
+            setTipoFiltro("");
+
+            // Si tienes estados de valor de filtro, límpialos de forma segura (no rompe si no existen)
+            typeof setValorFiltro === "function" && setValorFiltro("");
+            typeof setFiltroPrioridad === "function" && setFiltroPrioridad("");
+            typeof setFiltroEstado === "function" && setFiltroEstado("");
+            typeof setFiltroCategoria === "function" && setFiltroCategoria("");
+            typeof setFiltroTiempo === "function" && setFiltroTiempo("");
+            typeof setFiltroPalabras === "function" && setFiltroPalabras("");
+
+            // Recarga el listado base
+            const { data } = await getTareas();
+            setTareas(Array.isArray(data) ? data : []);
+        } catch (err) {
+            console.error("[Reset] ERROR:", err);
+        }
+    };
+
+
     const navigate = useNavigate();
     function handleLogout() {
         localStorage.removeItem("token");
@@ -198,6 +221,7 @@ export default function Home() {
                             <option value="titulo">Título</option>
                             <option value="tiempo">Tiempo estimado</option>
                             <option value="prioridad">Prioridad</option>
+                            <option value="fecha">Fecha de entrega</option>
                             <option value="hoy">Tareas de hoy</option>
                         </BaseSelect>
                         <BaseSelect
@@ -276,6 +300,16 @@ export default function Home() {
                                 className="w-64"
                             />
                         )}
+                        <BaseButton
+                            variant="secondary"
+                            size="md"
+                            className="ml-2"
+                            title="Resetear filtros y orden"
+                            onClick={resetControles}
+                        >
+                            Reset
+                        </BaseButton>
+
 
                         <BaseButton onClick={() => setBaseModalNuevaTarea(true)} variant="success" size="md">
                             Nueva tarea
@@ -374,6 +408,19 @@ export default function Home() {
                                                         </span>
                                                     </p>
                                                 )}
+                                                {t.fechaEntrega && (
+                                                    <p>
+                                                        <strong>Fecha de entrega:</strong>{" "}
+                                                        {new Date(t.fechaEntrega).toLocaleString("es-ES", {
+                                                            year: "numeric",
+                                                            month: "2-digit",
+                                                            day: "2-digit",
+                                                            hour: "2-digit",
+                                                            minute: "2-digit",
+                                                        })}
+                                                    </p>
+                                                )}
+
 
                                                 {/* Pie con botones: Eliminar, Completar, Editar */}
                                                 <div className="mt-3 flex justify-end gap-2">
@@ -408,6 +455,10 @@ export default function Home() {
                                                                     ? new Date(t.fechaEntrega).toISOString().slice(0, 16) // yyyy-MM-ddTHH:mm
                                                                     : "",
                                                                 idCategoria: t.idCategoria ? String(t.idCategoria) : "",
+                                                                completada: t.completada === true,
+                                                                fechaCompletada: t.fechaCompletada
+                                                                    ? String(t.fechaCompletada).slice(0, 16)
+                                                                    : "",
                                                             });
                                                             setEditOpen(true);
                                                         }}
@@ -417,7 +468,7 @@ export default function Home() {
 
                                                     <BaseButton
                                                         size="sm"
-                                                        variant="ghost"
+                                                        variant="danger"
                                                         title="Eliminar tarea"
                                                         onClick={(e) => {
                                                             e.stopPropagation(); // evitar colapsar
@@ -680,11 +731,21 @@ export default function Home() {
                                     tareaEdit.idCategoria === "" || tareaEdit.idCategoria === undefined
                                         ? null
                                         : Number(tareaEdit.idCategoria),
+                                completada: tareaEdit.completada === true,
+                                fechaCompletada:
+                                    tareaEdit.completada === true
+                                        ? (
+                                            tareaEdit.fechaCompletada?.length === 16
+                                                ? `${tareaEdit.fechaCompletada}:00` // yyyy-MM-ddTHH:mm:ss
+                                                : (tareaEdit.fechaCompletada || new Date().toISOString().slice(0, 19))
+                                        )
+                                        : null,
 
                             };
 
                             try {
                                 await updateTarea(tareaEdit.idTarea, payload);
+                                // si ya estaba completada, la re-marcamos como completada tras el update
                                 const { data } = await getTareas();
                                 setTareas(Array.isArray(data) ? data : []);
                                 setEditOpen(false);
@@ -767,6 +828,8 @@ export default function Home() {
                                     className="px-3 py-2 border rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
                                     value={tareaEdit.fechaEntrega}
                                     onChange={(e) => setTareaEdit((s) => ({ ...s, fechaEntrega: e.target.value }))}
+                                    disabled={tareaEdit.completada === true}
+                                    title={tareaEdit.completada ? "No se puede cambiar la fecha en una tarea completada" : ""}
                                 />
                             </BaseField>
 

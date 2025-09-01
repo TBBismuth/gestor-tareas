@@ -1,10 +1,5 @@
-// src/services/categoriaService.js
 import apiClient from "./apiClient";
 
-/**
- * GET /api/categoria
- * Devuelve directamente el ARRAY de categorías.
- */
 export async function getCategorias() {
     const { data } = await apiClient.get("/categoria");
     return data;
@@ -20,4 +15,9 @@ export function deleteCategoria(id) {
 
 export function updateCategoria(id, payload) {
     return apiClient.put(`/categoria/update/${id}`, payload);
+}
+
+export async function searchCategoriasByName(nombreParcial) {
+    const { data } = await apiClient.get(`/categoria/nombre/${encodeURIComponent(nombreParcial)}`);
+    return data;
 }

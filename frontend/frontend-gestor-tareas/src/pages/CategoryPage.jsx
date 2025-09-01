@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getCategorias, deleteCategoria } from "../services/categoriaService";
+import { getCategorias, deleteCategoria, searchCategoriasByName } from "../services/categoriaService";
 import BaseCard from "../components/base/BaseCard";
 import Sidebar from "../components/Sidebar";
 import { useNavigate } from "react-router-dom";
@@ -11,7 +11,7 @@ export default function CategoryPage() {
     const [editandoCategoria, setEditandoCategoria] = useState(null);
     const navigate = useNavigate();
     const [openCreate, setOpenCreate] = useState(false);
-
+    const [query, setQuery] = useState("");
 
     useEffect(() => {
         async function cargarCategorias() {
@@ -24,6 +24,27 @@ export default function CategoryPage() {
         }
         cargarCategorias();
     }, []);
+
+    useEffect(() => {
+        let active = true;
+
+        async function buscar() {
+            try {
+                if (!query.trim()) {
+                    const data = await getCategorias();
+                    if (active) setCategorias(data);
+                } else {
+                    const data = await searchCategoriasByName(query.trim());
+                    if (active) setCategorias(data);
+                }
+            } catch (err) {
+                console.error("Error al buscar categorías:", err);
+            }
+        }
+
+        buscar();
+        return () => { active = false; };
+    }, [query]);
 
     function handleLogout() {
         localStorage.removeItem("token");
@@ -56,9 +77,19 @@ export default function CategoryPage() {
             <main className="flex-1 min-h-screen bg-green-50 p-6">
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-xl font-bold text-green-700">Tus categorias</h2>
-                    <BaseButton variant="success" size="md" onClick={() => { setEditandoCategoria(null); setOpenCreate(true); }}>
-                        Nueva Categoria
-                    </BaseButton>
+
+                    <div className="flex items-center gap-2">
+                        <input
+                            type="text"
+                            value={query}
+                            onChange={(e) => setQuery(e.target.value)}
+                            placeholder="Buscar por nombre..."
+                            className="px-3 py-2 border rounded w-56 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                        />
+                        <BaseButton variant="success" size="md" onClick={() => { setEditandoCategoria(null); setOpenCreate(true); }}>
+                            Nueva Categoria
+                        </BaseButton>
+                    </div>
                 </div>
 
                 <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
@@ -75,7 +106,7 @@ export default function CategoryPage() {
 
                             {/* Botón eliminar (encima del editar) */}
                             <BaseButton
-                                variant="ghost"
+                                variant="danger"
                                 size="xs"
                                 className="absolute bottom-8 right-2"
                                 onClick={() => handleDelete(cat)}

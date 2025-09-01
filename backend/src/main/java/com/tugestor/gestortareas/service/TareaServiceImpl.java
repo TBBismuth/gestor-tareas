@@ -110,11 +110,24 @@ public class TareaServiceImpl implements TareaService{
 			if (!existente.getUsuario().getEmail().equals(emailUsuario)) {
 				throw new AccessDeniedException("No tienes permiso para modificar esta tarea.");
 			}
+
 			Long id = tareaRequest.getIdCategoria();
 			Categoria categoria = cr.findById(id)
 					.orElseThrow(() -> new RuntimeException("Categoría no encontrada con el id: " + id));
+
 			// Validación coherente antes de actualizar
 			validarCoherenciaCompletado(tareaRequest.isCompletada(), tareaRequest.getFechaCompletada());
+
+			if (!tareaRequest.isCompletada()) {
+				LocalDateTime nuevaEntrega = tareaRequest.getFechaEntrega();
+				if (nuevaEntrega != null) {
+					LocalDateTime entregaAnterior = existente.getFechaEntrega();
+					boolean seCambiaFechaEntrega = (entregaAnterior == null) || !nuevaEntrega.equals(entregaAnterior);
+					if (seCambiaFechaEntrega && nuevaEntrega.isBefore(LocalDateTime.now())) {
+						throw new ValidationException("La fecha de entrega no puede haber pasado.");
+					}
+				}
+			}
 
 			existente.setTitulo(tareaRequest.getTitulo());
 			existente.setTiempo(tareaRequest.getTiempo());
@@ -126,13 +139,8 @@ public class TareaServiceImpl implements TareaService{
 			existente.setCategoria(categoria);
 
 			if (existente.getFechaCompletada() != null &&
-					existente.getFechaCompletada().isBefore(existente.getFechaAgregado())) {
+				existente.getFechaCompletada().isBefore(existente.getFechaAgregado())) {
 				throw new RuntimeException("La fecha de completado no puede ser anterior a la fecha de creación.");
-			}
-
-			if (existente.getFechaEntrega() != null &&
-					existente.getFechaEntrega().isBefore(LocalDateTime.now())) {
-				throw new ValidationException("La fecha de entrega no puede haber pasado.");
 			}
 
 			return tr.save(existente);
@@ -140,6 +148,7 @@ public class TareaServiceImpl implements TareaService{
 			throw new RuntimeException("No existe la tarea con ID " + idTarea);
 		}
 	}
+
 
 	@Override
 	public 	List<Tarea> obtenerPorTitulo(String emailUsuario){
