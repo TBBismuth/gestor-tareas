@@ -5,7 +5,7 @@ import BaseButton from "../components/base/BaseButton";
 import { PRIORIDAD_BG, ESTADO_BG, pick } from "../styles/themeColors";
 import BaseModal from "../components/base/BaseModal";
 import Sidebar from "../components/Sidebar";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 // NUEVOS IMPORTS (componentes base para el formulario)
 import BaseField from "../components/base/BaseField";
@@ -60,9 +60,10 @@ export default function Home() {
         idCategoria: "",
     });
     const [errorEditar, setErrorEditar] = useState("");
+    const [searchParams, setSearchParams] = useSearchParams();
 
 
-    // 👇 Util para mostrar enums de forma friendly (e.g. EN_CURSO -> En curso)
+    // Util para mostrar enums de forma friendly (e.g. EN_CURSO -> En curso)
     const pretty = (txt) =>
         typeof txt === "string"
             ? txt.toLowerCase().replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase())
@@ -142,6 +143,21 @@ export default function Home() {
 
         aplicarFiltro();
     }, [tipoFiltro, valorFiltro]);
+
+    useEffect(() => {
+        if (searchParams.get('newTask') === '1') {
+            // Abre el modal de creación
+            setBaseModalNuevaTarea(true);
+
+            // Limpia el query param para que no se reabra en cada navegación/refresh
+            const next = new URLSearchParams(searchParams);
+            next.delete('newTask');
+            setSearchParams(next, { replace: true });
+        }
+        // Solo al montar
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
 
     const toggleExpandir = (id) =>
         setTareasExpandidas((prev) =>
