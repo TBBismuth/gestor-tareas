@@ -63,3 +63,6 @@ frontend/frontend-gestor-tareas/.env
 frontend/frontend-gestor-tareas/.DS_Store
 frontend/frontend-gestor-tareas/yarn.lock
 frontend/frontend-gestor-tareas/package-lock.json
+
+# PWA (vite-plugin-pwa) dev artifacts
+frontend/frontend-gestor-tareas/dev-dist/
