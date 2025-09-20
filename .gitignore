@@ -66,4 +66,5 @@ frontend/frontend-gestor-tareas/package-lock.json
 
 # PWA (vite-plugin-pwa) dev artifacts
 frontend/frontend-gestor-tareas/dev-dist/
+frontend/frontend-gestor-tareas/dev-dist
 /frontend/frontend-gestor-tareas/dev-dist
