@@ -2,7 +2,9 @@ package com.tugestor.gestortareas.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -16,12 +18,7 @@ import com.tugestor.gestortareas.security.JwtAuthenticationFilter;
 import com.tugestor.gestortareas.security.JwtService;
 
 @Configuration
-public class SeguridadConfig {
-//	private final JwtAuthenticationFilter jwtAuthenticationFilter;
-//	public SeguridadConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
-//		this.jwtAuthenticationFilter = jwtAuthenticationFilter;
-//	}
-	
+public class SeguridadConfig {	
 	@Bean
 	PasswordEncoder passwordEncoder() {
 		return new BCryptPasswordEncoder();
@@ -29,8 +26,13 @@ public class SeguridadConfig {
 	
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception{
-		http.csrf(csrf -> csrf.disable())	// Desactiva CSRF porque mi API es stateless (sin sesiones)
+		http.cors(Customizer.withDefaults())	// Habilita CORS con la configuracion de CorsConfig
+		.csrf(csrf -> csrf.disable())	// Desactiva CSRF porque mi API es stateless (sin sesiones)
 		.authorizeHttpRequests(auth -> auth
+				.requestMatchers(
+						HttpMethod.OPTIONS,
+						"/api/**"
+						).permitAll()
 				.requestMatchers(
 						"/api/usuario/add",
 						"/api/usuario/login",
