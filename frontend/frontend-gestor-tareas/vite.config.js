@@ -44,7 +44,16 @@ export default ({ mode }) => {
             { name: 'Categorías', short_name: 'Categorías', description: 'Gestionar categorías', url: '/categories', icons: [{ src: '/icons/pwa-192.png', sizes: '192x192', type: 'image/png' }] },
             { name: 'Nueva tarea', short_name: 'Nueva', description: 'Ir a la pantalla de tareas para crear una nueva', url: '/home?newTask=1', icons: [{ src: '/icons/pwa-192.png', sizes: '192x192', type: 'image/png' }] }
           ],
-        }
+        },
+        workbox: {
+          runtimeCaching: [
+            {
+              urlPattern: /^\/api\//,
+              handler: 'NetworkOnly'
+            }
+          ]
+        },
+        navigateFallbackDenylist: [/^\/api\//]
       })
     ],
     // Proxy solo afecta al servidor de desarrollo (npm run dev)
