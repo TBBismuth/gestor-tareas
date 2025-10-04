@@ -5,8 +5,10 @@ import java.util.Optional;
 
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.tugestor.gestortareas.dto.CategoriaRequest;
+import com.tugestor.gestortareas.exception.CategoriaProtegidaException;
 import com.tugestor.gestortareas.model.Categoria;
 import com.tugestor.gestortareas.model.Tarea;
 import com.tugestor.gestortareas.repository.CategoriaRepository;
@@ -34,19 +36,19 @@ public class CategoriaServiceImpl implements CategoriaService {
 		return cr.findAll();
 	}
 
+	@Transactional //Para que no pete a mitad de un desvinculado-eliminacion y se quede a medias
 	@Override
 	public void eliminarPorId(Long id) {
 		Categoria categoria = cr.findById(id)
 				.orElseThrow(() -> new EntityNotFoundException("Categoría no encontrada con id: " + id));
 		if (categoria.isProtegida()) {
-			throw new AccessDeniedException("No se puede eliminar una categoría base.");
+			throw new CategoriaProtegidaException("No se puede eliminar una categoría base.");
 		}
 		// Desvincular tareas asociadas
 		List<Tarea> tareasAsociadas = tareaRepository.findByCategoria_IdCategoria(id);
-
 		for (Tarea tarea : tareasAsociadas) {
-		    tarea.setCategoria(null);
-		    tareaRepository.save(tarea);
+			tarea.setCategoria(null);
+			tareaRepository.save(tarea);
 		}
 
 		cr.delete(categoria);
@@ -66,12 +68,12 @@ public class CategoriaServiceImpl implements CategoriaService {
 			throw new RuntimeException("Categoría no encontrada con el id: " + id);
 		}
 	}
-
+	
 	@Override
 	public List<Categoria> obtenerPorNombre(String nombreParcial) {
 		return cr.findByNombreIgnoreCaseContaining(nombreParcial);
 	}
-
+	
 	@Override
 	public Categoria guardarCategoria(CategoriaRequest categoriaRequest) {
 		Categoria categoria = new Categoria();
@@ -80,21 +82,29 @@ public class CategoriaServiceImpl implements CategoriaService {
 		categoria.setIcono(categoriaRequest.getIcono());
 		return cr.save(categoria);
 	}
-
+	
 	@Override
 	public Categoria actualizarCategoria(Long id, CategoriaRequest categoriaRequest) {
 		Optional<Categoria> categoriaOriginal = cr.findById(id);
 		// Optional<Categoria> para evitar errores null. Puede contener una categoria o estar vacía.
 		if (categoriaOriginal.isPresent()) {
 			Categoria categoria = categoriaOriginal.get();
+			
+			if (categoria.isProtegida()) {
+				throw new CategoriaProtegidaException(
+						"No se puede editar una categoría base (" + categoria.getNombre() + ")."
+						);
+			}
+			
 			categoria.setNombre(categoriaRequest.getNombre());
 			categoria.setColor(categoriaRequest.getColor());
 			categoria.setIcono(categoriaRequest.getIcono());
 			return cr.save(categoria);
-		}else {
+		} else {
 			throw new EntityNotFoundException("Categoría no encontrada con el id: " + id);
 		}
 	}
+
 
 
 }

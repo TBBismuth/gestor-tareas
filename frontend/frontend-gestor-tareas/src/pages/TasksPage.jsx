@@ -7,7 +7,6 @@ import BaseModal from "../components/base/BaseModal";
 import Sidebar from "../components/Sidebar";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
-// NUEVOS IMPORTS (componentes base para el formulario)
 import BaseField from "../components/base/BaseField";
 import BaseInput from "../components/base/BaseInput";
 import BaseSelect from "../components/base/BaseSelect";
@@ -15,9 +14,8 @@ import BaseTextarea from "../components/base/BaseTextarea";
 import SelectPrioridad from "../components/base/SelectPrioridad";
 import SelectCategoria from "../components/base/SelectCategoria";
 import AddCategoriaModal from "../components/AddCategoriaModal";
-import { filtrarTareas } from "../services/taskService";
 
-// NUEVO: categorías para pintar icono/nombre
+import { filtrarTareas } from "../services/taskService";
 import { getCategorias } from "../services/categoriaService";
 
 export default function Home() {
@@ -28,15 +26,10 @@ export default function Home() {
     const [BaseModalNuevaTarea, setBaseModalNuevaTarea] = useState(false);
     const [openAddCat, setOpenAddCat] = useState(false);
     const [catReloadKey, setCatReloadKey] = useState(0);
-
-    // NUEVO: mapa id->categoria para icono/nombre
     const [categoriasMap, setCategoriasMap] = useState({});
-
     const [ordenActual, setOrdenActual] = useState("");
     const [tipoFiltro, setTipoFiltro] = useState("");
     const [valorFiltro, setValorFiltro] = useState("");
-
-
     // Estado del formulario "Nueva tarea"
     const [nuevaTarea, setNuevaTarea] = useState({
         titulo: "",
@@ -47,7 +40,6 @@ export default function Home() {
         idCategoria: "",
     });
     const [errorNuevaTarea, setErrorNuevaTarea] = useState("");
-
     // Estado del modal de edición
     const [editOpen, setEditOpen] = useState(false);
     const [tareaEdit, setTareaEdit] = useState({
@@ -61,13 +53,12 @@ export default function Home() {
     });
     const [errorEditar, setErrorEditar] = useState("");
     const [searchParams, setSearchParams] = useSearchParams();
-
-
-    // Util para mostrar enums de forma friendly (e.g. EN_CURSO -> En curso)
+    // Para mostrar enums de forma friendly ( EN_CURSO -> En curso)
     const pretty = (txt) =>
         typeof txt === "string"
             ? txt.toLowerCase().replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase())
             : txt;
+
 
     // Cargar tareas
     useEffect(() => {
@@ -88,7 +79,6 @@ export default function Home() {
             cancelado = true;
         };
     }, []);
-
     // Cargar categorías una vez y crear mapa id -> {nombre, icono, color}
     useEffect(() => {
         let cancel = false;
@@ -109,7 +99,6 @@ export default function Home() {
             cancel = true;
         };
     }, []);
-
     // Cargar tareas ordenadas según el orden seleccionado
     useEffect(() => {
         async function cargarTareasOrdenadas() {
@@ -125,7 +114,6 @@ export default function Home() {
 
         cargarTareasOrdenadas();
     }, [ordenActual]);
-
     // Aplicar filtro de tareas según tipo y valor
     useEffect(() => {
         async function aplicarFiltro() {
@@ -148,7 +136,6 @@ export default function Home() {
         if (searchParams.get('newTask') === '1') {
             // Abre el modal de creación
             setBaseModalNuevaTarea(true);
-
             // Limpia el query param para que no se reabra en cada navegación/refresh
             const next = new URLSearchParams(searchParams);
             next.delete('newTask');
@@ -159,20 +146,14 @@ export default function Home() {
     }, []);
 
 
-    const toggleExpandir = (id) =>
-        setTareasExpandidas((prev) =>
-            prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-        );
-
+    const toggleExpandir = (id) => setTareasExpandidas((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
     const expandirTodas = () => setTareasExpandidas(tareas.map((t) => t.idTarea));
     const colapsarTodas = () => setTareasExpandidas([]);
-
     const resetControles = async () => {
         try {
             // Limpia los selects controlados
             setOrdenActual("");
             setTipoFiltro("");
-
             // Si tienes estados de valor de filtro, límpialos de forma segura (no rompe si no existen)
             typeof setValorFiltro === "function" && setValorFiltro("");
             typeof setFiltroPrioridad === "function" && setFiltroPrioridad("");
@@ -189,13 +170,11 @@ export default function Home() {
         }
     };
 
-
     const navigate = useNavigate();
     function handleLogout() {
         localStorage.removeItem("token");
         navigate("/");
     }
-
     async function handleCompletar(idTarea) {
         try {
             await completarTarea(idTarea);
@@ -206,7 +185,6 @@ export default function Home() {
             alert("No se pudo completar la tarea.");
         }
     }
-
     async function handleEliminar(idTarea, titulo = "") {
         const ok = window.confirm(`¿Eliminar la tarea "${titulo}"? Esta acción es irreversible.`);
         if (!ok) return;
@@ -350,7 +328,6 @@ export default function Home() {
                         const expandida = tareasExpandidas.includes(t.idTarea);
                         const cPrioridad = pick(PRIORIDAD_BG, t.prioridad);
                         const cEstado = pick(ESTADO_BG, t.estado);
-
                         // Categoría desde el mapa (si existe)
                         const cat = categoriasMap[t.idCategoria] || null;
 

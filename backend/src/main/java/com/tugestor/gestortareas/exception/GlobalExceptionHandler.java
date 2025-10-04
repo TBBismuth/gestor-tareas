@@ -98,9 +98,17 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(BadCredentialsException.class)
 	@ResponseStatus(HttpStatus.UNAUTHORIZED)
 	public Map<String, String> handleBadCredentials(BadCredentialsException ex) {
-	    Map<String, String> error = new HashMap<>();
-	    error.put("error", "Credenciales inválidas.");
-	    return error;
+		Map<String, String> error = new HashMap<>();
+		error.put("error", "Credenciales inválidas.");
+		return error;
 	}
-
+	
+	@ExceptionHandler(CategoriaProtegidaException.class)
+	@ResponseStatus(HttpStatus.CONFLICT)
+	public Map<String, String> handleCategoriaProtegida(CategoriaProtegidaException ex) {
+		Map<String, String> error = new HashMap<>();
+		error.put("error", ex.getMessage());
+		return error;
+	}
+	
 }
