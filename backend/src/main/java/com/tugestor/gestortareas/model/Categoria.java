@@ -2,9 +2,12 @@ package com.tugestor.gestortareas.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
@@ -20,7 +23,9 @@ public class Categoria {
 	private String icono; // Nombre del icono para librerias visuales en React Native
 	@Column(nullable = false)
 	private boolean protegida;
-
+	@ManyToOne(fetch = FetchType.LAZY) // LAZY para no cargar cada usuario al cargar una categoria, solo con categoria.getUsuario()
+	@JoinColumn(name = "usuario_id",nullable = true)
+	private Usuario usuario;
 	
 	public Categoria() {
 		// Constructor por defecto para JPA
@@ -61,6 +66,12 @@ public class Categoria {
 	}
 	public void setProtegida(boolean protegida) {
 		this.protegida = protegida;
+	}
+	public Usuario getUsuario() {
+		return usuario;
+	}
+	public void setUsuario(Usuario usuario) {
+		this.usuario = usuario;
 	}
 	
 	

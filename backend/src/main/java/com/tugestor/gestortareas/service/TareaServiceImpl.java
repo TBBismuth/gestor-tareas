@@ -71,7 +71,6 @@ public class TareaServiceImpl implements TareaService{
 		return tr.save(tarea);
 	}
 
-
 	@Override
 	public List<Tarea> obtenerTodas(String principal) {
 		return tr.findByUsuarioEmail(principal);
@@ -148,7 +147,6 @@ public class TareaServiceImpl implements TareaService{
 			throw new RuntimeException("No existe la tarea con ID " + idTarea);
 		}
 	}
-
 
 	@Override
 	public 	List<Tarea> obtenerPorTitulo(String emailUsuario){
@@ -252,6 +250,5 @@ public class TareaServiceImpl implements TareaService{
 			throw new RuntimeException("No se puede asignar una fecha completada a una tarea no completada.");
 		}
 	}
-
 
 }

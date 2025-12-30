@@ -7,5 +7,5 @@ import com.tugestor.gestortareas.model.Usuario;
 
 public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 	Optional<Usuario> findByEmail(String emailUsuarioCreador); //Optional y no List pues solo debe haber un usuario con ese email o ninguno
-	
+	Optional<Usuario> findByEmailIgnoreCase(String emailUsuarioCreador);
 }
