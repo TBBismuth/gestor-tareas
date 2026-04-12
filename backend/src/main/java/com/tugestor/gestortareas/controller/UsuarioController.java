@@ -1,7 +1,6 @@
 package com.tugestor.gestortareas.controller;
 
-import java.net.URI;
-import java.util.List;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -10,10 +9,10 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.tugestor.gestortareas.dto.LoginRequest;
@@ -26,8 +25,6 @@ import com.tugestor.gestortareas.security.JwtService;
 import com.tugestor.gestortareas.service.UsuarioService;
 
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
@@ -46,95 +43,47 @@ public class UsuarioController {
 		this.ur= ur;
 	}
 	
-	@GetMapping
+	@GetMapping("/me")
 	@Operation(
-			summary = "Listar todos los usuarios",
-			description = "Devuelve un listado con todos los usuarios registrados."
+			summary = "Obtener la cuenta del usuario autenticado",
+			description = "Devuelve la informacion de la cuenta asociada al JWT enviado en la peticion."
 			)
 	@ApiResponses({
-		@ApiResponse(responseCode = "200", description = "Listado de usuarios obtenido correctamente")
+		@ApiResponse(responseCode = "200", description = "Cuenta obtenida correctamente"),
+		@ApiResponse(responseCode = "401", description = "No autenticado o token invalido")
 	})
-	public List<UsuarioResponse> listarUsuarios() {
-		List<Usuario> usuarios = us.obtenerTodos();
-		return usuarios.stream()
-				.map(UsuarioResponse::new)
-				.toList();
-	}
-	
-	@GetMapping("/{id}")
-	@Operation(
-			summary = "Obtener usuario por ID",
-			description = "Devuelve la información de un usuario según su ID."
-			)
-	@Parameters({
-		@Parameter(name = "id", description = "ID del usuario", example = "3")
-	})
-	@ApiResponses({
-		@ApiResponse(responseCode = "200", description = "Usuario encontrado correctamente"),
-		@ApiResponse(responseCode = "404", description = "Usuario no encontrado")
-	})
-	public UsuarioResponse listarUsuarioId(@PathVariable Long id) {
-		Usuario usuario = us.obtenerPorId(id);
-		return new UsuarioResponse(usuario);
-	}
-	
-	@GetMapping("/email/{email}")
-	@Operation(
-			summary = "Obtener usuario por email",
-			description = "Devuelve la información de un usuario según su dirección de email."
-			)
-	@Parameters({
-		@Parameter(name = "email", description = "Email del usuario", example = "usuario@ejemplo.com")
-	})
-	@ApiResponses({
-		@ApiResponse(responseCode = "200", description = "Usuario encontrado correctamente"),
-		@ApiResponse(responseCode = "404", description = "Usuario no encontrado")
-	})
-	public ResponseEntity<UsuarioResponse> listarUsuarioEmail(@PathVariable String email) {
-		return us.obtenerPorEmail(email)
-				.map(usuario -> ResponseEntity.ok(new UsuarioResponse(usuario)))
-				.orElseThrow(() -> new RuntimeException("Usuario no encontrado con email: " + email));
-	/*ResponseEntity es una clase de Spring que representa una respuesta completa HTTP
-	 *Body, codigo de estado y headers*/
+	public ResponseEntity<UsuarioResponse> obtenerMiCuenta() {
+		Usuario usuario = us.obtenerUsuarioActual();
+		return ResponseEntity.ok(new UsuarioResponse(usuario));
 	}
 	
 	@PostMapping("/add")
 	@Operation(
 			summary = "Registrar un nuevo usuario",
-			description = "Crea un nuevo usuario con los datos proporcionados y devuelve su información."
+			description = "Crea un nuevo usuario con los datos proporcionados y devuelve su informacion."
 			)
 	@ApiResponses({
 		@ApiResponse(responseCode = "201", description = "Usuario creado correctamente"),
-		@ApiResponse(responseCode = "400", description = "Datos del usuario inválidos")
+		@ApiResponse(responseCode = "400", description = "Datos del usuario invalidos")
 	})
 	public ResponseEntity<UsuarioResponse> aniadirUsuario(@Valid @RequestBody UsuarioRequest usuarioRequest) {
 		Usuario nuevoUsuario = us.guardarUsuario(usuarioRequest);
-		// Creamos una URI para el recurso recién creado (ej: /usuario/5)
-		// Esto es solo una referencia de "dónde se puede consultar este nuevo recurso"
-		URI location = URI.create("/usuario/" + nuevoUsuario.getIdUsuario());
-		// Devolvemos una respuesta con:
-		// -Código 201 Created
-		// -Cabecera Location con la URI del nuevo usuario
-		// -Cuerpo: el usuario recién creado en formato JSON
 		UsuarioResponse response = new UsuarioResponse(nuevoUsuario);
-		// UsuarioResponse es un DTO que contiene solo los datos necesarios para la respuesta
-		return ResponseEntity.created(location).body(response);
+		return ResponseEntity.status(HttpStatus.CREATED).body(response);
 	}
 
-	@DeleteMapping("/delete/{id}")
+	@DeleteMapping("/me")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
 	@Operation(
-			summary = "Eliminar un usuario",
-			description = "Elimina el usuario indicado por su ID."
+			summary = "Eliminar la cuenta del usuario autenticado",
+			description = "Elimina la cuenta asociada al JWT enviado en la peticion."
 			)
-	@Parameters({
-		@Parameter(name = "id", description = "ID del usuario a eliminar", example = "4")
-	})
 	@ApiResponses({
-		@ApiResponse(responseCode = "204", description = "Usuario eliminado correctamente"),
-		@ApiResponse(responseCode = "404", description = "Usuario no encontrado")
+		@ApiResponse(responseCode = "204", description = "Cuenta eliminada correctamente"),
+		@ApiResponse(responseCode = "401", description = "No autenticado o token invalido")
 	})
-	public void eliminarUsuario(@PathVariable Long id) {
-		us.eliminarPorId(id);
+	public void eliminarMiCuenta() {
+		us.eliminarUsuarioActual();
 	}
 
 	@PostMapping("/login")
@@ -143,31 +92,26 @@ public class UsuarioController {
 			description = "Verifica las credenciales del usuario y devuelve un token JWT si son correctas."
 			)
 	@ApiResponses({
-		@ApiResponse(responseCode = "200", description = "Autenticación exitosa"),
-		@ApiResponse(responseCode = "401", description = "Credenciales inválidas")
+		@ApiResponse(responseCode = "200", description = "Autenticacion exitosa"),
+		@ApiResponse(responseCode = "401", description = "Credenciales invalidas")
 	})
 	public ResponseEntity<LoginResponse> loginUsuario(@Valid @RequestBody LoginRequest loginRequest){
-		// Autentifico el usuario con email y pass usando CustomUserDetailsService y PasswordEncoder
 		Authentication auth = am.authenticate(
 				new UsernamePasswordAuthenticationToken(
 						loginRequest.getEmail(),
 						loginRequest.getPassword()
 						)
 				);
-		// Extraigo los detalles del usuario autentificado
 		UserDetails userDetails = (UserDetails) auth.getPrincipal();
-		// Genero el token usando JwtService
 		String jwtToken = jwts.generateToken(userDetails);
-		// Recupero el Usuario de la BBDD para obtener id y nombre
-		Usuario usuario = ur.findByEmail(userDetails.getUsername())	// El Username es el email
+		Usuario usuario = ur.findByEmail(userDetails.getUsername())
 				.orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado: " + userDetails.getUsername()));
-		// Construyo el LoginResponse con el id, nombre, email y token
 		LoginResponse response = new LoginResponse(
 				usuario.getIdUsuario(),
 				usuario.getNombre(),
 				usuario.getEmail(),
 				jwtToken
 				);
-		return ResponseEntity.ok(response);	// .ok devuelve HTP 200 + el contenido
+		return ResponseEntity.ok(response);
 	}
 }

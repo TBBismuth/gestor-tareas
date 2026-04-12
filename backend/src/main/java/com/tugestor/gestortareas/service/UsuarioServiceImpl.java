@@ -2,8 +2,8 @@ package com.tugestor.gestortareas.service;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,8 +13,10 @@ import com.tugestor.gestortareas.dto.LoginResponse;
 import com.tugestor.gestortareas.dto.UsuarioRequest;
 import com.tugestor.gestortareas.exception.EmailDuplicadoException;
 import com.tugestor.gestortareas.model.Categoria;
+import com.tugestor.gestortareas.model.Tarea;
 import com.tugestor.gestortareas.model.Usuario;
 import com.tugestor.gestortareas.repository.CategoriaRepository;
+import com.tugestor.gestortareas.repository.TareaRepository;
 import com.tugestor.gestortareas.repository.UsuarioRepository;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -24,12 +26,15 @@ public class UsuarioServiceImpl implements UsuarioService{
 	private final UsuarioRepository ur;
 	private final PasswordEncoder pe;
 	private final CategoriaRepository cr;
-	public UsuarioServiceImpl(UsuarioRepository ur, PasswordEncoder pe, CategoriaRepository cr) {
+	private final TareaRepository tr;
+	public UsuarioServiceImpl(UsuarioRepository ur, PasswordEncoder pe, CategoriaRepository cr, TareaRepository tr) {
 		this.ur = ur;
 		this.pe = pe;
-		this.cr = cr; 
+		this.cr = cr;
+		this.tr = tr;
 	}
-
+	
+	@Deprecated(since="2.0", forRemoval=false)
 	@Override
 	public Usuario guardarUsuario(Usuario usuario) {
 		ur.findByEmail(usuario.getEmail()).ifPresent(temp -> {
@@ -40,24 +45,31 @@ public class UsuarioServiceImpl implements UsuarioService{
 	}
 
 	@Override
-	public Optional<Usuario> obtenerPorEmail(String email) {
-		return ur.findByEmail(email);
+	public Usuario obtenerUsuarioActual() {
+		String email = SecurityContextHolder.getContext().getAuthentication().getName();
+		return ur.findByEmailIgnoreCase(email)
+				.orElseThrow(() -> new EntityNotFoundException("Usuario autenticado no encontrado: " + email));
 	}
 
+	@Transactional
 	@Override
-	public Usuario obtenerPorId(Long id) {
-		return ur.findById(id).orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado con ID: " + id));
-	}
-
-	@Override
-	public List<Usuario> obtenerTodos() {
-		return ur.findAll();
-	}
-
-	@Override
-	public void eliminarPorId(Long id) {
-		Usuario usuario = ur.findById(id)
-				.orElseThrow(() -> new RuntimeException("No se encontró el usuario con ID: " + id));
+	public void eliminarUsuarioActual() {
+		Usuario usuario = obtenerUsuarioActual();
+		List<Tarea> tareasCompletadasPorUsuario = tr.findByUsuarioQueCompleta_IdUsuario(usuario.getIdUsuario());
+		for (Tarea tarea : tareasCompletadasPorUsuario) {
+			tarea.setUsuarioQueCompleta(null);
+		}
+		if (!tareasCompletadasPorUsuario.isEmpty()) {
+			tr.saveAll(tareasCompletadasPorUsuario);
+		}
+		List<Tarea> tareasUsuario = tr.findByUsuario_IdUsuario(usuario.getIdUsuario());
+		if (!tareasUsuario.isEmpty()) {
+			tr.deleteAll(tareasUsuario);
+		}
+		List<Categoria> categoriasUsuario = cr.findAllByUsuario(usuario);
+		if (!categoriasUsuario.isEmpty()) {
+			cr.deleteAll(categoriasUsuario);
+		}
 		ur.delete(usuario);
 	}
 
@@ -65,8 +77,8 @@ public class UsuarioServiceImpl implements UsuarioService{
 	public LoginResponse login(LoginRequest login) {
 		Usuario usuario = ur.findByEmail(login.getEmail())
 				.orElseThrow(() -> new RuntimeException("No existe un usuario con el email: " + login.getEmail()));
-		if (!pe.matches(login.getPassword(), usuario.getPassword())) { //El orden de .matches importa, primero raw text y luego encoded text
-			throw new RuntimeException("La contraseña no coincide");
+		if (!pe.matches(login.getPassword(), usuario.getPassword())) {
+			throw new RuntimeException("La contrasena no coincide");
 		}
 		return new LoginResponse(usuario);
 	}
@@ -113,6 +125,4 @@ public class UsuarioServiceImpl implements UsuarioService{
 	    categoria.setProtegida(true);
 	    return categoria;
 	}
-
-
 }

@@ -15,5 +15,5 @@ public interface CategoriaRepository extends JpaRepository<Categoria, Long> {
 	List<Categoria> findAllByUsuario(Usuario usuario);
 	boolean existsByUsuarioAndNombreIgnoreCase(Usuario usuario, String nombre);
 	List<Categoria> findByUsuarioAndNombreIgnoreCaseContaining(Usuario usuario, String nombreParcial);
-
-}
+	}
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             

@@ -4,6 +4,7 @@ import java.security.Principal;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import com.tugestor.gestortareas.dto.TareaRequest;
@@ -36,7 +37,7 @@ public class TareaController {
 	public String test() {
 		return "endpoint TEST ";
 	}
-
+	
 	@GetMapping
 	@Operation(
 			summary = "Listar todas las tareas del usuario autenticado",
@@ -51,7 +52,7 @@ public class TareaController {
 		return tareas.stream().map(TareaResponse::new)	// Convierte cada Tarea en un TareaResponse
 				.toList(); // Recoge el resultado en una nueva lista que es devuelta como respuesta
 	}
-
+	
 	@PostMapping("/add")
 	@Operation(
 			summary = "Añadir una nueva tarea",
@@ -84,7 +85,7 @@ public class TareaController {
 		Tarea tarea = ts.obtenerPorId(id, principal.getName());
 		return new TareaResponse(tarea);
 	}
-
+	
 	@DeleteMapping("/delete/{id}")
 	@Operation(
 			summary = "Eliminar una tarea",
@@ -98,10 +99,11 @@ public class TareaController {
 		@ApiResponse(responseCode = "401", description = "No autenticado o token inválido"),
 		@ApiResponse(responseCode = "404", description = "Tarea no encontrada o no pertenece al usuario")
 	})
+	@ResponseStatus(HttpStatus.NO_CONTENT)
 	public void eliminarTarea(@PathVariable Long id, Principal principal) {
 		ts.eliminarPorId(id, principal.getName());
 	}
-
+	
 	@PutMapping("/update/{id}")
 	@Operation(
 			summary = "Modificar una tarea existente",
@@ -134,7 +136,7 @@ public class TareaController {
 		List<Tarea> tareas = ts.obtenerPorTitulo(principal.getName());
 		return tareas.stream().map(TareaResponse::new).toList();
 	}
-
+	
 	@GetMapping("/tiempo")
 	@Operation(
 			summary = "Listar tareas ordenadas por tiempo estimado",
@@ -162,7 +164,7 @@ public class TareaController {
 		List<Tarea> tareas = ts.obtenerPorPrioridad(principal.getName());
 		return tareas.stream().map(TareaResponse::new).toList();
 	}
-
+	
 	@GetMapping("/fecha")
 	@Operation(
 			summary = "Listar tareas ordenadas por fecha de entrega",
@@ -176,7 +178,7 @@ public class TareaController {
 		List<Tarea> tareas = ts.obtenerPorFechaEntrega(principal.getName());
 		return tareas.stream().map(TareaResponse::new).toList();
 	}
-
+	
 	@GetMapping("/filtrar/prioridad/{prioridad}")
 	@Operation(
 			summary = "Filtrar tareas por prioridad",
@@ -210,7 +212,7 @@ public class TareaController {
 		List<Tarea> tareas = ts.filtrarPorTiempo(tiempo, principal.getName());
 		return tareas.stream().map(TareaResponse::new).toList();
 	}
-
+	
 	@GetMapping("/filtrar/palabras/{palabrasClave}")
 	@Operation(
 			summary = "Filtrar tareas por palabras clave en el título o descripción",
@@ -269,7 +271,7 @@ public class TareaController {
 		List<Tarea> tareas = ts.filtrarPorEstado(estado, principal.getName());
 		return tareas.stream().map(TareaResponse::new).toList();
 	}
-
+	
 	@GetMapping("/estado/{id}")
 	@Operation(
 			summary = "Obtener estado de una tarea por ID",
@@ -286,7 +288,7 @@ public class TareaController {
 	public Estado obtenerEstadoTarea(@PathVariable Long id, Principal principal) {
 		return ts.obtenerEstado(id, principal.getName());
 	}
-
+	
 	@PatchMapping("/completar/{id}")
 	@Operation(
 			summary = "Marcar una tarea como completada",
@@ -305,7 +307,7 @@ public class TareaController {
 		TareaResponse tareaResponse = ts.marcarTareaCompletada(id, principal.getName());
 		return ResponseEntity.ok(tareaResponse);
 	}
-
+	
 	@GetMapping("/hoy")
 	@Operation(
 			summary = "Obtener tareas programadas para hoy",

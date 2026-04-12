@@ -44,10 +44,10 @@ public class SeguridadConfig {
 						"/webjars/**",
 						"/documentacion-api",
 						"/documentacion-api/**"
-						).permitAll()// Solo registro, login y documentacion sin autentificacion
-				.anyRequest().authenticated()											// el resto rquiere JWT
+						).permitAll()	// Solo registro, login y documentacion sin autentificacion
+				.anyRequest().authenticated()	// el resto rquiere JWT
 		)
-		.sessionManagement(session -> session		// Indica que NO se creará sesion de usuario y cada peticion es stateless
+		.sessionManagement(session -> session	// Indica que NO se creará sesion de usuario y cada peticion es stateless
 				.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
 		)
 		.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

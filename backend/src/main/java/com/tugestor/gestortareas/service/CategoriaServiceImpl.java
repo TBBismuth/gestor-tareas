@@ -39,6 +39,7 @@ public class CategoriaServiceImpl implements CategoriaService {
 				.orElseThrow(() -> new EntityNotFoundException("Usuario autenticado no encontrado: " + email));
 	}
 	
+	@Deprecated(since="2.0", forRemoval=false)
 	@Override
 	public Categoria guardarCategoria(Categoria categoria) {
 		return cr.save(categoria);
@@ -74,6 +75,7 @@ public class CategoriaServiceImpl implements CategoriaService {
 		cr.delete(categoria);
 	}
 
+	@Deprecated(since="2.0", forRemoval=false)
 	@Override
 	public Categoria actualizarPorId(Long id, Categoria categoriaModificada) {
 		Optional<Categoria> categoriaOriginal = cr.findById(id);
@@ -147,7 +149,5 @@ public class CategoriaServiceImpl implements CategoriaService {
 			throw new EntityNotFoundException("Categoría no encontrada con el id: " + id);
 		}
 	}
-
-
 
 }

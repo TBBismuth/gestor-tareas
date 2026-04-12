@@ -9,7 +9,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+
+import org.springframework.http.HttpStatus;
 
 import com.tugestor.gestortareas.dto.CategoriaRequest;
 import com.tugestor.gestortareas.dto.CategoriaResponse;
@@ -73,6 +76,7 @@ public class CategoriaController {
 		@ApiResponse(responseCode = "204", description = "Categoría eliminada correctamente"),
 		@ApiResponse(responseCode = "404", description = "Categoría no encontrada")
 	})
+	@ResponseStatus(HttpStatus.NO_CONTENT)
 	public void eliminarCategoria(@PathVariable Long id) {
 		cs.eliminarPorId(id);
 	}
