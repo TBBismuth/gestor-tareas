@@ -13,15 +13,33 @@ import io.jsonwebtoken.SignatureAlgorithm;
 public class JwtService {
 	@Value("${jwt.secret}")
 	private String secretKey;
-	private static final long EXPIRATION_TIME_MILLISECONDS = 24*60*60*1000;	// 24 horas
-//	private static final long EXPIRATION_TIME_MILLISECONDS = 60*1000;	// 1 minuto para pruebas
+	@Value("${jwt.access-token-expiration-ms:900000}")
+	private long accessTokenExpirationMilliseconds;
+	@Value("${jwt.refresh-token-expiration-ms:604800000}")
+	private long refreshTokenExpirationMilliseconds;
 	private static final SignatureAlgorithm SIGNATURE_ALGORITHM = SignatureAlgorithm.HS256;
-	
+	private static final String TOKEN_TYPE_CLAIM = "type";
+	private static final String ACCESS_TOKEN_TYPE = "access";
+	private static final String REFRESH_TOKEN_TYPE = "refresh";
+
 	public String generateToken(UserDetails userDetails) {
+		return generateAccessToken(userDetails);
+	}
+
+	public String generateAccessToken(UserDetails userDetails) {
+		return generateToken(userDetails, ACCESS_TOKEN_TYPE, accessTokenExpirationMilliseconds);
+	}
+
+	public String generateRefreshToken(UserDetails userDetails) {
+		return generateToken(userDetails, REFRESH_TOKEN_TYPE, refreshTokenExpirationMilliseconds);
+	}
+
+	private String generateToken(UserDetails userDetails, String tokenType, long expirationMilliseconds) {
 		Date issuedAt = new Date();
-		Date expiration = new Date(issuedAt.getTime() + EXPIRATION_TIME_MILLISECONDS);
+		Date expiration = new Date(issuedAt.getTime() + expirationMilliseconds);
 		return Jwts.builder()
 				.setSubject(userDetails.getUsername())	// Identificador del usuario
+				.claim(TOKEN_TYPE_CLAIM, tokenType)
 				.setIssuedAt(issuedAt)					// Cuando se ha creado
 				.setExpiration(expiration)				// Cuando expira
 				.signWith(SIGNATURE_ALGORITHM, secretKey)//Firmo el token con HS256 y mi clave secreta
@@ -43,14 +61,38 @@ public class JwtService {
 				.getBody()
 				.getExpiration();
 	}
-	
+
+	public String extractTokenType(String token) {
+		return Jwts.parser()
+				.setSigningKey(secretKey)
+				.parseClaimsJws(token)
+				.getBody()
+				.get(TOKEN_TYPE_CLAIM, String.class);
+	}
+
 	private boolean isTokenExpired(String token) {
 		return extractExpiration(token).before(new Date());
 	}
-	
+
 	public boolean isTokenValid(String token, UserDetails userDetails) {
 		final String username = extractUsername(token);
 		return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
+	}
+
+	public boolean isAccessToken(String token) {
+		return ACCESS_TOKEN_TYPE.equals(extractTokenType(token));
+	}
+
+	public boolean isRefreshToken(String token) {
+		return REFRESH_TOKEN_TYPE.equals(extractTokenType(token));
+	}
+
+	public boolean isAccessTokenValid(String token, UserDetails userDetails) {
+		return isTokenValid(token, userDetails) && isAccessToken(token);
+	}
+
+	public boolean isRefreshTokenValid(String token, UserDetails userDetails) {
+		return isTokenValid(token, userDetails) && isRefreshToken(token);
 	}
 
 
