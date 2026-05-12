@@ -11,7 +11,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.tugestor.gestortareas.dto.GrupoActivoRequest;
+import com.tugestor.gestortareas.dto.GrupoMiembroAddRequest;
 import com.tugestor.gestortareas.dto.GrupoRequest;
+import com.tugestor.gestortareas.dto.GrupoRolRequest;
+import com.tugestor.gestortareas.dto.GrupoTransferirOwnershipRequest;
 import com.tugestor.gestortareas.model.Grupo;
 import com.tugestor.gestortareas.model.GrupoMiembro;
 import com.tugestor.gestortareas.model.RolGrupo;
@@ -123,9 +126,132 @@ public class GrupoServiceImpl implements GrupoService {
 		return gr.save(grupo);
 	}
 
+	@Override
+	public List<GrupoMiembro> obtenerMiembros(Long idGrupo) {
+		Grupo grupo = obtenerGrupo(idGrupo);
+		Usuario actual = getUsuarioActual();
+		validarMiembro(grupo, actual);
+		return gmr.findByGrupo(grupo);
+	}
+
+	@Override
+	public GrupoMiembro aniadirMiembro(Long idGrupo, GrupoMiembroAddRequest miembroAddRequest) {
+		Grupo grupo = obtenerGrupo(idGrupo);
+		Usuario actual = getUsuarioActual();
+		validarPuedeGestionarMiembros(grupo, actual);
+		Usuario nuevoMiembro = ur.findByEmailIgnoreCase(miembroAddRequest.getEmail())
+				.orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado con email: " + miembroAddRequest.getEmail()));
+		validarUsuarioVerificadoSiAplica(nuevoMiembro);
+		if (gmr.existsByGrupoAndUsuario(grupo, nuevoMiembro)) {
+			throw new RuntimeException("El usuario ya pertenece a este grupo.");
+		}
+
+		GrupoMiembro miembro = new GrupoMiembro();
+		miembro.setGrupo(grupo);
+		miembro.setUsuario(nuevoMiembro);
+		miembro.setRol(RolGrupo.MIEMBRO);
+		miembro.setFechaUnion(LocalDateTime.now());
+		miembro.setAnadidoPor(actual);
+		return gmr.save(miembro);
+	}
+
+	@Transactional
+	@Override
+	public void expulsarMiembro(Long idGrupo, Long idUsuario) {
+		Grupo grupo = obtenerGrupo(idGrupo);
+		Usuario actual = getUsuarioActual();
+		GrupoMiembro actor = obtenerMembresiaActual(grupo, actual);
+		GrupoMiembro objetivo = obtenerMembresiaPorIdUsuario(grupo, idUsuario);
+
+		if (objetivo.getUsuario().getIdUsuario().equals(actual.getIdUsuario())) {
+			throw new AccessDeniedException("No puedes expulsarte por esta via. Usa salir del grupo.");
+		}
+		if (esCreador(grupo, objetivo.getUsuario())) {
+			throw new AccessDeniedException("No se puede expulsar al creador del grupo.");
+		}
+		if (esCreador(grupo, actual)) {
+			gmr.delete(objetivo);
+			return;
+		}
+		if (actor.getRol() != RolGrupo.ADMIN) {
+			throw new AccessDeniedException("Los miembros no pueden expulsar a otros miembros del grupo.");
+		}
+		if (objetivo.getRol() != RolGrupo.MIEMBRO) {
+			throw new AccessDeniedException("Un admin normal no puede expulsar admins. Solo el creador puede hacerlo.");
+		}
+		gmr.delete(objetivo);
+	}
+
+	@Override
+	public GrupoMiembro cambiarRolMiembro(Long idGrupo, Long idUsuario, GrupoRolRequest grupoRolRequest) {
+		Grupo grupo = obtenerGrupo(idGrupo);
+		Usuario actual = getUsuarioActual();
+		validarPuedeCambiarRoles(grupo, actual);
+		GrupoMiembro objetivo = obtenerMembresiaPorIdUsuario(grupo, idUsuario);
+
+		if (esCreador(grupo, objetivo.getUsuario())) {
+			throw new AccessDeniedException("No se puede cambiar el rol del creador por esta via.");
+		}
+		if (grupoRolRequest.getRol() != RolGrupo.ADMIN && grupoRolRequest.getRol() != RolGrupo.MIEMBRO) {
+			throw new RuntimeException("Rol de grupo invalido.");
+		}
+		objetivo.setRol(grupoRolRequest.getRol());
+		return gmr.save(objetivo);
+	}
+
+	@Transactional
+	@Override
+	public void salirDelGrupo(Long idGrupo) {
+		Grupo grupo = obtenerGrupo(idGrupo);
+		Usuario actual = getUsuarioActual();
+		if (esCreador(grupo, actual)) {
+			throw new AccessDeniedException("El creador debe transferir el ownership o borrar el grupo antes de salir.");
+		}
+		GrupoMiembro membresia = obtenerMembresiaActual(grupo, actual);
+		gmr.delete(membresia);
+	}
+
+	@Override
+	public Grupo transferirOwnership(Long idGrupo, GrupoTransferirOwnershipRequest transferirOwnershipRequest) {
+		Grupo grupo = obtenerGrupo(idGrupo);
+		Usuario actual = getUsuarioActual();
+		validarPuedeTransferirOwnership(grupo, actual);
+		GrupoMiembro antiguoCreador = obtenerMembresia(grupo, actual);
+		GrupoMiembro nuevoCreador = obtenerMembresiaPorIdUsuario(grupo, transferirOwnershipRequest.getIdUsuario());
+		if (nuevoCreador.getUsuario().getIdUsuario().equals(actual.getIdUsuario())) {
+			throw new RuntimeException("El ownership debe transferirse a otro usuario.");
+		}
+		if (nuevoCreador.getRol() != RolGrupo.ADMIN) {
+			throw new AccessDeniedException("Solo se puede transferir el ownership a un admin del grupo.");
+		}
+		if (antiguoCreador.getRol() != RolGrupo.ADMIN) {
+			antiguoCreador.setRol(RolGrupo.ADMIN);
+			gmr.save(antiguoCreador);
+		}
+		grupo.setCreador(nuevoCreador.getUsuario());
+		return gr.save(grupo);
+	}
+
 	private Grupo obtenerGrupo(Long id) {
 		return gr.findById(id)
 				.orElseThrow(() -> new EntityNotFoundException("Grupo no encontrado con id: " + id));
+	}
+
+	private GrupoMiembro obtenerMembresia(Grupo grupo, Usuario usuario) {
+		return gmr.findByGrupoAndUsuario(grupo, usuario)
+				.orElseThrow(() -> new EntityNotFoundException("Miembro no encontrado en este grupo."));
+	}
+
+	private GrupoMiembro obtenerMembresiaActual(Grupo grupo, Usuario usuario) {
+		return gmr.findByGrupoAndUsuario(grupo, usuario)
+				.orElseThrow(() -> new AccessDeniedException("No perteneces a este grupo."));
+	}
+
+	private GrupoMiembro obtenerMembresiaPorIdUsuario(Grupo grupo, Long idUsuario) {
+		Usuario usuario = ur.findById(idUsuario)
+				.orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado con id: " + idUsuario));
+		return gmr.findByGrupoAndUsuario(grupo, usuario)
+				.orElseThrow(() -> new EntityNotFoundException("El usuario no pertenece a este grupo."));
 	}
 
 	private void validarMiembro(Grupo grupo, Usuario usuario) {
@@ -143,10 +269,45 @@ public class GrupoServiceImpl implements GrupoService {
 		}
 	}
 
+	private void validarPuedeGestionarMiembros(Grupo grupo, Usuario usuario) {
+		if (esCreador(grupo, usuario)) {
+			return;
+		}
+		GrupoMiembro membresia = gmr.findByGrupoAndUsuario(grupo, usuario)
+				.orElseThrow(() -> new AccessDeniedException("No perteneces a este grupo."));
+		if (membresia.getRol() != RolGrupo.ADMIN) {
+			throw new AccessDeniedException("Los miembros no pueden anadir nuevos miembros al grupo.");
+		}
+	}
+
 	private void validarCreador(Grupo grupo, Usuario usuario) {
 		if (!esCreador(grupo, usuario)) {
 			throw new AccessDeniedException("Solo el creador puede realizar esta accion sobre el grupo.");
 		}
+	}
+
+	private void validarPuedeCambiarRoles(Grupo grupo, Usuario usuario) {
+		if (esCreador(grupo, usuario)) {
+			return;
+		}
+		GrupoMiembro membresia = gmr.findByGrupoAndUsuario(grupo, usuario)
+				.orElseThrow(() -> new AccessDeniedException("No perteneces a este grupo."));
+		if (membresia.getRol() == RolGrupo.ADMIN) {
+			throw new AccessDeniedException("Un admin normal no puede cambiar roles. Solo el creador puede promover o degradar miembros.");
+		}
+		throw new AccessDeniedException("Los miembros no pueden cambiar roles. Solo el creador puede promover o degradar miembros.");
+	}
+
+	private void validarPuedeTransferirOwnership(Grupo grupo, Usuario usuario) {
+		if (esCreador(grupo, usuario)) {
+			return;
+		}
+		GrupoMiembro membresia = gmr.findByGrupoAndUsuario(grupo, usuario)
+				.orElseThrow(() -> new AccessDeniedException("No perteneces a este grupo."));
+		if (membresia.getRol() == RolGrupo.ADMIN) {
+			throw new AccessDeniedException("Un admin normal no puede transferir el ownership. Solo el creador puede hacerlo.");
+		}
+		throw new AccessDeniedException("Los miembros no pueden transferir el ownership. Solo el creador puede hacerlo.");
 	}
 
 	private boolean esCreador(Grupo grupo, Usuario usuario) {

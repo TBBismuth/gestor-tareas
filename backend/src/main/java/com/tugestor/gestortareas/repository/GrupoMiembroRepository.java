@@ -12,6 +12,7 @@ import com.tugestor.gestortareas.model.Usuario;
 
 public interface GrupoMiembroRepository extends JpaRepository<GrupoMiembro, Long> {
 	List<GrupoMiembro> findByUsuario(Usuario usuario);
+	List<GrupoMiembro> findByGrupo(Grupo grupo);
 	Optional<GrupoMiembro> findByGrupoAndUsuario(Grupo grupo, Usuario usuario);
 	boolean existsByGrupoAndUsuario(Grupo grupo, Usuario usuario);
 	boolean existsByGrupoAndUsuarioAndRol(Grupo grupo, Usuario usuario, RolGrupo rol);
