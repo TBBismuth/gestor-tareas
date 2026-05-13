@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -58,6 +59,13 @@ public class GlobalExceptionHandler {
 		});
 		// Devolvemos todos los errores con un código HTTP 400
 		return ResponseEntity.badRequest().body(errors);
+	}
+
+	@ExceptionHandler(HttpMessageNotReadableException.class)
+	public ResponseEntity<Map<String, String>> handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
+		Map<String, String> error = new HashMap<>();
+		error.put("error", "El cuerpo de la peticion no es valido o esta mal formado.");
+		return ResponseEntity.badRequest().body(error);
 	}
 	
 	@ExceptionHandler(EntityNotFoundException.class)// Captura excepciones de entidad no encontrada

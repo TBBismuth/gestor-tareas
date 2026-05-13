@@ -15,6 +15,8 @@ public class AsignacionGrupoMiembroResponse {
 	private LocalDateTime fechaAsignacion;
 	private LocalDateTime fechaEntregaInicial;
 	private LocalDateTime fechaEntregaActual;
+	private String comentarioRevision;
+	private LocalDateTime fechaRevision;
 
 	public AsignacionGrupoMiembroResponse() {
 	}
@@ -30,6 +32,8 @@ public class AsignacionGrupoMiembroResponse {
 		this.fechaAsignacion = miembro.getFechaAsignacion();
 		this.fechaEntregaInicial = miembro.getFechaEntregaInicial();
 		this.fechaEntregaActual = miembro.getFechaEntregaActual();
+		this.comentarioRevision = miembro.getComentarioRevision();
+		this.fechaRevision = miembro.getFechaRevision();
 	}
 
 	public Long getIdAsignacionGrupoMiembro() {
@@ -58,5 +62,11 @@ public class AsignacionGrupoMiembroResponse {
 	}
 	public LocalDateTime getFechaEntregaActual() {
 		return fechaEntregaActual;
+	}
+	public String getComentarioRevision() {
+		return comentarioRevision;
+	}
+	public LocalDateTime getFechaRevision() {
+		return fechaRevision;
 	}
 }

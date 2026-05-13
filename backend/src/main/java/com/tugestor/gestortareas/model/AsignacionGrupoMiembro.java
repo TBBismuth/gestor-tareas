@@ -33,6 +33,8 @@ public class AsignacionGrupoMiembro {
 	private LocalDateTime fechaAsignacion = LocalDateTime.now();
 	private LocalDateTime fechaEntregaInicial;
 	private LocalDateTime fechaEntregaActual;
+	private String comentarioRevision;
+	private LocalDateTime fechaRevision;
 
 	public AsignacionGrupoMiembro() {
 		// Constructor por defecto para JPA
@@ -82,5 +84,17 @@ public class AsignacionGrupoMiembro {
 	}
 	public void setFechaEntregaActual(LocalDateTime fechaEntregaActual) {
 		this.fechaEntregaActual = fechaEntregaActual;
+	}
+	public String getComentarioRevision() {
+		return comentarioRevision;
+	}
+	public void setComentarioRevision(String comentarioRevision) {
+		this.comentarioRevision = comentarioRevision;
+	}
+	public LocalDateTime getFechaRevision() {
+		return fechaRevision;
+	}
+	public void setFechaRevision(LocalDateTime fechaRevision) {
+		this.fechaRevision = fechaRevision;
 	}
 }

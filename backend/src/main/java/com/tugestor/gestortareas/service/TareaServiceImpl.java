@@ -260,7 +260,8 @@ public class TareaServiceImpl implements TareaService{
 
 	private void actualizarRevisionSiEsAsignacionGrupo(Tarea tarea) {
 		agmr.findByTareaGenerada(tarea).ifPresent(asignacionMiembro -> {
-			if (asignacionMiembro.getEstadoRevision() == EstadoRevisionAsignacion.PENDIENTE) {
+			if (asignacionMiembro.getEstadoRevision() == EstadoRevisionAsignacion.PENDIENTE
+					|| asignacionMiembro.getEstadoRevision() == EstadoRevisionAsignacion.REABIERTA) {
 				asignacionMiembro.setEstadoRevision(EstadoRevisionAsignacion.ENTREGADA);
 				agmr.save(asignacionMiembro);
 			}
