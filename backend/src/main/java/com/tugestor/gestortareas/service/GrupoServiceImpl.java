@@ -20,6 +20,7 @@ import com.tugestor.gestortareas.model.Grupo;
 import com.tugestor.gestortareas.model.GrupoMiembro;
 import com.tugestor.gestortareas.model.RolGrupo;
 import com.tugestor.gestortareas.model.Usuario;
+import com.tugestor.gestortareas.repository.AsignacionGrupoRepository;
 import com.tugestor.gestortareas.repository.GrupoMiembroRepository;
 import com.tugestor.gestortareas.repository.GrupoRepository;
 import com.tugestor.gestortareas.repository.UsuarioRepository;
@@ -34,13 +35,16 @@ public class GrupoServiceImpl implements GrupoService {
 	private final GrupoRepository gr;
 	private final GrupoMiembroRepository gmr;
 	private final UsuarioRepository ur;
+	private final AsignacionGrupoRepository agr;
 	@Value("${app.grupos.requireVerifiedUsers:false}")
 	private boolean requireVerifiedUsers;
 
-	public GrupoServiceImpl(GrupoRepository gr, GrupoMiembroRepository gmr, UsuarioRepository ur) {
+	public GrupoServiceImpl(GrupoRepository gr, GrupoMiembroRepository gmr, UsuarioRepository ur,
+			AsignacionGrupoRepository agr) {
 		this.gr = gr;
 		this.gmr = gmr;
 		this.ur = ur;
+		this.agr = agr;
 	}
 
 	private Usuario getUsuarioActual() {
@@ -114,6 +118,10 @@ public class GrupoServiceImpl implements GrupoService {
 		Grupo grupo = obtenerGrupo(id);
 		Usuario actual = getUsuarioActual();
 		validarCreador(grupo, actual);
+		agr.findByGrupo(grupo).forEach(asignacion -> {
+			asignacion.setGrupo(null);
+			agr.save(asignacion);
+		});
 		gmr.deleteByGrupo(grupo);
 		gr.delete(grupo);
 	}

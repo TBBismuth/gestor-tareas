@@ -10,10 +10,12 @@ import org.springframework.stereotype.Service;
 import com.tugestor.gestortareas.dto.TareaRequest;
 import com.tugestor.gestortareas.dto.TareaResponse;
 import com.tugestor.gestortareas.model.Categoria;
+import com.tugestor.gestortareas.model.EstadoRevisionAsignacion;
 import com.tugestor.gestortareas.model.Estado;
 import com.tugestor.gestortareas.model.Prioridad;
 import com.tugestor.gestortareas.model.Tarea;
 import com.tugestor.gestortareas.model.Usuario;
+import com.tugestor.gestortareas.repository.AsignacionGrupoMiembroRepository;
 import com.tugestor.gestortareas.repository.CategoriaRepository;
 import com.tugestor.gestortareas.repository.TareaRepository;
 import com.tugestor.gestortareas.repository.UsuarioRepository;
@@ -33,10 +35,13 @@ public class TareaServiceImpl implements TareaService{
 	private final TareaRepository tr;
 	private final CategoriaRepository cr;
 	private final UsuarioRepository ur;
-	public TareaServiceImpl(TareaRepository tr, CategoriaRepository cr, UsuarioRepository ur) {
+	private final AsignacionGrupoMiembroRepository agmr;
+	public TareaServiceImpl(TareaRepository tr, CategoriaRepository cr, UsuarioRepository ur,
+			AsignacionGrupoMiembroRepository agmr) {
 		this.tr = tr;
 		this.cr = cr;
 		this.ur = ur;
+		this.agmr = agmr;
 	}
 	
 	@Override
@@ -93,6 +98,9 @@ public class TareaServiceImpl implements TareaService{
 		if (!tarea.getUsuario().getEmail().equals(emailUsuario)) {
 			throw new AccessDeniedException("No puedes eliminar tareas que no son tuyas.");
 		}
+		if (agmr.existsByTareaGenerada(tarea)) {
+			throw new AccessDeniedException("No puedes eliminar una tarea asignada desde un grupo.");
+		}
 		tr.delete(tarea);
 	}
 	
@@ -105,6 +113,9 @@ public class TareaServiceImpl implements TareaService{
 			
 			if (!existente.getUsuario().getEmail().equals(emailUsuario)) {
 				throw new AccessDeniedException("No tienes permiso para modificar esta tarea.");
+			}
+			if (agmr.existsByTareaGenerada(existente)) {
+				throw new AccessDeniedException("No puedes editar una tarea asignada desde un grupo.");
 			}
 			
 			Long id = tareaRequest.getIdCategoria();
@@ -218,6 +229,7 @@ public class TareaServiceImpl implements TareaService{
 		tarea.setFechaCompletada(LocalDateTime.now());
 		tarea.setUsuarioQueCompleta(usuarioAutenticado);
 		tr.save(tarea);
+		actualizarRevisionSiEsAsignacionGrupo(tarea);
 		return new TareaResponse(tarea);
 	}
 	
@@ -244,6 +256,15 @@ public class TareaServiceImpl implements TareaService{
 		if (!completada && fechaCompletada != null) {
 			throw new RuntimeException("No se puede asignar una fecha completada a una tarea no completada.");
 		}
+	}
+
+	private void actualizarRevisionSiEsAsignacionGrupo(Tarea tarea) {
+		agmr.findByTareaGenerada(tarea).ifPresent(asignacionMiembro -> {
+			if (asignacionMiembro.getEstadoRevision() == EstadoRevisionAsignacion.PENDIENTE) {
+				asignacionMiembro.setEstadoRevision(EstadoRevisionAsignacion.ENTREGADA);
+				agmr.save(asignacionMiembro);
+			}
+		});
 	}
 
 	private Categoria validarPertenencia(Long idCategoria, Usuario usuario) {
