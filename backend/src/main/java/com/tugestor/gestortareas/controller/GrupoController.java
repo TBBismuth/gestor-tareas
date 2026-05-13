@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.tugestor.gestortareas.dto.GrupoActivoRequest;
+import com.tugestor.gestortareas.dto.GrupoCodigoInvitacionResponse;
+import com.tugestor.gestortareas.dto.GrupoJoinRequest;
 import com.tugestor.gestortareas.dto.GrupoMiembroAddRequest;
 import com.tugestor.gestortareas.dto.GrupoMiembroResponse;
 import com.tugestor.gestortareas.dto.GrupoRequest;
@@ -258,5 +260,57 @@ public class GrupoController {
 			@Valid @RequestBody GrupoTransferirOwnershipRequest transferirOwnershipRequest) {
 		Grupo grupo = gs.transferirOwnership(id, transferirOwnershipRequest);
 		return new GrupoResponse(grupo);
+	}
+
+	@GetMapping("/{id}/invitation-code")
+	@Operation(
+			summary = "Ver codigo de invitacion de un grupo",
+			description = "Devuelve el codigo de invitacion si el usuario autenticado es creador o admin."
+			)
+	@Parameters({
+		@Parameter(name = "id", description = "ID del grupo", example = "1")
+	})
+	@ApiResponses({
+		@ApiResponse(responseCode = "200", description = "Codigo de invitacion obtenido correctamente"),
+		@ApiResponse(responseCode = "403", description = "No tiene permisos para ver el codigo"),
+		@ApiResponse(responseCode = "404", description = "Grupo no encontrado")
+	})
+	public GrupoCodigoInvitacionResponse verCodigoInvitacion(@PathVariable Long id) {
+		String codigoInvitacion = gs.obtenerCodigoInvitacion(id);
+		return new GrupoCodigoInvitacionResponse(codigoInvitacion);
+	}
+
+	@PostMapping("/{id}/invitation-code/regenerate")
+	@Operation(
+			summary = "Regenerar codigo de invitacion de un grupo",
+			description = "Regenera el codigo de invitacion si el usuario autenticado es el creador."
+			)
+	@Parameters({
+		@Parameter(name = "id", description = "ID del grupo", example = "1")
+	})
+	@ApiResponses({
+		@ApiResponse(responseCode = "200", description = "Codigo de invitacion regenerado correctamente"),
+		@ApiResponse(responseCode = "403", description = "Solo el creador puede regenerar el codigo"),
+		@ApiResponse(responseCode = "404", description = "Grupo no encontrado")
+	})
+	public GrupoCodigoInvitacionResponse regenerarCodigoInvitacion(@PathVariable Long id) {
+		String codigoInvitacion = gs.regenerarCodigoInvitacion(id);
+		return new GrupoCodigoInvitacionResponse(codigoInvitacion);
+	}
+
+	@PostMapping("/join")
+	@Operation(
+			summary = "Unirse a un grupo por codigo",
+			description = "Une al usuario autenticado a un grupo activo mediante su codigo de invitacion."
+			)
+	@ApiResponses({
+		@ApiResponse(responseCode = "200", description = "Usuario unido al grupo correctamente"),
+		@ApiResponse(responseCode = "400", description = "El usuario ya pertenece al grupo"),
+		@ApiResponse(responseCode = "403", description = "El grupo esta inactivo"),
+		@ApiResponse(responseCode = "404", description = "Codigo de invitacion invalido o inexistente")
+	})
+	public GrupoMiembroResponse unirsePorCodigo(@Valid @RequestBody GrupoJoinRequest grupoJoinRequest) {
+		GrupoMiembro miembro = gs.unirsePorCodigo(grupoJoinRequest);
+		return new GrupoMiembroResponse(miembro);
 	}
 }

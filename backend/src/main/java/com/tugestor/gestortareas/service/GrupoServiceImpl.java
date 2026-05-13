@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.tugestor.gestortareas.dto.GrupoActivoRequest;
+import com.tugestor.gestortareas.dto.GrupoJoinRequest;
 import com.tugestor.gestortareas.dto.GrupoMiembroAddRequest;
 import com.tugestor.gestortareas.dto.GrupoRequest;
 import com.tugestor.gestortareas.dto.GrupoRolRequest;
@@ -232,6 +233,46 @@ public class GrupoServiceImpl implements GrupoService {
 		return gr.save(grupo);
 	}
 
+	@Override
+	public String obtenerCodigoInvitacion(Long idGrupo) {
+		Grupo grupo = obtenerGrupo(idGrupo);
+		Usuario actual = getUsuarioActual();
+		validarPuedeVerCodigoInvitacion(grupo, actual);
+		return grupo.getCodigoInvitacion();
+	}
+
+	@Override
+	public String regenerarCodigoInvitacion(Long idGrupo) {
+		Grupo grupo = obtenerGrupo(idGrupo);
+		Usuario actual = getUsuarioActual();
+		validarPuedeRegenerarCodigoInvitacion(grupo, actual);
+		grupo.setCodigoInvitacion(generarCodigoInvitacion());
+		return gr.save(grupo).getCodigoInvitacion();
+	}
+
+	@Transactional
+	@Override
+	public GrupoMiembro unirsePorCodigo(GrupoJoinRequest grupoJoinRequest) {
+		Usuario actual = getUsuarioActual();
+		validarUsuarioVerificadoSiAplica(actual);
+		Grupo grupo = gr.findByCodigoInvitacion(grupoJoinRequest.getCodigoInvitacion())
+				.orElseThrow(() -> new EntityNotFoundException("Codigo de invitacion invalido o inexistente."));
+		if (!grupo.isActivo()) {
+			throw new AccessDeniedException("No puedes unirte a un grupo inactivo.");
+		}
+		if (gmr.existsByGrupoAndUsuario(grupo, actual)) {
+			throw new RuntimeException("Ya perteneces a este grupo.");
+		}
+
+		GrupoMiembro miembro = new GrupoMiembro();
+		miembro.setGrupo(grupo);
+		miembro.setUsuario(actual);
+		miembro.setRol(RolGrupo.MIEMBRO);
+		miembro.setFechaUnion(LocalDateTime.now());
+		miembro.setAnadidoPor(null);
+		return gmr.save(miembro);
+	}
+
 	private Grupo obtenerGrupo(Long id) {
 		return gr.findById(id)
 				.orElseThrow(() -> new EntityNotFoundException("Grupo no encontrado con id: " + id));
@@ -308,6 +349,23 @@ public class GrupoServiceImpl implements GrupoService {
 			throw new AccessDeniedException("Un admin normal no puede transferir el ownership. Solo el creador puede hacerlo.");
 		}
 		throw new AccessDeniedException("Los miembros no pueden transferir el ownership. Solo el creador puede hacerlo.");
+	}
+
+	private void validarPuedeVerCodigoInvitacion(Grupo grupo, Usuario usuario) {
+		if (esCreador(grupo, usuario)) {
+			return;
+		}
+		GrupoMiembro membresia = gmr.findByGrupoAndUsuario(grupo, usuario)
+				.orElseThrow(() -> new AccessDeniedException("No perteneces a este grupo."));
+		if (membresia.getRol() != RolGrupo.ADMIN) {
+			throw new AccessDeniedException("Los miembros no pueden ver el codigo de invitacion del grupo.");
+		}
+	}
+
+	private void validarPuedeRegenerarCodigoInvitacion(Grupo grupo, Usuario usuario) {
+		if (!esCreador(grupo, usuario)) {
+			throw new AccessDeniedException("Solo el creador puede regenerar el codigo de invitacion del grupo.");
+		}
 	}
 
 	private boolean esCreador(Grupo grupo, Usuario usuario) {

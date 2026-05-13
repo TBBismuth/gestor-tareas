@@ -3,6 +3,7 @@ package com.tugestor.gestortareas.service;
 import java.util.List;
 
 import com.tugestor.gestortareas.dto.GrupoActivoRequest;
+import com.tugestor.gestortareas.dto.GrupoJoinRequest;
 import com.tugestor.gestortareas.dto.GrupoMiembroAddRequest;
 import com.tugestor.gestortareas.dto.GrupoRequest;
 import com.tugestor.gestortareas.dto.GrupoRolRequest;
@@ -23,4 +24,7 @@ public interface GrupoService {
 	GrupoMiembro cambiarRolMiembro(Long idGrupo, Long idUsuario, GrupoRolRequest grupoRolRequest);
 	void salirDelGrupo(Long idGrupo);
 	Grupo transferirOwnership(Long idGrupo, GrupoTransferirOwnershipRequest transferirOwnershipRequest);
+	String obtenerCodigoInvitacion(Long idGrupo);
+	String regenerarCodigoInvitacion(Long idGrupo);
+	GrupoMiembro unirsePorCodigo(GrupoJoinRequest grupoJoinRequest);
 }
