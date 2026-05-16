@@ -51,6 +51,20 @@ public class SeguridadConfig {
 		.sessionManagement(session -> session	// Indica que NO se creará sesion de usuario y cada peticion es stateless
 				.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
 		)
+		.exceptionHandling(exceptions -> exceptions
+				.authenticationEntryPoint((request, response, authException) -> {
+					response.setStatus(401);
+					response.setContentType("application/json");
+					response.setCharacterEncoding("UTF-8");
+					response.getWriter().write("{\"status\":401,\"error\":\"Autenticación requerida.\"}");
+				})
+				.accessDeniedHandler((request, response, accessDeniedException) -> {
+					response.setStatus(403);
+					response.setContentType("application/json");
+					response.setCharacterEncoding("UTF-8");
+					response.getWriter().write("{\"status\":403,\"error\":\"No tienes permiso para realizar esta acción.\"}");
+				})
+		)
 		.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 		return http.build();
 	}

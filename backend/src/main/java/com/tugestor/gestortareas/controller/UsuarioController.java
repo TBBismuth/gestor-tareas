@@ -22,6 +22,7 @@ import com.tugestor.gestortareas.dto.LoginResponse;
 import com.tugestor.gestortareas.dto.RefreshTokenRequest;
 import com.tugestor.gestortareas.dto.UsuarioRequest;
 import com.tugestor.gestortareas.dto.UsuarioResponse;
+import com.tugestor.gestortareas.exception.ErrorResponse;
 import com.tugestor.gestortareas.model.Usuario;
 import com.tugestor.gestortareas.repository.UsuarioRepository;
 import com.tugestor.gestortareas.security.JwtService;
@@ -132,18 +133,20 @@ public class UsuarioController {
 		@ApiResponse(responseCode = "200", description = "Access token renovado correctamente"),
 		@ApiResponse(responseCode = "401", description = "Refresh token invalido")
 	})
-	public ResponseEntity<AccessTokenResponse> refreshToken(@Valid @RequestBody RefreshTokenRequest refreshTokenRequest){
+	public ResponseEntity<?> refreshToken(@Valid @RequestBody RefreshTokenRequest refreshTokenRequest){
 		String refreshToken = refreshTokenRequest.getRefreshToken();
 		try {
 			String username = jwts.extractUsername(refreshToken);
 			UserDetails userDetails = uds.loadUserByUsername(username);
 			if (!jwts.isRefreshTokenValid(refreshToken, userDetails)) {
-				return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+				return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+						.body(new ErrorResponse(HttpStatus.UNAUTHORIZED.value(), "Refresh token inválido o expirado."));
 			}
 			String accessToken = jwts.generateAccessToken(userDetails);
 			return ResponseEntity.ok(new AccessTokenResponse(accessToken));
 		} catch (Exception e) {
-			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+					.body(new ErrorResponse(HttpStatus.UNAUTHORIZED.value(), "Refresh token inválido o expirado."));
 		}
 	}
 }

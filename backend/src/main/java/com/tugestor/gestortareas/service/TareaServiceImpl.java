@@ -47,7 +47,7 @@ public class TareaServiceImpl implements TareaService{
 	@Override
 	public Tarea guardarTarea(TareaRequest tareaRequest, String emailUsuario) {
 		Usuario usuario = ur.findByEmail(emailUsuario)
-				.orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado con email: " + emailUsuario));
+				.orElseThrow(() -> new EntityNotFoundException("Usuario autenticado no encontrado."));
 		Long id = tareaRequest.getIdCategoria();
 		Categoria categoria = validarPertenencia(id, usuario);
 		validarCoherenciaCompletado(tareaRequest.isCompletada(), tareaRequest.getFechaCompletada());
@@ -225,7 +225,7 @@ public class TareaServiceImpl implements TareaService{
 				() -> new EntityNotFoundException("Tarea no encontrada con id: " + idTarea));
 		// Recupero el usuario autenticado por su email
 		Usuario usuarioAutenticado = ur.findByEmail(emailUsuarioQueCompleta).orElseThrow(
-				() -> new EntityNotFoundException("Usuario no encontrado con email: " + emailUsuarioQueCompleta));		
+				() -> new EntityNotFoundException("Usuario autenticado no encontrado."));		
 		// Verifico si el usuario autenticado es el propietario de la tarea
 		if (!tarea.getUsuario().getIdUsuario().equals(usuarioAutenticado.getIdUsuario())) {
 			throw new AccessDeniedException("No puedes completar tareas que no son tuyas.");

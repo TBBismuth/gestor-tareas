@@ -37,7 +37,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 		try {
 			jwt = authHeader.substring(7);
 			if (!jwtS.isAccessToken(jwt)) {
-				filterChain.doFilter(request, response);
+				responderNoAutorizado(response);
 				return;
 			}
 			username = jwtS.extractUsername(jwt);
@@ -54,17 +54,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 					SecurityContextHolder.getContext().setAuthentication(authToken);
 				} else {
 					// Token invalido por firma incorrecta o expirado
-					response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+					responderNoAutorizado(response);
 					return;
 				}
 			}
 		} catch (Exception e) {
 			// Cualquier error al procesar el token da 401
-			response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+			responderNoAutorizado(response);
 			return;
 		}
 
 		filterChain.doFilter(request, response);
+	}
+
+	private void responderNoAutorizado(HttpServletResponse response) throws IOException {
+		response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+		response.setContentType("application/json");
+		response.setCharacterEncoding("UTF-8");
+		response.getWriter().write("{\"status\":401,\"error\":\"Token inválido o expirado.\"}");
 	}
 
 

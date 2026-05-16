@@ -61,7 +61,7 @@ public class AsignacionGrupoServiceImpl implements AsignacionGrupoService {
 		Grupo grupo = gr.findById(idGrupo)
 				.orElseThrow(() -> new EntityNotFoundException("Grupo no encontrado con id: " + idGrupo));
 		Usuario creadorAsignacion = ur.findByEmailIgnoreCase(emailUsuario)
-				.orElseThrow(() -> new EntityNotFoundException("Usuario autenticado no encontrado: " + emailUsuario));
+				.orElseThrow(() -> new EntityNotFoundException("Usuario autenticado no encontrado."));
 		validarCreadorOAdmin(grupo, creadorAsignacion);
 		validarFechaEntrega(asignacionGrupoRequest.getFechaEntrega());
 
@@ -233,7 +233,7 @@ public class AsignacionGrupoServiceImpl implements AsignacionGrupoService {
 
 	private Usuario obtenerUsuarioPorEmail(String emailUsuario) {
 		return ur.findByEmailIgnoreCase(emailUsuario)
-				.orElseThrow(() -> new EntityNotFoundException("Usuario autenticado no encontrado: " + emailUsuario));
+				.orElseThrow(() -> new EntityNotFoundException("Usuario autenticado no encontrado."));
 	}
 
 	private AsignacionGrupo obtenerAsignacionDelGrupo(Long idAsignacion, Grupo grupo) {

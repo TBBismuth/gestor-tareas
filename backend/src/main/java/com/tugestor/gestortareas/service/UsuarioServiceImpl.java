@@ -39,7 +39,7 @@ public class UsuarioServiceImpl implements UsuarioService{
 	@Override
 	public Usuario guardarUsuario(Usuario usuario) {
 		ur.findByEmail(usuario.getEmail()).ifPresent(temp -> {
-			throw new EmailDuplicadoException("Ya existe un usuario con el email: " + usuario.getEmail());
+			throw new EmailDuplicadoException("Ya existe un usuario con ese email.");
 		});
 		usuario.setPassword(pe.encode(usuario.getPassword()));
 		return ur.save(usuario);
@@ -49,7 +49,7 @@ public class UsuarioServiceImpl implements UsuarioService{
 	public Usuario obtenerUsuarioActual() {
 		String email = SecurityContextHolder.getContext().getAuthentication().getName();
 		return ur.findByEmailIgnoreCase(email)
-				.orElseThrow(() -> new EntityNotFoundException("Usuario autenticado no encontrado: " + email));
+				.orElseThrow(() -> new EntityNotFoundException("Usuario autenticado no encontrado."));
 	}
 
 	@Transactional
@@ -95,7 +95,7 @@ public class UsuarioServiceImpl implements UsuarioService{
 				false);
 		
 		ur.findByEmail(usuario.getEmail()).ifPresent(temp ->{
-			throw new EmailDuplicadoException("Ya existe un usuario con el email: " + usuario.getEmail());
+			throw new EmailDuplicadoException("Ya existe un usuario con ese email.");
 		});
 		
 		usuario.setPassword(pe.encode(usuario.getPassword()));

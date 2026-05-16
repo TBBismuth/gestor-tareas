@@ -50,7 +50,7 @@ public class GrupoServiceImpl implements GrupoService {
 	private Usuario getUsuarioActual() {
 		String email = SecurityContextHolder.getContext().getAuthentication().getName();
 		return ur.findByEmailIgnoreCase(email)
-				.orElseThrow(() -> new EntityNotFoundException("Usuario autenticado no encontrado: " + email));
+				.orElseThrow(() -> new EntityNotFoundException("Usuario autenticado no encontrado."));
 	}
 
 	@Transactional

@@ -36,7 +36,7 @@ public class CategoriaServiceImpl implements CategoriaService {
 		//Obtengo el email del usuario autenticado desde Spring Security (SecurityContext > Authentication > username)
 		String email = SecurityContextHolder.getContext().getAuthentication().getName();
 		return ur.findByEmailIgnoreCase(email)
-				.orElseThrow(() -> new EntityNotFoundException("Usuario autenticado no encontrado: " + email));
+				.orElseThrow(() -> new EntityNotFoundException("Usuario autenticado no encontrado."));
 	}
 	
 	@Deprecated(since="2.0", forRemoval=false)
@@ -87,7 +87,7 @@ public class CategoriaServiceImpl implements CategoriaService {
 			categoria.setIcono(categoriaModificada.getIcono());
 			return cr.save(categoria);
 		}else {
-			throw new EntityNotFoundException("Categoría no encontrada con el id: " + id);
+			throw new EntityNotFoundException("Categoría no encontrada con id: " + id);
 		}
 	}
 	
@@ -103,7 +103,7 @@ public class CategoriaServiceImpl implements CategoriaService {
 		Usuario usuario = getUsuarioActual();
 		if (cr.existsByUsuarioAndNombreIgnoreCase(usuario, categoriaRequest.getNombre())) {
 			throw new jakarta.persistence.EntityExistsException(
-					"Ya existe una categoría con ese nombre para este usuario"
+					"Ya existe una categoría con ese nombre."
 					);
 		}
 		
@@ -137,7 +137,7 @@ public class CategoriaServiceImpl implements CategoriaService {
 			String nuevoNombre = categoriaRequest.getNombre();
 			if (nuevoNombre != null && !nuevoNombre.equalsIgnoreCase(categoria.getNombre()) && cr.existsByUsuarioAndNombreIgnoreCase(usuario, nuevoNombre)) {
 				throw new jakarta.persistence.EntityExistsException(
-						"Ya existe una categoría con ese nombre para este usuario"
+						"Ya existe una categoría con ese nombre."
 						);
 			}
 
@@ -146,7 +146,7 @@ public class CategoriaServiceImpl implements CategoriaService {
 			categoria.setIcono(categoriaRequest.getIcono());
 			return cr.save(categoria);
 		} else {
-			throw new EntityNotFoundException("Categoría no encontrada con el id: " + id);
+			throw new EntityNotFoundException("Categoría no encontrada con id: " + id);
 		}
 	}
 
