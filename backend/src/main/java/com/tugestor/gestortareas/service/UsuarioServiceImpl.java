@@ -3,6 +3,7 @@ package com.tugestor.gestortareas.service;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -76,9 +77,9 @@ public class UsuarioServiceImpl implements UsuarioService{
 	@Override
 	public LoginResponse login(LoginRequest login) {
 		Usuario usuario = ur.findByEmail(login.getEmail())
-				.orElseThrow(() -> new RuntimeException("No existe un usuario con el email: " + login.getEmail()));
+				.orElseThrow(() -> new BadCredentialsException("Credenciales inválidas."));
 		if (!pe.matches(login.getPassword(), usuario.getPassword())) {
-			throw new RuntimeException("La contrasena no coincide");
+			throw new BadCredentialsException("Credenciales inválidas.");
 		}
 		return new LoginResponse(usuario);
 	}

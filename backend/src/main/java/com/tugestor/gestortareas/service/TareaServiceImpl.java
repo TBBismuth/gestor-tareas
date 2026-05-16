@@ -65,7 +65,7 @@ public class TareaServiceImpl implements TareaService{
 		tarea.setFechaCompletada(tareaRequest.getFechaCompletada());
 		
 		if (tarea.getFechaCompletada() != null && tarea.getFechaCompletada().isBefore(tarea.getFechaAgregado())) {
-			throw new RuntimeException("La fecha de completado no puede ser anterior a la fecha de creación.");
+			throw new ValidationException("La fecha de completado no puede ser anterior a la fecha de creación.");
 		}
 		if (tarea.getFechaEntrega() != null && tarea.getFechaEntrega().isBefore(LocalDateTime.now())) {
 			throw new ValidationException("La fecha de entrega no puede haber pasado.");
@@ -144,12 +144,12 @@ public class TareaServiceImpl implements TareaService{
 			
 			if (existente.getFechaCompletada() != null &&
 					existente.getFechaCompletada().isBefore(existente.getFechaAgregado())) {
-				throw new RuntimeException("La fecha de completado no puede ser anterior a la fecha de creación.");
+				throw new ValidationException("La fecha de completado no puede ser anterior a la fecha de creación.");
 			}
 			
 			return tr.save(existente);
 		} else {
-			throw new RuntimeException("No existe la tarea con ID " + idTarea);
+			throw new EntityNotFoundException("Tarea no encontrada con id: " + idTarea);
 		}
 	}
 	
@@ -178,7 +178,12 @@ public class TareaServiceImpl implements TareaService{
 	@Override
 	public List<Tarea> filtrarPorPrioridad(String prioridad, String emailUsuario) {
 		// Convierto la cadena de prioridad a un enum Prioridad
-		Prioridad p = Prioridad.valueOf(prioridad.toUpperCase());
+		Prioridad p;
+		try {
+			p = Prioridad.valueOf(prioridad.toUpperCase());
+		} catch (IllegalArgumentException ex) {
+			throw new IllegalArgumentException("Prioridad no válida: " + prioridad);
+		}
 		return tr.findByUsuarioEmailAndPrioridad(emailUsuario, p);
 	}
 	
@@ -206,7 +211,7 @@ public class TareaServiceImpl implements TareaService{
 	@Override
 	public Estado obtenerEstado(Long id, String emailUsuario) {
 		Tarea tarea = tr.findById(id).orElseThrow(
-				() -> new RuntimeException("No existe la tarea con ID " + id));
+				() -> new EntityNotFoundException("Tarea no encontrada con id: " + id));
 		if (!tarea.getUsuario().getEmail().equals(emailUsuario)) {
 			throw new AccessDeniedException("No tienes permiso para ver el estado de esta tarea");
 		}
@@ -251,10 +256,10 @@ public class TareaServiceImpl implements TareaService{
 	
 	private void validarCoherenciaCompletado(boolean completada, LocalDateTime fechaCompletada) {
 		if (completada && fechaCompletada == null) {
-			throw new RuntimeException("Una tarea completada debe incluir la fecha de finalización.");
+			throw new ValidationException("Una tarea completada debe incluir la fecha de finalización.");
 		}
 		if (!completada && fechaCompletada != null) {
-			throw new RuntimeException("No se puede asignar una fecha completada a una tarea no completada.");
+			throw new ValidationException("No se puede asignar una fecha completada a una tarea no completada.");
 		}
 	}
 

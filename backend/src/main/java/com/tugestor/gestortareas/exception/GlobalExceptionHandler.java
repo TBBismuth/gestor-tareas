@@ -17,8 +17,10 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 
 
 
+import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ConstraintViolationException;
+import jakarta.validation.ValidationException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -76,6 +78,20 @@ public class GlobalExceptionHandler {
 		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
 	}
 
+	@ExceptionHandler(EntityExistsException.class)
+	public ResponseEntity<Map<String, String>> handleEntityExistsException(EntityExistsException ex) {
+		Map<String, String> error = new HashMap<>();
+		error.put("error", ex.getMessage());
+		return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+	}
+
+	@ExceptionHandler(ValidationException.class)
+	public ResponseEntity<Map<String, String>> handleValidationException(ValidationException ex) {
+		Map<String, String> error = new HashMap<>();
+		error.put("error", ex.getMessage());
+		return ResponseEntity.badRequest().body(error);
+	}
+
 	@ExceptionHandler(AccessDeniedException.class)	// Captura excepciones de acceso denegado
 	public ResponseEntity<Map<String, String>> handleAccessDeniedException(AccessDeniedException ex) {
 		Map<String, String> error = new HashMap<>();
@@ -90,6 +106,13 @@ public class GlobalExceptionHandler {
 		return ResponseEntity.badRequest().body(error);
 	}
 
+	@ExceptionHandler(IllegalArgumentException.class)
+	public ResponseEntity<Map<String, String>> handleIllegalArgumentException(IllegalArgumentException ex) {
+		Map<String, String> error = new HashMap<>();
+		error.put("error", ex.getMessage());
+		return ResponseEntity.badRequest().body(error);
+	}
+
 	@ExceptionHandler(UsernameNotFoundException.class)	// Captura excepciones de usuario no encontrado, generalmente en login
 	public ResponseEntity<Map<String, String>> handleUsernameNotFoundException(UsernameNotFoundException ex) {
 		Map<String, String> error = new HashMap<>();
@@ -98,9 +121,9 @@ public class GlobalExceptionHandler {
 	}
 	
 	@ExceptionHandler(EmailDuplicadoException.class)
-	@ResponseStatus(HttpStatus.BAD_REQUEST)
+	@ResponseStatus(HttpStatus.CONFLICT)
 	public ErrorResponse handleEmailDuplicadoException(EmailDuplicadoException ex) {
-		return new ErrorResponse(HttpStatus.BAD_REQUEST.value(), ex.getMessage());
+		return new ErrorResponse(HttpStatus.CONFLICT.value(), ex.getMessage());
 	}
 	
 	@ExceptionHandler(BadCredentialsException.class)

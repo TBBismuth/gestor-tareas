@@ -59,7 +59,7 @@ public class CategoriaServiceImpl implements CategoriaService {
 		//Comprobar que la categoria pertenece al usuario
 		Usuario actual = getUsuarioActual();
 		if (categoria.getUsuario() == null || !categoria.getUsuario().getIdUsuario().equals(actual.getIdUsuario())) {
-			throw new EntityNotFoundException("Categoría no encontrada para este usuario: " + id);
+			throw new AccessDeniedException("No tienes permiso para acceder a esta categoría.");
 		}
 		//Comprobar que no sea una categoria protegida
 		if (categoria.isProtegida()) {
@@ -87,7 +87,7 @@ public class CategoriaServiceImpl implements CategoriaService {
 			categoria.setIcono(categoriaModificada.getIcono());
 			return cr.save(categoria);
 		}else {
-			throw new RuntimeException("Categoría no encontrada con el id: " + id);
+			throw new EntityNotFoundException("Categoría no encontrada con el id: " + id);
 		}
 	}
 	
@@ -125,7 +125,7 @@ public class CategoriaServiceImpl implements CategoriaService {
 			//Verificar que la categoría es del usuario autenticado
 			Usuario usuario = getUsuarioActual();
 			if (categoria.getUsuario() == null || !Objects.equals(categoria.getUsuario().getIdUsuario(), usuario.getIdUsuario())) {
-				throw new EntityNotFoundException("Categoría no encontrada para este usuario: " + id);
+				throw new AccessDeniedException("No tienes permiso para modificar esta categoría.");
 			}
 			//Verificar que la categoria no está protegida
 			if (categoria.isProtegida()) {
