@@ -7,12 +7,17 @@ import java.util.*;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
+import com.tugestor.gestortareas.dto.FiltroTareaCombinadoRequest;
 import com.tugestor.gestortareas.dto.TareaAsignadaGrupoResponse;
+import com.tugestor.gestortareas.dto.TareaFiltroCombinadoResponse;
 import com.tugestor.gestortareas.dto.TareaRequest;
 import com.tugestor.gestortareas.dto.TareaResponse;
+import com.tugestor.gestortareas.model.AsignacionGrupoMiembro;
+import com.tugestor.gestortareas.model.CriterioOrdenTareaCombinado;
 import com.tugestor.gestortareas.model.Categoria;
 import com.tugestor.gestortareas.model.EstadoRevisionAsignacion;
 import com.tugestor.gestortareas.model.Estado;
+import com.tugestor.gestortareas.model.OrigenTareaFiltro;
 import com.tugestor.gestortareas.model.Prioridad;
 import com.tugestor.gestortareas.model.Tarea;
 import com.tugestor.gestortareas.model.Usuario;
@@ -280,6 +285,53 @@ public class TareaServiceImpl implements TareaService{
 				.map(TareaAsignadaGrupoResponse::new)
 				.toList();
 	}
+
+	@Override
+	public List<TareaFiltroCombinadoResponse> filtrarCombinado(FiltroTareaCombinadoRequest filtro,
+			String emailUsuarioCreador) {
+		FiltroTareaCombinadoRequest filtroNormalizado = filtro != null ? filtro : new FiltroTareaCombinadoRequest();
+		OrigenTareaFiltro origen = filtroNormalizado.getOrigen() != null
+				? filtroNormalizado.getOrigen()
+				: OrigenTareaFiltro.TODAS;
+		CriterioOrdenTareaCombinado criterioOrden = filtroNormalizado.getCriterioOrdenActivo() != null
+				? filtroNormalizado.getCriterioOrdenActivo()
+				: CriterioOrdenTareaCombinado.FECHA_AGREGADO;
+
+		if (origen == OrigenTareaFiltro.PERSONAL && filtroNormalizado.getIdGrupo() != null) {
+			throw new ValidationException("No se puede filtrar por grupo cuando el origen es PERSONAL.");
+		}
+
+		List<AsignacionGrupoMiembro> asignacionesGrupo = filtroNormalizado.getIdGrupo() != null
+				? agmr.findTareasAsignadasGrupoUsuarioPorGrupo(emailUsuarioCreador, filtroNormalizado.getIdGrupo())
+				: agmr.findTareasAsignadasGrupoUsuario(emailUsuarioCreador);
+
+		Set<Long> idsTareasGrupo = asignacionesGrupo.stream()
+				.map(AsignacionGrupoMiembro::getTareaGenerada)
+				.filter(Objects::nonNull)
+				.map(Tarea::getIdTarea)
+				.collect(java.util.stream.Collectors.toSet());
+
+		List<TareaFiltroCombinadoResponse> resultado = new ArrayList<>();
+
+		if (filtroNormalizado.getIdGrupo() == null
+				&& (origen == OrigenTareaFiltro.TODAS || origen == OrigenTareaFiltro.PERSONAL)) {
+			tr.findByUsuarioEmail(emailUsuarioCreador).stream()
+					.filter(tarea -> !idsTareasGrupo.contains(tarea.getIdTarea()))
+					.filter(tarea -> cumpleFiltrosTarea(tarea, filtroNormalizado))
+					.map(TareaFiltroCombinadoResponse::new)
+					.forEach(resultado::add);
+		}
+
+		if (origen == OrigenTareaFiltro.TODAS || origen == OrigenTareaFiltro.GRUPO) {
+			asignacionesGrupo.stream()
+					.filter(asignacion -> cumpleFiltrosTarea(asignacion.getTareaGenerada(), filtroNormalizado))
+					.map(TareaFiltroCombinadoResponse::new)
+					.forEach(resultado::add);
+		}
+
+		resultado.sort(comparadorFiltroCombinado(criterioOrden));
+		return resultado;
+	}
 	
 	
 	private void validarCoherenciaCompletado(boolean completada, LocalDateTime fechaCompletada) {
@@ -299,6 +351,44 @@ public class TareaServiceImpl implements TareaService{
 				agmr.save(asignacionMiembro);
 			}
 		});
+	}
+
+	private boolean cumpleFiltrosTarea(Tarea tarea, FiltroTareaCombinadoRequest filtro) {
+		if (tarea == null) {
+			return false;
+		}
+		if (filtro.getPrioridad() != null && tarea.getPrioridad() != filtro.getPrioridad()) {
+			return false;
+		}
+		return filtro.getEstado() == null || tarea.getEstado() == filtro.getEstado();
+	}
+
+	private Comparator<TareaFiltroCombinadoResponse> comparadorFiltroCombinado(
+			CriterioOrdenTareaCombinado criterioOrden) {
+		Comparator<TareaFiltroCombinadoResponse> desempate = Comparator
+				.comparing(TareaFiltroCombinadoResponse::getIdTarea, Comparator.nullsLast(Long::compareTo));
+		return switch (criterioOrden) {
+		case FECHA_ENTREGA -> Comparator
+				.comparing(TareaFiltroCombinadoResponse::getFechaEntrega,
+						Comparator.nullsLast(LocalDateTime::compareTo))
+				.thenComparing(desempate);
+		case PRIORIDAD -> Comparator
+				.comparingInt((TareaFiltroCombinadoResponse tarea) -> prioridadOrden(tarea.getPrioridad()))
+				.reversed()
+				.thenComparing(desempate);
+		case TIEMPO -> Comparator
+				.comparingInt(TareaFiltroCombinadoResponse::getTiempo)
+				.thenComparing(desempate);
+		case FECHA_AGREGADO -> Comparator
+				.comparingInt((TareaFiltroCombinadoResponse tarea) -> tarea.getFechaAgregado() == null ? 1 : 0)
+				.thenComparing(TareaFiltroCombinadoResponse::getFechaAgregado,
+						Comparator.nullsLast(Comparator.reverseOrder()))
+				.thenComparing(desempate);
+		};
+	}
+
+	private int prioridadOrden(Prioridad prioridad) {
+		return prioridad != null ? prioridad.ordinal() : -1;
 	}
 
 	private Categoria validarPertenencia(Long idCategoria, Usuario usuario) {

@@ -2,7 +2,9 @@ package com.tugestor.gestortareas.service;
 
 import java.util.List;
 
+import com.tugestor.gestortareas.dto.FiltroTareaCombinadoRequest;
 import com.tugestor.gestortareas.dto.TareaAsignadaGrupoResponse;
+import com.tugestor.gestortareas.dto.TareaFiltroCombinadoResponse;
 import com.tugestor.gestortareas.dto.TareaRequest;
 import com.tugestor.gestortareas.dto.TareaResponse;
 import com.tugestor.gestortareas.model.Estado;
@@ -34,4 +36,6 @@ public interface TareaService {
 	List<Tarea> obtenerTareasVencidas(String emailUsuarioCreador);
 	List<TareaAsignadaGrupoResponse> obtenerTareasAsignadasGrupo(String emailUsuarioCreador);
 	List<TareaAsignadaGrupoResponse> obtenerTareasAsignadasGrupoPorGrupo(Long idGrupo, String emailUsuarioCreador);
+	List<TareaFiltroCombinadoResponse> filtrarCombinado(FiltroTareaCombinadoRequest filtro,
+			String emailUsuarioCreador);
 }

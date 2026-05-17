@@ -7,7 +7,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+import com.tugestor.gestortareas.dto.FiltroTareaCombinadoRequest;
 import com.tugestor.gestortareas.dto.TareaAsignadaGrupoResponse;
+import com.tugestor.gestortareas.dto.TareaFiltroCombinadoResponse;
 import com.tugestor.gestortareas.dto.TareaRequest;
 import com.tugestor.gestortareas.dto.TareaResponse;
 import com.tugestor.gestortareas.model.Estado;
@@ -236,6 +238,21 @@ public class TareaController {
 	public List<TareaAsignadaGrupoResponse> listarTareasAsignadasGrupoPorGrupo(@PathVariable Long idGrupo,
 			Principal principal) {
 		return ts.obtenerTareasAsignadasGrupoPorGrupo(idGrupo, principal.getName());
+	}
+
+	@PostMapping("/filtrar-combinado")
+	@Operation(
+			summary = "Filtrar tareas combinadas",
+			description = "Devuelve una lista combinada de tareas personales y tareas asignadas desde grupos del usuario autenticado, aplicando filtros simples y el criterio de orden recibido."
+			)
+	@ApiResponses({
+		@ApiResponse(responseCode = "200", description = "Listado combinado de tareas filtrado correctamente"),
+		@ApiResponse(responseCode = "400", description = "Filtro combinado invalido"),
+		@ApiResponse(responseCode = "401", description = "No autenticado o token invalido")
+	})
+	public List<TareaFiltroCombinadoResponse> filtrarCombinado(
+			@RequestBody(required = false) FiltroTareaCombinadoRequest filtroRequest, Principal principal) {
+		return ts.filtrarCombinado(filtroRequest, principal.getName());
 	}
 	
 	@GetMapping("/filtrar/prioridad/{prioridad}")
