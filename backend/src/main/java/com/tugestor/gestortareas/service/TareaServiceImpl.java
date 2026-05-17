@@ -253,6 +253,12 @@ public class TareaServiceImpl implements TareaService{
 		return tr.findByUsuarioEmailAndFechaEntregaBetween(emailUsuarioCreador, inicioHoy, inicioManiana);
 	}
 	
+	@Override
+	public List<Tarea> obtenerTareasProximas(String emailUsuarioCreador) {
+		return tr.findByUsuarioEmailAndCompletadaFalseAndFechaEntregaAfterOrderByFechaEntregaAsc(
+				emailUsuarioCreador, LocalDateTime.now());
+	}
+	
 	
 	private void validarCoherenciaCompletado(boolean completada, LocalDateTime fechaCompletada) {
 		if (completada && fechaCompletada == null) {

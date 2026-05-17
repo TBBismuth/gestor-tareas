@@ -29,4 +29,5 @@ public interface TareaService {
 	Estado obtenerEstado(Long id, String emailUsuarioCreador);
 	TareaResponse marcarTareaCompletada(Long idTarea, String emailUsuarioQueCompleta);
 	List<Tarea> obtenerTareasHoy(String emailUsuarioCreador);
+	List<Tarea> obtenerTareasProximas(String emailUsuarioCreador);
 }

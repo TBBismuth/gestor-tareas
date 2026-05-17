@@ -179,6 +179,12 @@ public class TareaController {
 		return tareas.stream().map(TareaResponse::new).toList();
 	}
 	
+	@GetMapping("/proximas")
+	public List<TareaResponse> listarTareasProximas(Principal principal) {
+		List<Tarea> tareas = ts.obtenerTareasProximas(principal.getName());
+		return tareas.stream().map(TareaResponse::new).toList();
+	}
+	
 	@GetMapping("/filtrar/prioridad/{prioridad}")
 	@Operation(
 			summary = "Filtrar tareas por prioridad",
