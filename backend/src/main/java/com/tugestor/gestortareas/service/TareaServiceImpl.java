@@ -7,6 +7,7 @@ import java.util.*;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
+import com.tugestor.gestortareas.dto.EstadoFiltroTareaResponse;
 import com.tugestor.gestortareas.dto.FiltroTareaCombinadoRequest;
 import com.tugestor.gestortareas.dto.TareaAsignadaGrupoResponse;
 import com.tugestor.gestortareas.dto.TareaFiltroCombinadoResponse;
@@ -17,12 +18,17 @@ import com.tugestor.gestortareas.model.CriterioOrdenTareaCombinado;
 import com.tugestor.gestortareas.model.Categoria;
 import com.tugestor.gestortareas.model.EstadoRevisionAsignacion;
 import com.tugestor.gestortareas.model.Estado;
+import com.tugestor.gestortareas.model.EstadoFiltroTarea;
+import com.tugestor.gestortareas.model.Grupo;
 import com.tugestor.gestortareas.model.OrigenTareaFiltro;
 import com.tugestor.gestortareas.model.Prioridad;
 import com.tugestor.gestortareas.model.Tarea;
 import com.tugestor.gestortareas.model.Usuario;
 import com.tugestor.gestortareas.repository.AsignacionGrupoMiembroRepository;
 import com.tugestor.gestortareas.repository.CategoriaRepository;
+import com.tugestor.gestortareas.repository.EstadoFiltroTareaRepository;
+import com.tugestor.gestortareas.repository.GrupoMiembroRepository;
+import com.tugestor.gestortareas.repository.GrupoRepository;
 import com.tugestor.gestortareas.repository.TareaRepository;
 import com.tugestor.gestortareas.repository.UsuarioRepository;
 
@@ -42,12 +48,19 @@ public class TareaServiceImpl implements TareaService{
 	private final CategoriaRepository cr;
 	private final UsuarioRepository ur;
 	private final AsignacionGrupoMiembroRepository agmr;
+	private final GrupoRepository gr;
+	private final GrupoMiembroRepository gmr;
+	private final EstadoFiltroTareaRepository eftr;
 	public TareaServiceImpl(TareaRepository tr, CategoriaRepository cr, UsuarioRepository ur,
-			AsignacionGrupoMiembroRepository agmr) {
+			AsignacionGrupoMiembroRepository agmr, GrupoRepository gr, GrupoMiembroRepository gmr,
+			EstadoFiltroTareaRepository eftr) {
 		this.tr = tr;
 		this.cr = cr;
 		this.ur = ur;
 		this.agmr = agmr;
+		this.gr = gr;
+		this.gmr = gmr;
+		this.eftr = eftr;
 	}
 	
 	@Override
@@ -290,6 +303,7 @@ public class TareaServiceImpl implements TareaService{
 	public List<TareaFiltroCombinadoResponse> filtrarCombinado(FiltroTareaCombinadoRequest filtro,
 			String emailUsuarioCreador) {
 		FiltroTareaCombinadoRequest filtroNormalizado = filtro != null ? filtro : new FiltroTareaCombinadoRequest();
+		Usuario usuario = obtenerUsuarioAutenticado(emailUsuarioCreador);
 		OrigenTareaFiltro origen = filtroNormalizado.getOrigen() != null
 				? filtroNormalizado.getOrigen()
 				: OrigenTareaFiltro.TODAS;
@@ -297,14 +311,7 @@ public class TareaServiceImpl implements TareaService{
 				? filtroNormalizado.getCriterioOrdenActivo()
 				: CriterioOrdenTareaCombinado.FECHA_AGREGADO;
 
-		if (origen == OrigenTareaFiltro.PERSONAL && filtroNormalizado.getIdGrupo() != null) {
-			throw new ValidationException("No se puede filtrar por grupo cuando el origen es PERSONAL.");
-		}
-		if (filtroNormalizado.getFechaEntregaExacta() != null
-				&& filtroNormalizado.getFechaEntregaHasta() != null) {
-			throw new ValidationException(
-					"No se puede filtrar por fecha exacta y fecha hasta en la misma peticion.");
-		}
+		validarFiltroCombinado(filtroNormalizado, usuario, origen);
 
 		List<AsignacionGrupoMiembro> asignacionesGrupo = filtroNormalizado.getIdGrupo() != null
 				? agmr.findTareasAsignadasGrupoUsuarioPorGrupo(emailUsuarioCreador, filtroNormalizado.getIdGrupo())
@@ -337,6 +344,45 @@ public class TareaServiceImpl implements TareaService{
 		resultado.sort(comparadorFiltroCombinado(criterioOrden));
 		return resultado;
 	}
+
+	@Override
+	public EstadoFiltroTareaResponse obtenerEstadoFiltroCombinadoGuardado(String emailUsuario) {
+		Usuario usuario = obtenerUsuarioAutenticado(emailUsuario);
+		return eftr.findByUsuario(usuario)
+				.map(EstadoFiltroTareaResponse::new)
+				.orElseGet(EstadoFiltroTareaResponse::porDefecto);
+	}
+
+	@Override
+	public EstadoFiltroTareaResponse guardarEstadoFiltroCombinado(FiltroTareaCombinadoRequest filtro,
+			String emailUsuario) {
+		FiltroTareaCombinadoRequest filtroNormalizado = filtro != null ? filtro : new FiltroTareaCombinadoRequest();
+		Usuario usuario = obtenerUsuarioAutenticado(emailUsuario);
+		OrigenTareaFiltro origen = filtroNormalizado.getOrigen() != null
+				? filtroNormalizado.getOrigen()
+				: OrigenTareaFiltro.TODAS;
+		validarFiltroCombinado(filtroNormalizado, usuario, origen);
+
+		EstadoFiltroTarea estadoFiltro = eftr.findByUsuario(usuario).orElseGet(EstadoFiltroTarea::new);
+		estadoFiltro.setUsuario(usuario);
+		estadoFiltro.setOrigen(origen);
+		estadoFiltro.setIdGrupo(filtroNormalizado.getIdGrupo());
+		estadoFiltro.setPrioridad(filtroNormalizado.getPrioridad());
+		estadoFiltro.setEstado(filtroNormalizado.getEstado());
+		estadoFiltro.setPalabrasClave(filtroNormalizado.getPalabrasClave());
+		estadoFiltro.setTiempoMax(filtroNormalizado.getTiempoMax());
+		estadoFiltro.setIdCategoria(filtroNormalizado.getIdCategoria());
+		estadoFiltro.setFechaEntregaExacta(filtroNormalizado.getFechaEntregaExacta());
+		estadoFiltro.setFechaEntregaHasta(filtroNormalizado.getFechaEntregaHasta());
+		estadoFiltro.setCriterioOrdenActivo(filtroNormalizado.getCriterioOrdenActivo() != null
+				? filtroNormalizado.getCriterioOrdenActivo()
+				: CriterioOrdenTareaCombinado.FECHA_AGREGADO);
+		estadoFiltro.setSoloPorCompletar(filtroNormalizado.getSoloPorCompletar() != null
+				? filtroNormalizado.getSoloPorCompletar()
+				: true);
+		estadoFiltro.setUpdatedAt(LocalDateTime.now());
+		return new EstadoFiltroTareaResponse(eftr.save(estadoFiltro));
+	}
 	
 	
 	private void validarCoherenciaCompletado(boolean completada, LocalDateTime fechaCompletada) {
@@ -360,6 +406,9 @@ public class TareaServiceImpl implements TareaService{
 
 	private boolean cumpleFiltrosTarea(Tarea tarea, FiltroTareaCombinadoRequest filtro) {
 		if (tarea == null) {
+			return false;
+		}
+		if (Boolean.TRUE.equals(filtro.getSoloPorCompletar()) && esEstadoCompletado(tarea.getEstado())) {
 			return false;
 		}
 		if (filtro.getPrioridad() != null && tarea.getPrioridad() != filtro.getPrioridad()) {
@@ -406,6 +455,56 @@ public class TareaServiceImpl implements TareaService{
 		String titulo = tarea.getTitulo() != null ? tarea.getTitulo().toLowerCase(Locale.ROOT) : "";
 		String descripcion = tarea.getDescripcion() != null ? tarea.getDescripcion().toLowerCase(Locale.ROOT) : "";
 		return titulo.contains(palabrasClave) || descripcion.contains(palabrasClave);
+	}
+
+	private void validarFiltroCombinado(FiltroTareaCombinadoRequest filtro, Usuario usuario, OrigenTareaFiltro origen) {
+		if (origen == OrigenTareaFiltro.PERSONAL && filtro.getIdGrupo() != null) {
+			throw new ValidationException("No se puede filtrar por grupo cuando el origen es PERSONAL.");
+		}
+		if (filtro.getFechaEntregaExacta() != null && filtro.getFechaEntregaHasta() != null) {
+			throw new ValidationException(
+					"No se puede filtrar por fecha exacta y fecha hasta en la misma peticion.");
+		}
+		if (filtro.getTiempoMax() != null && filtro.getTiempoMax() < 0) {
+			throw new ValidationException("El tiempo maximo no puede ser negativo.");
+		}
+		if (Boolean.TRUE.equals(filtro.getSoloPorCompletar()) && esEstadoCompletado(filtro.getEstado())) {
+			throw new ValidationException("No se puede combinar soloPorCompletar con un estado completado.");
+		}
+		validarGrupoFiltro(filtro.getIdGrupo(), usuario);
+		validarCategoriaFiltro(filtro.getIdCategoria(), usuario);
+	}
+
+	private void validarGrupoFiltro(Long idGrupo, Usuario usuario) {
+		if (idGrupo == null) {
+			return;
+		}
+		Grupo grupo = gr.findById(idGrupo)
+				.orElseThrow(() -> new ValidationException("El grupo indicado no pertenece al usuario autenticado."));
+		if (!gmr.existsByGrupoAndUsuario(grupo, usuario)) {
+			throw new ValidationException("El grupo indicado no pertenece al usuario autenticado.");
+		}
+	}
+
+	private void validarCategoriaFiltro(Long idCategoria, Usuario usuario) {
+		if (idCategoria == null) {
+			return;
+		}
+		Categoria categoria = cr.findById(idCategoria)
+				.orElseThrow(() -> new ValidationException(
+						"La categoria indicada no pertenece al usuario autenticado."));
+		if (categoria.getUsuario() == null || !categoria.getUsuario().getIdUsuario().equals(usuario.getIdUsuario())) {
+			throw new ValidationException("La categoria indicada no pertenece al usuario autenticado.");
+		}
+	}
+
+	private boolean esEstadoCompletado(Estado estado) {
+		return estado == Estado.COMPLETADA || estado == Estado.COMPLETADA_CON_RETRASO;
+	}
+
+	private Usuario obtenerUsuarioAutenticado(String emailUsuario) {
+		return ur.findByEmail(emailUsuario)
+				.orElseThrow(() -> new EntityNotFoundException("Usuario autenticado no encontrado."));
 	}
 
 	private Comparator<TareaFiltroCombinadoResponse> comparadorFiltroCombinado(

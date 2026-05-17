@@ -1,28 +1,55 @@
-package com.tugestor.gestortareas.dto;
+package com.tugestor.gestortareas.model;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
-import com.tugestor.gestortareas.model.CriterioOrdenTareaCombinado;
-import com.tugestor.gestortareas.model.Estado;
-import com.tugestor.gestortareas.model.OrigenTareaFiltro;
-import com.tugestor.gestortareas.model.Prioridad;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
 
-public class FiltroTareaCombinadoRequest {
+@Entity
+public class EstadoFiltroTarea {
+	@Id
+	@GeneratedValue(strategy= GenerationType.IDENTITY)
+	private Long idEstadoFiltroTarea;
+	@OneToOne
+	@JoinColumn(name = "usuario_id", nullable = false, unique = true)
+	private Usuario usuario;
+	@Enumerated(EnumType.STRING)
 	private OrigenTareaFiltro origen = OrigenTareaFiltro.TODAS;
 	private Long idGrupo;
+	@Enumerated(EnumType.STRING)
 	private Prioridad prioridad;
+	@Enumerated(EnumType.STRING)
 	private Estado estado;
-	private CriterioOrdenTareaCombinado criterioOrdenActivo = CriterioOrdenTareaCombinado.FECHA_AGREGADO;
 	private String palabrasClave;
 	private Integer tiempoMax;
 	private Long idCategoria;
 	private LocalDate fechaEntregaExacta;
 	private LocalDate fechaEntregaHasta;
-	private Boolean soloPorCompletar;
+	@Enumerated(EnumType.STRING)
+	private CriterioOrdenTareaCombinado criterioOrdenActivo = CriterioOrdenTareaCombinado.FECHA_AGREGADO;
+	private Boolean soloPorCompletar = true;
+	private LocalDateTime updatedAt = LocalDateTime.now();
 
-	public FiltroTareaCombinadoRequest() {
+	public EstadoFiltroTarea() {
+		// Constructor por defecto para JPA
 	}
 
+	public Long getIdEstadoFiltroTarea() {
+		return idEstadoFiltroTarea;
+	}
+	public Usuario getUsuario() {
+		return usuario;
+	}
+	public void setUsuario(Usuario usuario) {
+		this.usuario = usuario;
+	}
 	public OrigenTareaFiltro getOrigen() {
 		return origen;
 	}
@@ -46,12 +73,6 @@ public class FiltroTareaCombinadoRequest {
 	}
 	public void setEstado(Estado estado) {
 		this.estado = estado;
-	}
-	public CriterioOrdenTareaCombinado getCriterioOrdenActivo() {
-		return criterioOrdenActivo;
-	}
-	public void setCriterioOrdenActivo(CriterioOrdenTareaCombinado criterioOrdenActivo) {
-		this.criterioOrdenActivo = criterioOrdenActivo;
 	}
 	public String getPalabrasClave() {
 		return palabrasClave;
@@ -83,10 +104,22 @@ public class FiltroTareaCombinadoRequest {
 	public void setFechaEntregaHasta(LocalDate fechaEntregaHasta) {
 		this.fechaEntregaHasta = fechaEntregaHasta;
 	}
+	public CriterioOrdenTareaCombinado getCriterioOrdenActivo() {
+		return criterioOrdenActivo;
+	}
+	public void setCriterioOrdenActivo(CriterioOrdenTareaCombinado criterioOrdenActivo) {
+		this.criterioOrdenActivo = criterioOrdenActivo;
+	}
 	public Boolean getSoloPorCompletar() {
 		return soloPorCompletar;
 	}
 	public void setSoloPorCompletar(Boolean soloPorCompletar) {
 		this.soloPorCompletar = soloPorCompletar;
+	}
+	public LocalDateTime getUpdatedAt() {
+		return updatedAt;
+	}
+	public void setUpdatedAt(LocalDateTime updatedAt) {
+		this.updatedAt = updatedAt;
 	}
 }

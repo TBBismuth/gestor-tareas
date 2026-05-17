@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+import com.tugestor.gestortareas.dto.EstadoFiltroTareaResponse;
 import com.tugestor.gestortareas.dto.FiltroTareaCombinadoRequest;
 import com.tugestor.gestortareas.dto.TareaAsignadaGrupoResponse;
 import com.tugestor.gestortareas.dto.TareaFiltroCombinadoResponse;
@@ -253,6 +254,34 @@ public class TareaController {
 	public List<TareaFiltroCombinadoResponse> filtrarCombinado(
 			@RequestBody(required = false) FiltroTareaCombinadoRequest filtroRequest, Principal principal) {
 		return ts.filtrarCombinado(filtroRequest, principal.getName());
+	}
+
+	@GetMapping("/filtro-combinado/save")
+	@Operation(
+			summary = "Obtener estado guardado del filtro combinado",
+			description = "Devuelve el ultimo estado guardado del megafiltro de tareas del usuario autenticado, o un estado por defecto si aun no existe."
+			)
+	@ApiResponses({
+		@ApiResponse(responseCode = "200", description = "Estado del filtro combinado obtenido correctamente"),
+		@ApiResponse(responseCode = "401", description = "No autenticado o token invalido")
+	})
+	public EstadoFiltroTareaResponse obtenerEstadoFiltroCombinadoGuardado(Principal principal) {
+		return ts.obtenerEstadoFiltroCombinadoGuardado(principal.getName());
+	}
+
+	@PutMapping("/filtro-combinado/save")
+	@Operation(
+			summary = "Guardar estado del filtro combinado",
+			description = "Guarda o actualiza el ultimo estado del megafiltro de tareas del usuario autenticado."
+			)
+	@ApiResponses({
+		@ApiResponse(responseCode = "200", description = "Estado del filtro combinado guardado correctamente"),
+		@ApiResponse(responseCode = "400", description = "Estado del filtro combinado invalido"),
+		@ApiResponse(responseCode = "401", description = "No autenticado o token invalido")
+	})
+	public EstadoFiltroTareaResponse guardarEstadoFiltroCombinado(
+			@RequestBody(required = false) FiltroTareaCombinadoRequest filtroRequest, Principal principal) {
+		return ts.guardarEstadoFiltroCombinado(filtroRequest, principal.getName());
 	}
 	
 	@GetMapping("/filtrar/prioridad/{prioridad}")
