@@ -30,4 +30,5 @@ public interface TareaService {
 	TareaResponse marcarTareaCompletada(Long idTarea, String emailUsuarioQueCompleta);
 	List<Tarea> obtenerTareasHoy(String emailUsuarioCreador);
 	List<Tarea> obtenerTareasProximas(String emailUsuarioCreador);
+	List<Tarea> obtenerTareasVencidas(String emailUsuarioCreador);
 }

@@ -259,6 +259,12 @@ public class TareaServiceImpl implements TareaService{
 				emailUsuarioCreador, LocalDateTime.now());
 	}
 	
+	@Override
+	public List<Tarea> obtenerTareasVencidas(String emailUsuarioCreador) {
+		return tr.findByUsuarioEmailAndCompletadaFalseAndFechaEntregaBeforeOrderByFechaEntregaAsc(
+				emailUsuarioCreador, LocalDateTime.now());
+	}
+	
 	
 	private void validarCoherenciaCompletado(boolean completada, LocalDateTime fechaCompletada) {
 		if (completada && fechaCompletada == null) {

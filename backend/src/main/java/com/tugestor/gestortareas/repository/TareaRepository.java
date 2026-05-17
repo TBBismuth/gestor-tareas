@@ -25,6 +25,8 @@ public interface TareaRepository extends JpaRepository<Tarea, Long> {
 			LocalDateTime fin);
 	List<Tarea> findByUsuarioEmailAndCompletadaFalseAndFechaEntregaAfterOrderByFechaEntregaAsc(
 			String emailUsuarioCreador, LocalDateTime fechaActual);
+	List<Tarea> findByUsuarioEmailAndCompletadaFalseAndFechaEntregaBeforeOrderByFechaEntregaAsc(
+			String emailUsuarioCreador, LocalDateTime fechaActual);
 	List<Tarea> findByCategoria_IdCategoria(Long idCategoria);
 	List<Tarea> findAllByUsuarioEmail(String emailUsuario);
 	
