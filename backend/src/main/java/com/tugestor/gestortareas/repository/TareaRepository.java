@@ -17,16 +17,13 @@ public interface TareaRepository extends JpaRepository<Tarea, Long> {
 	List<Tarea> findByUsuarioEmailAndTiempoLessThanEqual(String emailUsuarioCreador, int tiempo);
 	List<Tarea> findByUsuarioEmailAndTituloContainingIgnoreCaseOrUsuarioEmailAndDescripcionContainingIgnoreCase(
 			String emailUsuarioCreador0, String titulo,String emailUsuarioCreador1, String descripcion);
-	List<Tarea> findByUsuarioEmailAndCategoria_IdCategoria(String emailUsuarioCreador, Long idCategoria); // Con el "_" se indica que es un campo de la entidad Categoria (categoria.idCategoria)
+	List<Tarea> findByUsuarioEmailAndCategoria_IdCategoria(String emailUsuarioCreador, Long idCategoria);// Con el "_" se indica que es un campo de la entidad Categoria (categoria.idCategoria)
 	List<Tarea> findByUsuario_IdUsuario(Long idUsuario);
 	List<Tarea> findByUsuarioQueCompleta_IdUsuario(Long idUsuario);
 	List<Tarea> findByUsuarioEmail(String email);
-	List<Tarea> findByUsuarioEmailAndFechaEntregaBetween(String emailUsuarioCreador, LocalDateTime inicio,
-			LocalDateTime fin);
-	List<Tarea> findByUsuarioEmailAndCompletadaFalseAndFechaEntregaAfterOrderByFechaEntregaAsc(
-			String emailUsuarioCreador, LocalDateTime fechaActual);
-	List<Tarea> findByUsuarioEmailAndCompletadaFalseAndFechaEntregaBeforeOrderByFechaEntregaAsc(
-			String emailUsuarioCreador, LocalDateTime fechaActual);
+	List<Tarea> findByUsuarioEmailAndFechaEntregaBetween(String emailUsuarioCreador, LocalDateTime inicio,LocalDateTime fin);
+	List<Tarea> findByUsuarioEmailAndCompletadaFalseAndFechaEntregaAfterOrderByFechaEntregaAsc(String emailUsuarioCreador, LocalDateTime fechaActual);
+	List<Tarea> findByUsuarioEmailAndCompletadaFalseAndFechaEntregaBeforeOrderByFechaEntregaAsc(String emailUsuarioCreador, LocalDateTime fechaActual);
 	List<Tarea> findByCategoria_IdCategoria(Long idCategoria);
 	List<Tarea> findAllByUsuarioEmail(String emailUsuario);
 	

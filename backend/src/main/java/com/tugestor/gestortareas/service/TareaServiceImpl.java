@@ -7,6 +7,7 @@ import java.util.*;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
+import com.tugestor.gestortareas.dto.TareaAsignadaGrupoResponse;
 import com.tugestor.gestortareas.dto.TareaRequest;
 import com.tugestor.gestortareas.dto.TareaResponse;
 import com.tugestor.gestortareas.model.Categoria;
@@ -263,6 +264,21 @@ public class TareaServiceImpl implements TareaService{
 	public List<Tarea> obtenerTareasVencidas(String emailUsuarioCreador) {
 		return tr.findByUsuarioEmailAndCompletadaFalseAndFechaEntregaBeforeOrderByFechaEntregaAsc(
 				emailUsuarioCreador, LocalDateTime.now());
+	}
+	
+	@Override
+	public List<TareaAsignadaGrupoResponse> obtenerTareasAsignadasGrupo(String emailUsuarioCreador) {
+		return agmr.findTareasAsignadasGrupoUsuario(emailUsuarioCreador).stream()
+				.map(TareaAsignadaGrupoResponse::new)
+				.toList();
+	}
+	
+	@Override
+	public List<TareaAsignadaGrupoResponse> obtenerTareasAsignadasGrupoPorGrupo(Long idGrupo,
+			String emailUsuarioCreador) {
+		return agmr.findTareasAsignadasGrupoUsuarioPorGrupo(emailUsuarioCreador, idGrupo).stream()
+				.map(TareaAsignadaGrupoResponse::new)
+				.toList();
 	}
 	
 	

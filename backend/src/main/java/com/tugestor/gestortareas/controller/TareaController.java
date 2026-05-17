@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+import com.tugestor.gestortareas.dto.TareaAsignadaGrupoResponse;
 import com.tugestor.gestortareas.dto.TareaRequest;
 import com.tugestor.gestortareas.dto.TareaResponse;
 import com.tugestor.gestortareas.model.Estado;
@@ -180,15 +181,61 @@ public class TareaController {
 	}
 	
 	@GetMapping("/proximas")
+	@Operation(
+			summary = "Listar tareas próximas a vencer",
+			description = "Devuelve las tareas del usuario autenticado que tienen fecha de entrega futura, no están completadas y están ordenadas por fecha de entrega ascendente."
+			)
+	@ApiResponses({
+		@ApiResponse(responseCode = "200", description = "Listado de tareas próximas obtenido correctamente"),
+		@ApiResponse(responseCode = "401", description = "No autenticado o token inválido")
+	})
 	public List<TareaResponse> listarTareasProximas(Principal principal) {
 		List<Tarea> tareas = ts.obtenerTareasProximas(principal.getName());
 		return tareas.stream().map(TareaResponse::new).toList();
 	}
 	
 	@GetMapping("/vencidas")
+	@Operation(
+			summary = "Listar tareas vencidas",
+			description = "Devuelve las tareas del usuario autenticado que tienen fecha de entrega pasada, no están completadas y están ordenadas por fecha de entrega ascendente."
+			)
+	@ApiResponses({
+		@ApiResponse(responseCode = "200", description = "Listado de tareas vencidas obtenido correctamente"),
+		@ApiResponse(responseCode = "401", description = "No autenticado o token inválido")
+	})
 	public List<TareaResponse> listarTareasVencidas(Principal principal) {
 		List<Tarea> tareas = ts.obtenerTareasVencidas(principal.getName());
 		return tareas.stream().map(TareaResponse::new).toList();
+	}
+	
+	@GetMapping("/asignadas-grupo")
+	@Operation(
+			summary = "Listar tareas asignadas desde grupos",
+			description = "Devuelve las tareas del usuario autenticado que fueron generadas desde asignaciones de grupo, incluyendo informacion de origen y revision."
+			)
+	@ApiResponses({
+		@ApiResponse(responseCode = "200", description = "Listado de tareas asignadas desde grupos obtenido correctamente"),
+		@ApiResponse(responseCode = "401", description = "No autenticado o token invalido")
+	})
+	public List<TareaAsignadaGrupoResponse> listarTareasAsignadasGrupo(Principal principal) {
+		return ts.obtenerTareasAsignadasGrupo(principal.getName());
+	}
+	
+	@GetMapping("/asignadas-grupo/{idGrupo}")
+	@Operation(
+			summary = "Listar tareas asignadas desde un grupo",
+			description = "Devuelve las tareas del usuario autenticado que fueron generadas desde asignaciones del grupo indicado, incluyendo informacion de origen y revision."
+			)
+	@Parameters({
+		@Parameter(name = "idGrupo", description = "ID del grupo origen", example = "1")
+	})
+	@ApiResponses({
+		@ApiResponse(responseCode = "200", description = "Listado de tareas asignadas desde el grupo obtenido correctamente"),
+		@ApiResponse(responseCode = "401", description = "No autenticado o token invalido")
+	})
+	public List<TareaAsignadaGrupoResponse> listarTareasAsignadasGrupoPorGrupo(@PathVariable Long idGrupo,
+			Principal principal) {
+		return ts.obtenerTareasAsignadasGrupoPorGrupo(idGrupo, principal.getName());
 	}
 	
 	@GetMapping("/filtrar/prioridad/{prioridad}")
