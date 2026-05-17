@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 
 import com.tugestor.gestortareas.model.AsignacionGrupo;
 import com.tugestor.gestortareas.model.AsignacionGrupoMiembro;
+import com.tugestor.gestortareas.model.Categoria;
 import com.tugestor.gestortareas.model.EstadoRevisionAsignacion;
 import com.tugestor.gestortareas.model.Grupo;
 import com.tugestor.gestortareas.model.OrigenTareaFiltro;
@@ -22,6 +23,10 @@ public class TareaFiltroCombinadoResponse {
 	private boolean completada;
 	private LocalDateTime fechaCompletada;
 	private String estado;
+	private Long idCategoria;
+	private String nombreCategoria;
+	private String colorCategoria;
+	private String iconoCategoria;
 	private OrigenTareaFiltro origenTarea;
 	private Long idGrupoOrigen;
 	private String nombreGrupoOrigen;
@@ -68,6 +73,13 @@ public class TareaFiltroCombinadoResponse {
 		this.completada = tarea.isCompletada();
 		this.fechaCompletada = tarea.getFechaCompletada();
 		this.estado = tarea.getEstado().name();
+		Categoria categoria = tarea.getCategoria();
+		if (categoria != null) {
+			this.idCategoria = categoria.getIdCategoria();
+			this.nombreCategoria = categoria.getNombre();
+			this.colorCategoria = categoria.getColor();
+			this.iconoCategoria = categoria.getIcono();
+		}
 	}
 
 	public Long getIdTarea() {
@@ -99,6 +111,18 @@ public class TareaFiltroCombinadoResponse {
 	}
 	public String getEstado() {
 		return estado;
+	}
+	public Long getIdCategoria() {
+		return idCategoria;
+	}
+	public String getNombreCategoria() {
+		return nombreCategoria;
+	}
+	public String getColorCategoria() {
+		return colorCategoria;
+	}
+	public String getIconoCategoria() {
+		return iconoCategoria;
 	}
 	public OrigenTareaFiltro getOrigenTarea() {
 		return origenTarea;

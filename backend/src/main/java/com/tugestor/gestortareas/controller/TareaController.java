@@ -243,7 +243,7 @@ public class TareaController {
 	@PostMapping("/filtrar-combinado")
 	@Operation(
 			summary = "Filtrar tareas combinadas",
-			description = "Devuelve una lista combinada de tareas personales y tareas asignadas desde grupos del usuario autenticado, aplicando filtros simples y el criterio de orden recibido."
+			description = "Devuelve una lista combinada de tareas personales y tareas asignadas desde grupos del usuario autenticado, aplicando filtros combinados y el criterio de orden recibido."
 			)
 	@ApiResponses({
 		@ApiResponse(responseCode = "200", description = "Listado combinado de tareas filtrado correctamente"),

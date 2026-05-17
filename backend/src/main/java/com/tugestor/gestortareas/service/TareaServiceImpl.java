@@ -300,6 +300,11 @@ public class TareaServiceImpl implements TareaService{
 		if (origen == OrigenTareaFiltro.PERSONAL && filtroNormalizado.getIdGrupo() != null) {
 			throw new ValidationException("No se puede filtrar por grupo cuando el origen es PERSONAL.");
 		}
+		if (filtroNormalizado.getFechaEntregaExacta() != null
+				&& filtroNormalizado.getFechaEntregaHasta() != null) {
+			throw new ValidationException(
+					"No se puede filtrar por fecha exacta y fecha hasta en la misma peticion.");
+		}
 
 		List<AsignacionGrupoMiembro> asignacionesGrupo = filtroNormalizado.getIdGrupo() != null
 				? agmr.findTareasAsignadasGrupoUsuarioPorGrupo(emailUsuarioCreador, filtroNormalizado.getIdGrupo())
@@ -360,7 +365,47 @@ public class TareaServiceImpl implements TareaService{
 		if (filtro.getPrioridad() != null && tarea.getPrioridad() != filtro.getPrioridad()) {
 			return false;
 		}
-		return filtro.getEstado() == null || tarea.getEstado() == filtro.getEstado();
+		if (filtro.getEstado() != null && tarea.getEstado() != filtro.getEstado()) {
+			return false;
+		}
+		if (filtro.getTiempoMax() != null && tarea.getTiempo() > filtro.getTiempoMax()) {
+			return false;
+		}
+		if (filtro.getIdCategoria() != null
+				&& (tarea.getCategoria() == null
+						|| !filtro.getIdCategoria().equals(tarea.getCategoria().getIdCategoria()))) {
+			return false;
+		}
+		if (tienePalabrasClave(filtro)
+				&& !contienePalabrasClave(tarea, filtro.getPalabrasClave().trim().toLowerCase(Locale.ROOT))) {
+			return false;
+		}
+		if (filtro.getFechaEntregaExacta() != null
+				&& (tarea.getFechaEntrega() == null
+						|| !tarea.getFechaEntrega().toLocalDate().equals(filtro.getFechaEntregaExacta()))) {
+			return false;
+		}
+		if (filtro.getFechaEntregaHasta() != null) {
+			if (tarea.getFechaEntrega() == null) {
+				return false;
+			}
+			LocalDate fechaEntrega = tarea.getFechaEntrega().toLocalDate();
+			LocalDate hoy = LocalDate.now();
+			if (fechaEntrega.isBefore(hoy) || fechaEntrega.isAfter(filtro.getFechaEntregaHasta())) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	private boolean tienePalabrasClave(FiltroTareaCombinadoRequest filtro) {
+		return filtro.getPalabrasClave() != null && !filtro.getPalabrasClave().trim().isBlank();
+	}
+
+	private boolean contienePalabrasClave(Tarea tarea, String palabrasClave) {
+		String titulo = tarea.getTitulo() != null ? tarea.getTitulo().toLowerCase(Locale.ROOT) : "";
+		String descripcion = tarea.getDescripcion() != null ? tarea.getDescripcion().toLowerCase(Locale.ROOT) : "";
+		return titulo.contains(palabrasClave) || descripcion.contains(palabrasClave);
 	}
 
 	private Comparator<TareaFiltroCombinadoResponse> comparadorFiltroCombinado(
