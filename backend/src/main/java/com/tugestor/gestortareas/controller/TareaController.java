@@ -256,6 +256,21 @@ public class TareaController {
 		return ts.filtrarCombinado(filtroRequest, principal.getName());
 	}
 
+	@PostMapping("/recomendadas")
+	@Operation(
+			summary = "Obtener tareas recomendadas",
+			description = "Devuelve tareas personales y de grupo recomendables del usuario autenticado, aplicando filtros opcionales y orden inteligente."
+			)
+	@ApiResponses({
+		@ApiResponse(responseCode = "200", description = "Listado de tareas recomendadas obtenido correctamente"),
+		@ApiResponse(responseCode = "400", description = "Filtro de recomendadas invalido"),
+		@ApiResponse(responseCode = "401", description = "No autenticado o token invalido")
+	})
+	public List<TareaFiltroCombinadoResponse> obtenerTareasRecomendadas(
+			@RequestBody(required = false) FiltroTareaCombinadoRequest filtroRequest, Principal principal) {
+		return ts.obtenerTareasRecomendadas(filtroRequest, principal.getName());
+	}
+
 	@GetMapping("/filtro-combinado/save")
 	@Operation(
 			summary = "Obtener estado guardado del filtro combinado",

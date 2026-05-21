@@ -342,7 +342,13 @@ public class TareaServiceImpl implements TareaService{
 		resultado.sort(comparadorFiltroCombinado(criterioOrden));
 		return resultado;
 	}
-	
+
+	@Override
+	public List<TareaFiltroCombinadoResponse> obtenerTareasRecomendadas(FiltroTareaCombinadoRequest filtro,
+			String emailUsuarioCreador) {
+		return filtrarCombinado(normalizarFiltroRecomendadas(filtro), emailUsuarioCreador);
+	}
+
 	@Override
 	public EstadoFiltroTareaResponse obtenerEstadoFiltroCombinadoGuardado(String emailUsuario) {
 		Usuario usuario = obtenerUsuarioAutenticado(emailUsuario);
@@ -498,6 +504,23 @@ public class TareaServiceImpl implements TareaService{
 	
 	private boolean esEstadoCompletado(Estado estado) {
 		return estado == Estado.COMPLETADA || estado == Estado.COMPLETADA_CON_RETRASO;
+	}
+
+	private FiltroTareaCombinadoRequest normalizarFiltroRecomendadas(FiltroTareaCombinadoRequest filtro) {
+		FiltroTareaCombinadoRequest origen = filtro != null ? filtro : new FiltroTareaCombinadoRequest();
+		FiltroTareaCombinadoRequest recomendado = new FiltroTareaCombinadoRequest();
+		recomendado.setOrigen(origen.getOrigen() != null ? origen.getOrigen() : OrigenTareaFiltro.TODAS);
+		recomendado.setIdGrupo(origen.getIdGrupo());
+		recomendado.setPrioridad(origen.getPrioridad());
+		recomendado.setEstado(origen.getEstado());
+		recomendado.setPalabrasClave(origen.getPalabrasClave());
+		recomendado.setTiempoMax(origen.getTiempoMax());
+		recomendado.setIdCategoria(origen.getIdCategoria());
+		recomendado.setFechaEntregaExacta(origen.getFechaEntregaExacta());
+		recomendado.setFechaEntregaHasta(origen.getFechaEntregaHasta());
+		recomendado.setSoloPorCompletar(origen.getSoloPorCompletar() != null ? origen.getSoloPorCompletar() : true);
+		recomendado.setCriterioOrdenActivo(CriterioOrdenTareaCombinado.INTELIGENTE);
+		return recomendado;
 	}
 	
 	private List<TareaScoringContext> construirContextosFiltroCombinado(FiltroTareaCombinadoRequest filtro,

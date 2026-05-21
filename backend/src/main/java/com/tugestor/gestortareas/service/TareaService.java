@@ -12,7 +12,7 @@ import com.tugestor.gestortareas.model.Estado;
 import com.tugestor.gestortareas.model.Tarea;
 
 public interface TareaService {
-	/*Recuerda que los metodos de una interfaz son public abstract por defecto
+	/*Recuerdo de que los metodos de una interfaz son public abstract por defecto
 	 *Por lo tanto es lo mismo que poner:
 	 *(public abstract) Tarea guardarTarea(Tarea tarea); */
 	Tarea guardarTarea(TareaRequest tarea, String emailUsuarioCreador);
@@ -38,6 +38,8 @@ public interface TareaService {
 	List<TareaAsignadaGrupoResponse> obtenerTareasAsignadasGrupo(String emailUsuarioCreador);
 	List<TareaAsignadaGrupoResponse> obtenerTareasAsignadasGrupoPorGrupo(Long idGrupo, String emailUsuarioCreador);
 	List<TareaFiltroCombinadoResponse> filtrarCombinado(FiltroTareaCombinadoRequest filtro,
+			String emailUsuarioCreador);
+	List<TareaFiltroCombinadoResponse> obtenerTareasRecomendadas(FiltroTareaCombinadoRequest filtro,
 			String emailUsuarioCreador);
 	EstadoFiltroTareaResponse obtenerEstadoFiltroCombinadoGuardado(String emailUsuario);
 	EstadoFiltroTareaResponse guardarEstadoFiltroCombinado(FiltroTareaCombinadoRequest filtro, String emailUsuario);
