@@ -31,6 +31,8 @@ import com.tugestor.gestortareas.repository.GrupoMiembroRepository;
 import com.tugestor.gestortareas.repository.GrupoRepository;
 import com.tugestor.gestortareas.repository.TareaRepository;
 import com.tugestor.gestortareas.repository.UsuarioRepository;
+import com.tugestor.gestortareas.service.scoring.TareaInteligenteRankingService;
+import com.tugestor.gestortareas.service.scoring.TareaScoringContext;
 
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ValidationException;
@@ -51,9 +53,10 @@ public class TareaServiceImpl implements TareaService{
 	private final GrupoRepository gr;
 	private final GrupoMiembroRepository gmr;
 	private final EstadoFiltroTareaRepository eftr;
+	private final TareaInteligenteRankingService rankingInteligenteService;
 	public TareaServiceImpl(TareaRepository tr, CategoriaRepository cr, UsuarioRepository ur,
 			AsignacionGrupoMiembroRepository agmr, GrupoRepository gr, GrupoMiembroRepository gmr,
-			EstadoFiltroTareaRepository eftr) {
+			EstadoFiltroTareaRepository eftr, TareaInteligenteRankingService rankingInteligenteService) {
 		this.tr = tr;
 		this.cr = cr;
 		this.ur = ur;
@@ -61,6 +64,7 @@ public class TareaServiceImpl implements TareaService{
 		this.gr = gr;
 		this.gmr = gmr;
 		this.eftr = eftr;
+		this.rankingInteligenteService = rankingInteligenteService;
 	}
 	
 	@Override
@@ -298,7 +302,7 @@ public class TareaServiceImpl implements TareaService{
 				.map(TareaAsignadaGrupoResponse::new)
 				.toList();
 	}
-
+	
 	@Override
 	public List<TareaFiltroCombinadoResponse> filtrarCombinado(FiltroTareaCombinadoRequest filtro,
 			String emailUsuarioCreador) {
@@ -310,41 +314,35 @@ public class TareaServiceImpl implements TareaService{
 		CriterioOrdenTareaCombinado criterioOrden = filtroNormalizado.getCriterioOrdenActivo() != null
 				? filtroNormalizado.getCriterioOrdenActivo()
 				: CriterioOrdenTareaCombinado.FECHA_AGREGADO;
-
+		
 		validarFiltroCombinado(filtroNormalizado, usuario, origen);
-
+		
 		List<AsignacionGrupoMiembro> asignacionesGrupo = filtroNormalizado.getIdGrupo() != null
 				? agmr.findTareasAsignadasGrupoUsuarioPorGrupo(emailUsuarioCreador, filtroNormalizado.getIdGrupo())
 				: agmr.findTareasAsignadasGrupoUsuario(emailUsuarioCreador);
-
+		
 		Set<Long> idsTareasGrupo = asignacionesGrupo.stream()
 				.map(AsignacionGrupoMiembro::getTareaGenerada)
 				.filter(Objects::nonNull)
 				.map(Tarea::getIdTarea)
 				.collect(java.util.stream.Collectors.toSet());
-
-		List<TareaFiltroCombinadoResponse> resultado = new ArrayList<>();
-
-		if (filtroNormalizado.getIdGrupo() == null
-				&& (origen == OrigenTareaFiltro.TODAS || origen == OrigenTareaFiltro.PERSONAL)) {
-			tr.findByUsuarioEmail(emailUsuarioCreador).stream()
-					.filter(tarea -> !idsTareasGrupo.contains(tarea.getIdTarea()))
-					.filter(tarea -> cumpleFiltrosTarea(tarea, filtroNormalizado))
-					.map(TareaFiltroCombinadoResponse::new)
-					.forEach(resultado::add);
+		
+		List<TareaScoringContext> contextos = construirContextosFiltroCombinado(
+				filtroNormalizado, emailUsuarioCreador, origen, asignacionesGrupo, idsTareasGrupo);
+		
+		if (criterioOrden == CriterioOrdenTareaCombinado.INTELIGENTE) {
+			return rankingInteligenteService.ordenarPorScoreDesc(contextos).stream()
+					.map(this::mapearContextoFiltroCombinado)
+					.toList();
 		}
-
-		if (origen == OrigenTareaFiltro.TODAS || origen == OrigenTareaFiltro.GRUPO) {
-			asignacionesGrupo.stream()
-					.filter(asignacion -> cumpleFiltrosTarea(asignacion.getTareaGenerada(), filtroNormalizado))
-					.map(TareaFiltroCombinadoResponse::new)
-					.forEach(resultado::add);
-		}
-
+		
+		List<TareaFiltroCombinadoResponse> resultado = new ArrayList<>(contextos.stream()
+				.map(this::mapearContextoFiltroCombinado)
+				.toList());
 		resultado.sort(comparadorFiltroCombinado(criterioOrden));
 		return resultado;
 	}
-
+	
 	@Override
 	public EstadoFiltroTareaResponse obtenerEstadoFiltroCombinadoGuardado(String emailUsuario) {
 		Usuario usuario = obtenerUsuarioAutenticado(emailUsuario);
@@ -352,7 +350,7 @@ public class TareaServiceImpl implements TareaService{
 				.map(EstadoFiltroTareaResponse::new)
 				.orElseGet(EstadoFiltroTareaResponse::porDefecto);
 	}
-
+	
 	@Override
 	public EstadoFiltroTareaResponse guardarEstadoFiltroCombinado(FiltroTareaCombinadoRequest filtro,
 			String emailUsuario) {
@@ -362,7 +360,7 @@ public class TareaServiceImpl implements TareaService{
 				? filtroNormalizado.getOrigen()
 				: OrigenTareaFiltro.TODAS;
 		validarFiltroCombinado(filtroNormalizado, usuario, origen);
-
+		
 		EstadoFiltroTarea estadoFiltro = eftr.findByUsuario(usuario).orElseGet(EstadoFiltroTarea::new);
 		estadoFiltro.setUsuario(usuario);
 		estadoFiltro.setOrigen(origen);
@@ -393,7 +391,7 @@ public class TareaServiceImpl implements TareaService{
 			throw new ValidationException("No se puede asignar una fecha completada a una tarea no completada.");
 		}
 	}
-
+	
 	private void actualizarRevisionSiEsAsignacionGrupo(Tarea tarea) {
 		agmr.findByTareaGenerada(tarea).ifPresent(asignacionMiembro -> {
 			if (asignacionMiembro.getEstadoRevision() == EstadoRevisionAsignacion.PENDIENTE
@@ -403,7 +401,7 @@ public class TareaServiceImpl implements TareaService{
 			}
 		});
 	}
-
+	
 	private boolean cumpleFiltrosTarea(Tarea tarea, FiltroTareaCombinadoRequest filtro) {
 		if (tarea == null) {
 			return false;
@@ -446,17 +444,17 @@ public class TareaServiceImpl implements TareaService{
 		}
 		return true;
 	}
-
+	
 	private boolean tienePalabrasClave(FiltroTareaCombinadoRequest filtro) {
 		return filtro.getPalabrasClave() != null && !filtro.getPalabrasClave().trim().isBlank();
 	}
-
+	
 	private boolean contienePalabrasClave(Tarea tarea, String palabrasClave) {
 		String titulo = tarea.getTitulo() != null ? tarea.getTitulo().toLowerCase(Locale.ROOT) : "";
 		String descripcion = tarea.getDescripcion() != null ? tarea.getDescripcion().toLowerCase(Locale.ROOT) : "";
 		return titulo.contains(palabrasClave) || descripcion.contains(palabrasClave);
 	}
-
+	
 	private void validarFiltroCombinado(FiltroTareaCombinadoRequest filtro, Usuario usuario, OrigenTareaFiltro origen) {
 		if (origen == OrigenTareaFiltro.PERSONAL && filtro.getIdGrupo() != null) {
 			throw new ValidationException("No se puede filtrar por grupo cuando el origen es PERSONAL.");
@@ -474,7 +472,7 @@ public class TareaServiceImpl implements TareaService{
 		validarGrupoFiltro(filtro.getIdGrupo(), usuario);
 		validarCategoriaFiltro(filtro.getIdCategoria(), usuario);
 	}
-
+	
 	private void validarGrupoFiltro(Long idGrupo, Usuario usuario) {
 		if (idGrupo == null) {
 			return;
@@ -485,7 +483,7 @@ public class TareaServiceImpl implements TareaService{
 			throw new ValidationException("El grupo indicado no pertenece al usuario autenticado.");
 		}
 	}
-
+	
 	private void validarCategoriaFiltro(Long idCategoria, Usuario usuario) {
 		if (idCategoria == null) {
 			return;
@@ -497,16 +495,44 @@ public class TareaServiceImpl implements TareaService{
 			throw new ValidationException("La categoria indicada no pertenece al usuario autenticado.");
 		}
 	}
-
+	
 	private boolean esEstadoCompletado(Estado estado) {
 		return estado == Estado.COMPLETADA || estado == Estado.COMPLETADA_CON_RETRASO;
 	}
-
+	
+	private List<TareaScoringContext> construirContextosFiltroCombinado(FiltroTareaCombinadoRequest filtro,
+			String emailUsuarioCreador, OrigenTareaFiltro origen, List<AsignacionGrupoMiembro> asignacionesGrupo,
+			Set<Long> idsTareasGrupo) {
+		List<TareaScoringContext> contextos = new ArrayList<>();
+		if (filtro.getIdGrupo() == null
+				&& (origen == OrigenTareaFiltro.TODAS || origen == OrigenTareaFiltro.PERSONAL)) {
+			tr.findByUsuarioEmail(emailUsuarioCreador).stream()
+					.filter(tarea -> !idsTareasGrupo.contains(tarea.getIdTarea()))
+					.filter(tarea -> cumpleFiltrosTarea(tarea, filtro))
+					.map(TareaScoringContext::personal)
+					.forEach(contextos::add);
+		}
+		if (origen == OrigenTareaFiltro.TODAS || origen == OrigenTareaFiltro.GRUPO) {
+			asignacionesGrupo.stream()
+					.filter(asignacion -> cumpleFiltrosTarea(asignacion.getTareaGenerada(), filtro))
+					.map(TareaScoringContext::grupo)
+					.forEach(contextos::add);
+		}
+		return contextos;
+	}
+	
+	private TareaFiltroCombinadoResponse mapearContextoFiltroCombinado(TareaScoringContext contexto) {
+		if (contexto.tieneAsignacionGrupo()) {
+			return new TareaFiltroCombinadoResponse(contexto.getAsignacionGrupoMiembro());
+		}
+		return new TareaFiltroCombinadoResponse(contexto.getTarea());
+	}
+	
 	private Usuario obtenerUsuarioAutenticado(String emailUsuario) {
 		return ur.findByEmail(emailUsuario)
 				.orElseThrow(() -> new EntityNotFoundException("Usuario autenticado no encontrado."));
 	}
-
+	
 	private Comparator<TareaFiltroCombinadoResponse> comparadorFiltroCombinado(
 			CriterioOrdenTareaCombinado criterioOrden) {
 		Comparator<TareaFiltroCombinadoResponse> desempate = Comparator
@@ -528,13 +554,15 @@ public class TareaServiceImpl implements TareaService{
 				.thenComparing(TareaFiltroCombinadoResponse::getFechaAgregado,
 						Comparator.nullsLast(Comparator.reverseOrder()))
 				.thenComparing(desempate);
+		case INTELIGENTE -> Comparator
+				.comparing(TareaFiltroCombinadoResponse::getIdTarea, Comparator.nullsLast(Long::compareTo));
 		};
 	}
-
+	
 	private int prioridadOrden(Prioridad prioridad) {
 		return prioridad != null ? prioridad.ordinal() : -1;
 	}
-
+	
 	private Categoria validarPertenencia(Long idCategoria, Usuario usuario) {
 		Categoria categoria = cr.findById(idCategoria).orElseThrow(() ->
 		new EntityNotFoundException("Categoría no encontrada con id: " + idCategoria));
