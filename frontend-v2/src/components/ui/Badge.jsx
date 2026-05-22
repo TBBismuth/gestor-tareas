@@ -10,7 +10,7 @@ export default function Badge({ children, className, toneColor }) {
       style={{
         borderColor: toneColor || "var(--color-border)",
         color: toneColor || "var(--color-text-secondary)",
-        background: "color-mix(in srgb, currentColor 10%, white)",
+        background: "color-mix(in srgb, currentColor 10%, var(--color-surface-card))",
       }}
     >
       {children}

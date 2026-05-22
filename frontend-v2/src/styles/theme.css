@@ -1,4 +1,6 @@
 :root {
+  color-scheme: light;
+
   --color-brand: #2563eb;
   --color-brand-strong: #1d4ed8;
   --color-brand-soft: #dbeafe;
@@ -7,6 +9,7 @@
   --color-bg-accent-soft: rgba(37, 99, 235, 0.14);
   --color-bg-elevated: #ffffff;
   --color-bg-muted: #eef2f7;
+  --color-overlay: rgba(15, 23, 42, 0.4);
 
   --color-surface-panel: rgba(255, 255, 255, 0.92);
   --color-surface-card: #ffffff;
@@ -39,9 +42,9 @@
   --state-disabled-text: #94a3b8;
 
   --priority-baja: #22c55e;
-  --priority-media: #f59e0b;
+  --priority-media: #f0a92e;
   --priority-alta: #ef4444;
-  --priority-imprescindible: #7c3aed;
+  --priority-imprescindible: #8043eb;
   --priority-default: #94a3b8;
 
   --status-completada: #059669;
@@ -50,6 +53,57 @@
   --status-sin-fecha: #64748b;
   --status-completada-con-retraso: #d97706;
   --status-default: #94a3b8;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --color-brand: #60a5fa;
+  --color-brand-strong: #3b82f6;
+  --color-brand-soft: #172554;
+
+  --color-bg-app: #080d16;
+  --color-bg-accent-soft: rgba(96, 165, 250, 0.14);
+  --color-bg-elevated: #101827;
+  --color-bg-muted: #182235;
+  --color-overlay: rgba(2, 6, 23, 0.68);
+
+  --color-surface-panel: rgba(15, 23, 42, 0.9);
+  --color-surface-card: #111827;
+  --color-surface-card-muted: #172033;
+
+  --color-text-primary: #f8fafc;
+  --color-text-secondary: #cbd5e1;
+  --color-text-muted: #94a3b8;
+  --color-text-inverse: #07111f;
+
+  --color-border: #2d3a4f;
+  --color-border-strong: #42526b;
+
+  --shadow-panel: 0 18px 60px rgba(0, 0, 0, 0.38);
+  --shadow-card: 0 12px 32px rgba(0, 0, 0, 0.34);
+  --shadow-control: 0 4px 14px rgba(0, 0, 0, 0.28);
+
+  --state-active-bg: #18345f;
+  --state-active-text: #bfdbfe;
+  --state-active-border: #3b82f6;
+  --state-inactive-bg: #111827;
+  --state-inactive-text: #cbd5e1;
+  --state-disabled-bg: #1f2937;
+  --state-disabled-text: #64748b;
+
+  --priority-baja: #34d399;
+  --priority-media: #fdc63d;
+  --priority-alta: #fb7185;
+  --priority-imprescindible: #a78bfa;
+  --priority-default: #64748b;
+
+  --status-completada: #0b9668;
+  --status-en-curso: #38bdf8;
+  --status-vencida: #f43f5e;
+  --status-sin-fecha: #94a3b8;
+  --status-completada-con-retraso: #f59e0b;
+  --status-default: #64748b;
 }
 
 .bg-app {

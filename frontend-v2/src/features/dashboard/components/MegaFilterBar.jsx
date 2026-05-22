@@ -1,4 +1,6 @@
-import { CalendarDays, Clock3, Search, SlidersHorizontal, Tag } from "lucide-react";
+import { CalendarDays, Clock3, Moon, Search, SlidersHorizontal, Sun, Tag } from "lucide-react";
+import { useTheme } from "../../../app/theme.jsx";
+import IconButton from "../../../components/ui/IconButton.jsx";
 import Button from "../../../components/ui/Button.jsx";
 
 const filters = [
@@ -9,19 +11,34 @@ const filters = [
 ];
 
 export default function MegaFilterBar({ onFocus }) {
+  const { theme, toggleTheme } = useTheme();
+  const ThemeIcon = theme === "dark" ? Sun : Moon;
+
   return (
     <header
       className="rounded-panel border border-app bg-panel p-4 shadow-panel"
       onClick={onFocus}
     >
       <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-        <div>
+        <div className="flex items-start justify-between gap-3">
+          <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-muted">
             Megafiltro
           </p>
           <h2 className="mt-1 text-lg font-semibold text-primary">
             Filtros avanzados de tareas
           </h2>
+          </div>
+          <IconButton
+            label="Cambiar tema"
+            className="xl:hidden"
+            onClick={(event) => {
+              event.stopPropagation();
+              toggleTheme();
+            }}
+          >
+            <ThemeIcon size={18} />
+          </IconButton>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -40,6 +57,16 @@ export default function MegaFilterBar({ onFocus }) {
             <Search size={16} />
             <span className="text-sm text-muted">Buscar palabras clave...</span>
           </div>
+          <IconButton
+            label="Cambiar tema"
+            className="hidden xl:inline-grid"
+            onClick={(event) => {
+              event.stopPropagation();
+              toggleTheme();
+            }}
+          >
+            <ThemeIcon size={18} />
+          </IconButton>
         </div>
       </div>
     </header>
