@@ -9,3 +9,8 @@ export async function completeTask(taskId) {
   const { data } = await apiClient.patch(`/tarea/completar/${taskId}`);
   return data;
 }
+
+export async function createTask(payload) {
+  const { data } = await apiClient.post("/tarea/add", payload);
+  return data;
+}

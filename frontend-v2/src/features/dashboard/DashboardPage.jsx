@@ -1,16 +1,21 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { Plus } from "lucide-react";
 import AppShell from "../../components/layout/AppShell.jsx";
 import RightSidebar from "../../components/layout/RightSidebar.jsx";
 import ViewActionsBar from "../../components/layout/ViewActionsBar.jsx";
+import Button from "../../components/ui/Button.jsx";
 import MegaFilterBar from "./components/MegaFilterBar.jsx";
+import TaskFormModal from "./components/TaskFormModal.jsx";
 import TaskList from "./components/TaskList.jsx";
-import { completeTask, getMyTasks } from "./api/tasksApi.js";
+import { getMyCategories } from "./api/categoriesApi.js";
+import { completeTask, createTask, getMyTasks } from "./api/tasksApi.js";
 import { mapTaskResponsesToCardTasks } from "./mappers/taskMapper.js";
 
 const VIEW_MINE = "mine";
 const MY_TASKS_QUERY_KEY = ["tasks", "mine"];
+const CATEGORIES_QUERY_KEY = ["categories", "mine"];
 
 function getTaskActionErrorMessage(error) {
   return error?.response?.data?.error || "No se pudo completar la tarea.";
@@ -18,8 +23,14 @@ function getTaskActionErrorMessage(error) {
 
 export default function DashboardPage() {
   const queryClient = useQueryClient();
+  const [taskModalOpen, setTaskModalOpen] = useState(false);
   const [focusArea, setFocusArea] = useState("filter");
   const [activeView, setActiveView] = useState(VIEW_MINE);
+  const categoriesQuery = useQuery({
+    queryKey: CATEGORIES_QUERY_KEY,
+    queryFn: getMyCategories,
+    enabled: taskModalOpen,
+  });
   const tasksQuery = useQuery({
     queryKey: MY_TASKS_QUERY_KEY,
     queryFn: getMyTasks,
@@ -36,13 +47,26 @@ export default function DashboardPage() {
       toast.error(getTaskActionErrorMessage(error));
     },
   });
+  const createTaskMutation = useMutation({
+    mutationFn: createTask,
+    onSuccess: () => {
+      toast.success("Tarea creada.");
+      setTaskModalOpen(false);
+      queryClient.invalidateQueries({ queryKey: MY_TASKS_QUERY_KEY });
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.error || "No se pudo crear la tarea.");
+    },
+  });
 
   const tasks = tasksQuery.data ?? [];
 
   return (
     <AppShell
       focusArea={focusArea}
-      topBar={<MegaFilterBar onFocus={() => setFocusArea("filter")} />}
+      topBar={
+        <MegaFilterBar onFocus={() => setFocusArea("filter")} />
+      }
       secondaryBar={
         <ViewActionsBar
           activeView={activeView}
@@ -60,13 +84,17 @@ export default function DashboardPage() {
         />
       }
     >
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-muted">
             Pantalla principal
           </p>
           <h1 className="mt-1 text-2xl font-semibold text-primary">Tareas</h1>
         </div>
+        <Button className="w-full sm:w-auto" onClick={() => setTaskModalOpen(true)}>
+          <Plus size={17} />
+          Nueva tarea
+        </Button>
       </div>
       {activeView === VIEW_MINE ? (
         <>
@@ -99,6 +127,15 @@ export default function DashboardPage() {
           Esta vista se conectara en un bloque posterior.
         </p>
       )}
+      <TaskFormModal
+        categories={categoriesQuery.data ?? []}
+        categoriesError={categoriesQuery.isError}
+        categoriesLoading={categoriesQuery.isLoading}
+        creating={createTaskMutation.isPending}
+        onClose={() => setTaskModalOpen(false)}
+        onSubmit={(payload) => createTaskMutation.mutateAsync(payload)}
+        open={taskModalOpen}
+      />
     </AppShell>
   );
 }
