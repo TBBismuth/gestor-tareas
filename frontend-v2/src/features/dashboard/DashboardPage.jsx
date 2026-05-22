@@ -1,23 +1,40 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import AppShell from "../../components/layout/AppShell.jsx";
 import RightSidebar from "../../components/layout/RightSidebar.jsx";
 import ViewActionsBar from "../../components/layout/ViewActionsBar.jsx";
 import MegaFilterBar from "./components/MegaFilterBar.jsx";
 import TaskList from "./components/TaskList.jsx";
-import { getMyTasks } from "./api/tasksApi.js";
+import { completeTask, getMyTasks } from "./api/tasksApi.js";
 import { mapTaskResponsesToCardTasks } from "./mappers/taskMapper.js";
 
 const VIEW_MINE = "mine";
+const MY_TASKS_QUERY_KEY = ["tasks", "mine"];
+
+function getTaskActionErrorMessage(error) {
+  return error?.response?.data?.error || "No se pudo completar la tarea.";
+}
 
 export default function DashboardPage() {
+  const queryClient = useQueryClient();
   const [focusArea, setFocusArea] = useState("filter");
   const [activeView, setActiveView] = useState(VIEW_MINE);
   const tasksQuery = useQuery({
-    queryKey: ["tasks", "mine"],
+    queryKey: MY_TASKS_QUERY_KEY,
     queryFn: getMyTasks,
     select: mapTaskResponsesToCardTasks,
     enabled: activeView === VIEW_MINE,
+  });
+  const completeTaskMutation = useMutation({
+    mutationFn: (task) => completeTask(task.idTarea),
+    onSuccess: () => {
+      toast.success("Tarea completada.");
+      queryClient.invalidateQueries({ queryKey: MY_TASKS_QUERY_KEY });
+    },
+    onError: (error) => {
+      toast.error(getTaskActionErrorMessage(error));
+    },
   });
 
   const tasks = tasksQuery.data ?? [];
@@ -68,7 +85,14 @@ export default function DashboardPage() {
               Todavia no tienes tareas.
             </p>
           )}
-          {tasks.length > 0 && <TaskList tasks={tasks} />}
+          {tasks.length > 0 && (
+            <TaskList
+              completingTaskId={completeTaskMutation.variables?.idTarea}
+              isCompleting={completeTaskMutation.isPending}
+              onCompleteTask={(task) => completeTaskMutation.mutate(task)}
+              tasks={tasks}
+            />
+          )}
         </>
       ) : (
         <p className="mt-5 rounded-control border border-app bg-[color:var(--color-surface-card-muted)] px-4 py-3 text-sm text-secondary">

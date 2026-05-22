@@ -21,11 +21,15 @@ function DetailItem({ label, children }) {
   );
 }
 
-export default function TaskCard({ task }) {
+export default function TaskCard({ isCompleting = false, onComplete, task }) {
   const [expanded, setExpanded] = useState(false);
   const priority = getPriorityVisual(task.prioridad);
   const state = getStateVisual(task.estado);
   const isGroupTask = task.origenTarea === "GRUPO";
+  const isCompleted =
+    task.completada ||
+    task.estado === "COMPLETADA" ||
+    task.estado === "COMPLETADA_CON_RETRASO";
   const categoryName = getTaskCategoryName(task);
   const metaItems = [formatDuration(task.tiempo), formatTaskDate(task.fechaEntrega), categoryName];
 
@@ -116,10 +120,16 @@ export default function TaskCard({ task }) {
               </div>
             )}
             <div className="mt-4 flex flex-wrap items-center gap-2">
-              <Button className="success-action-button">
-                <Check size={17} />
-                Completar
-              </Button>
+              {!isCompleted && (
+                <Button
+                  className="success-action-button"
+                  disabled={isCompleting}
+                  onClick={() => onComplete?.(task)}
+                >
+                  <Check size={17} />
+                  {isCompleting ? "Completando..." : "Completar"}
+                </Button>
+              )}
               <Button variant="secondary">
                 <Pencil size={17} />
                 Editar
