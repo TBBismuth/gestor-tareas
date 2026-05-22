@@ -1,0 +1,149 @@
+:root {
+  --color-brand: #2563eb;
+  --color-brand-strong: #1d4ed8;
+  --color-brand-soft: #dbeafe;
+
+  --color-bg-app: #f5f7fb;
+  --color-bg-accent-soft: rgba(37, 99, 235, 0.14);
+  --color-bg-elevated: #ffffff;
+  --color-bg-muted: #eef2f7;
+
+  --color-surface-panel: rgba(255, 255, 255, 0.92);
+  --color-surface-card: #ffffff;
+  --color-surface-card-muted: #f8fafc;
+
+  --color-text-primary: #111827;
+  --color-text-secondary: #475569;
+  --color-text-muted: #64748b;
+  --color-text-inverse: #ffffff;
+
+  --color-border: #d8dee9;
+  --color-border-strong: #b8c2d2;
+
+  --shadow-panel: 0 18px 60px rgba(15, 23, 42, 0.08);
+  --shadow-card: 0 12px 32px rgba(15, 23, 42, 0.09);
+  --shadow-control: 0 4px 14px rgba(15, 23, 42, 0.08);
+
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-panel: 16px;
+  --radius-pill: 999px;
+
+  --state-active-bg: #e0ecff;
+  --state-active-text: #1d4ed8;
+  --state-active-border: #93b4ff;
+  --state-inactive-bg: #f8fafc;
+  --state-inactive-text: #475569;
+  --state-disabled-bg: #e5e7eb;
+  --state-disabled-text: #94a3b8;
+
+  --priority-baja: #22c55e;
+  --priority-media: #f59e0b;
+  --priority-alta: #ef4444;
+  --priority-imprescindible: #7c3aed;
+  --priority-default: #94a3b8;
+
+  --status-completada: #059669;
+  --status-en-curso: #0284c7;
+  --status-vencida: #dc2626;
+  --status-sin-fecha: #64748b;
+  --status-completada-con-retraso: #d97706;
+  --status-default: #94a3b8;
+}
+
+.bg-app {
+  background: var(--color-bg-app);
+}
+
+.bg-panel {
+  background: var(--color-surface-panel);
+}
+
+.bg-card {
+  background: var(--color-surface-card);
+}
+
+.text-primary {
+  color: var(--color-text-primary);
+}
+
+.text-secondary {
+  color: var(--color-text-secondary);
+}
+
+.text-muted {
+  color: var(--color-text-muted);
+}
+
+.border-app {
+  border-color: var(--color-border);
+}
+
+.shadow-panel {
+  box-shadow: var(--shadow-panel);
+}
+
+.shadow-card {
+  box-shadow: var(--shadow-card);
+}
+
+.rounded-panel {
+  border-radius: var(--radius-panel);
+}
+
+.rounded-control {
+  border-radius: var(--radius-md);
+}
+
+.floating-sidebar {
+  position: fixed;
+  top: 52%;
+  right: max(1.5rem, calc((100vw - 1680px) / 2 + 1.5rem));
+  z-index: 30;
+  width: 16rem;
+  max-height: min(40vh, 25rem);
+  transform: translateY(-50%);
+}
+
+.task-card-shell {
+  --task-priority-color: var(--priority-default);
+  --task-state-color: var(--status-default);
+  --task-priority-width: clamp(4.5rem, 8vw, 7rem);
+  --task-state-width: clamp(4.5rem, 8vw, 7rem);
+  background: var(--color-surface-card);
+}
+
+.task-card-color-zone {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+
+.task-card-priority-zone {
+  left: 0;
+  width: var(--task-priority-width);
+  background: var(--task-priority-color);
+  clip-path: polygon(0 0, 75% 0, 100% 50%, 75% 100%, 0 100%);
+}
+
+.task-card-state-zone {
+  right: 0;
+  width: var(--task-state-width);
+  background: var(--task-state-color);
+  clip-path: polygon(25% 0, 100% 0, 100% 100%, 25% 100%, 0 50%);
+}
+
+.task-card-center {
+  position: relative;
+  z-index: 1;
+  margin-left: calc(var(--task-priority-width) * 0.86);
+  margin-right: calc(var(--task-state-width) * 0.86);
+  background: var(--color-surface-card);
+  min-height: 100%;
+}
+
+.task-card-detail {
+  background: color-mix(in srgb, var(--color-surface-card-muted) 82%, var(--color-surface-card));
+}

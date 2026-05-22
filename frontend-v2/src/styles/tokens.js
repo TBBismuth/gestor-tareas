@@ -1,0 +1,39 @@
+export const tokens = {
+  color: {
+    brand: "var(--color-brand)",
+    brandStrong: "var(--color-brand-strong)",
+    brandSoft: "var(--color-brand-soft)",
+    bgApp: "var(--color-bg-app)",
+    panel: "var(--color-surface-panel)",
+    card: "var(--color-surface-card)",
+    textPrimary: "var(--color-text-primary)",
+    textSecondary: "var(--color-text-secondary)",
+    textMuted: "var(--color-text-muted)",
+    border: "var(--color-border)",
+  },
+  radius: {
+    sm: "var(--radius-sm)",
+    md: "var(--radius-md)",
+    lg: "var(--radius-lg)",
+    panel: "var(--radius-panel)",
+    pill: "var(--radius-pill)",
+  },
+  shadow: {
+    panel: "var(--shadow-panel)",
+    card: "var(--shadow-card)",
+    control: "var(--shadow-control)",
+  },
+  state: {
+    activeBg: "var(--state-active-bg)",
+    activeText: "var(--state-active-text)",
+    activeBorder: "var(--state-active-border)",
+    inactiveBg: "var(--state-inactive-bg)",
+    inactiveText: "var(--state-inactive-text)",
+    disabledBg: "var(--state-disabled-bg)",
+    disabledText: "var(--state-disabled-text)",
+  },
+  layout: {
+    floatingSidebarWidth: "16rem",
+    floatingSidebarMaxHeight: "min(40vh, 25rem)",
+  },
+};

@@ -68,3 +68,13 @@ frontend/frontend-gestor-tareas/package-lock.json
 frontend/frontend-gestor-tareas/dev-dist/
 frontend/frontend-gestor-tareas/dev-dist
 /frontend/frontend-gestor-tareas/dev-dist
+
+# --- FRONTEND V2 (carpeta: frontend-v2/) ---
+
+# Node modules
+node_modules/
+frontend-v2/node_modules/
+
+# Build outputs
+dist/
+frontend-v2/dist/
