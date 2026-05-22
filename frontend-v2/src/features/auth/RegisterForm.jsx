@@ -1,21 +1,25 @@
 import { UserPlus } from "lucide-react";
 import { useForm } from "react-hook-form";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import Button from "../../components/ui/Button.jsx";
+import { getAuthErrorMessage } from "./authErrors.js";
+import { useAuth } from "./AuthContext.jsx";
 import PasswordField from "./PasswordField.jsx";
 import PasswordStrengthMeter from "./PasswordStrengthMeter.jsx";
 import TextField from "./TextField.jsx";
 
 export default function RegisterForm() {
+  const navigate = useNavigate();
+  const { register: registerUser } = useAuth();
   const {
     register,
     handleSubmit,
     watch,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm({
     defaultValues: {
-      name: "",
+      nombre: "",
       email: "",
       password: "",
       confirmPassword: "",
@@ -24,10 +28,25 @@ export default function RegisterForm() {
 
   const password = watch("password");
 
-  function onSubmit(values) {
-    toast.info("Registro pendiente de integrar con backend", {
-      description: values.email,
-    });
+  async function onSubmit(values) {
+    try {
+      const session = await registerUser({
+        nombre: values.nombre,
+        email: values.email,
+        password: values.password,
+      });
+
+      if (session.accessToken) {
+        toast.success("Cuenta creada.");
+        navigate("/app", { replace: true });
+        return;
+      }
+
+      toast.success("Cuenta creada. Inicia sesion.");
+      navigate("/login", { replace: true, state: { registered: true } });
+    } catch (error) {
+      toast.error(getAuthErrorMessage(error, "No se ha podido crear la cuenta."));
+    }
   }
 
   return (
@@ -46,8 +65,8 @@ export default function RegisterForm() {
           label="Nombre"
           autoComplete="name"
           placeholder="Tu nombre"
-          error={errors.name}
-          register={register("name", {
+          error={errors.nombre}
+          register={register("nombre", {
             required: "El nombre es obligatorio.",
           })}
         />
@@ -92,9 +111,9 @@ export default function RegisterForm() {
           Recomendacion: usa al menos 8 caracteres, una mayuscula, una minuscula y un numero.
         </p>
 
-        <Button type="submit" size="lg" className="w-full">
+        <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
           <UserPlus size={18} />
-          Crear cuenta
+          {isSubmitting ? "Creando..." : "Crear cuenta"}
         </Button>
       </form>
 

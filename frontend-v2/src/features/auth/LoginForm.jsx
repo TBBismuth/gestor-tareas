@@ -1,16 +1,21 @@
 import { LogIn } from "lucide-react";
 import { useForm } from "react-hook-form";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import Button from "../../components/ui/Button.jsx";
+import { getAuthErrorMessage } from "./authErrors.js";
+import { useAuth } from "./AuthContext.jsx";
 import PasswordField from "./PasswordField.jsx";
 import TextField from "./TextField.jsx";
 
 export default function LoginForm() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { login } = useAuth();
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm({
     defaultValues: {
       email: "",
@@ -18,10 +23,14 @@ export default function LoginForm() {
     },
   });
 
-  function onSubmit(values) {
-    toast.info("Login pendiente de integrar con backend", {
-      description: values.email,
-    });
+  async function onSubmit(values) {
+    try {
+      await login(values);
+      toast.success("Sesion iniciada.");
+      navigate(location.state?.from?.pathname || "/app", { replace: true });
+    } catch (error) {
+      toast.error(getAuthErrorMessage(error, "No se ha podido iniciar sesion."));
+    }
   }
 
   return (
@@ -57,9 +66,9 @@ export default function LoginForm() {
           })}
         />
 
-        <Button type="submit" size="lg" className="w-full">
+        <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
           <LogIn size={18} />
-          Entrar
+          {isSubmitting ? "Entrando..." : "Entrar"}
         </Button>
       </form>
 
