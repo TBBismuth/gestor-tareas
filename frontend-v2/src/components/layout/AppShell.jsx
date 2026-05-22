@@ -1,7 +1,6 @@
 import { cn } from "../../lib/cn";
 
 export default function AppShell({ topBar, sidebar, children, focusArea = "filter" }) {
-  const sidebarDimmed = focusArea === "filter";
   const topBarDimmed = focusArea === "sidebar";
 
   return (
@@ -20,12 +19,7 @@ export default function AppShell({ topBar, sidebar, children, focusArea = "filte
             {children}
           </section>
         </main>
-        <aside
-          className={cn(
-            "floating-sidebar hidden transition duration-200 lg:block",
-            sidebarDimmed && "opacity-55 saturate-50"
-          )}
-        >
+        <aside className="hidden lg:block">
           {sidebar}
         </aside>
       </div>

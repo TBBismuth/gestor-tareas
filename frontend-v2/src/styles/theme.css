@@ -98,12 +98,19 @@
 
 .floating-sidebar {
   position: fixed;
-  top: 52%;
-  right: max(1.5rem, calc((100vw - 1680px) / 2 + 1.5rem));
   z-index: 30;
   width: 16rem;
   max-height: min(40vh, 25rem);
-  transform: translateY(-50%);
+}
+
+.floating-sidebar-handle {
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.floating-sidebar-handle[data-dragging="true"] {
+  cursor: grabbing;
 }
 
 .task-card-shell {

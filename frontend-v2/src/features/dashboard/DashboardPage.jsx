@@ -58,7 +58,12 @@ export default function DashboardPage() {
     <AppShell
       focusArea={focusArea}
       topBar={<MegaFilterBar onFocus={() => setFocusArea("filter")} />}
-      sidebar={<RightSidebar onFocus={() => setFocusArea("sidebar")} />}
+      sidebar={
+        <RightSidebar
+          dimmed={focusArea === "filter"}
+          onFocus={() => setFocusArea("sidebar")}
+        />
+      }
     >
       <div className="flex items-start justify-between gap-4">
         <div>

@@ -12,8 +12,7 @@ export default function MegaFilterBar({ onFocus }) {
   return (
     <header
       className="rounded-panel border border-app bg-panel p-4 shadow-panel"
-      onMouseEnter={onFocus}
-      onFocus={onFocus}
+      onClick={onFocus}
     >
       <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
         <div>
