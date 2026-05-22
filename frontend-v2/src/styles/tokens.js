@@ -34,6 +34,10 @@ export const tokens = {
     inactiveText: "var(--state-inactive-text)",
     disabledBg: "var(--state-disabled-bg)",
     disabledText: "var(--state-disabled-text)",
+    dangerBg: "var(--state-danger-bg)",
+    dangerBgHover: "var(--state-danger-bg-hover)",
+    dangerBorder: "var(--state-danger-border)",
+    dangerText: "var(--state-danger-text)",
   },
   layout: {
     floatingSidebarWidth: "16rem",

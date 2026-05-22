@@ -1,17 +1,10 @@
-import { Brain, FolderKanban, Layers3, ListTodo, LogOut, RotateCcw } from "lucide-react";
+import { RotateCcw } from "lucide-react";
 import { useDraggablePanel } from "../../lib/useDraggablePanel";
 import { cn } from "../../lib/cn";
-import Button from "../ui/Button.jsx";
 import IconButton from "../ui/IconButton.jsx";
+import ViewActions from "./ViewActions.jsx";
 
 const SIDEBAR_POSITION_KEY = "gestor-tareas.frontend-v2.sidebar-position";
-
-const navItems = [
-  { label: "Mis tareas", icon: ListTodo },
-  { label: "Mis categorias", icon: FolderKanban },
-  { label: "Mis grupos", icon: Layers3 },
-  { label: "Inteligente", icon: Brain },
-];
 
 export default function RightSidebar({ dimmed = false, onFocus }) {
   const { panelRef, position, isDragging, dragHandleProps, resetPosition } =
@@ -34,36 +27,25 @@ export default function RightSidebar({ dimmed = false, onFocus }) {
           dimmed && "opacity-55 saturate-50"
         )}
       >
-      <div>
-        <div
-          className="floating-sidebar-handle flex items-center justify-between gap-2"
-          data-dragging={isDragging}
-          {...dragHandleProps}
-        >
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted">Vistas</p>
-          <IconButton
-            label="Resetear posicion del panel"
-            className="size-8"
-            onPointerDown={(event) => event.stopPropagation()}
-            onClick={resetPosition}
+        <div>
+          <div
+            className="floating-sidebar-handle flex items-center justify-between gap-2"
+            data-dragging={isDragging}
+            {...dragHandleProps}
           >
-            <RotateCcw size={15} />
-          </IconButton>
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted">Vistas</p>
+            <IconButton
+              label="Resetear posicion del panel"
+              className="size-8"
+              onPointerDown={(event) => event.stopPropagation()}
+              onClick={resetPosition}
+            >
+              <RotateCcw size={15} />
+            </IconButton>
+          </div>
+          {/* Mobile queda pendiente para una version tipo drawer/bottom sheet. */}
+          <ViewActions className="mt-4" />
         </div>
-        {/* Mobile queda pendiente para una version tipo drawer/bottom sheet. */}
-        <nav className="mt-4 grid gap-2">
-          {navItems.map(({ label, icon: Icon }) => (
-            <Button key={label} variant="secondary" className="justify-start">
-              <Icon size={17} />
-              {label}
-            </Button>
-          ))}
-        </nav>
-      </div>
-      <Button variant="ghost" className="mt-auto justify-start">
-        <LogOut size={17} />
-        Cerrar sesion
-      </Button>
       </div>
     </div>
   );

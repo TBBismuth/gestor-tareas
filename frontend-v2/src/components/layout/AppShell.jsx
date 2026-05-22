@@ -1,6 +1,12 @@
 import { cn } from "../../lib/cn";
 
-export default function AppShell({ topBar, sidebar, children, focusArea = "filter" }) {
+export default function AppShell({
+  topBar,
+  secondaryBar,
+  sidebar,
+  children,
+  focusArea = "filter",
+}) {
   const topBarDimmed = focusArea === "sidebar";
 
   return (
@@ -15,6 +21,7 @@ export default function AppShell({ topBar, sidebar, children, focusArea = "filte
           >
             {topBar}
           </div>
+          {secondaryBar}
           <section className="min-h-0 flex-1 rounded-panel border border-app bg-panel p-4 shadow-panel">
             {children}
           </section>

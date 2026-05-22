@@ -1,6 +1,7 @@
 import { useState } from "react";
 import AppShell from "../../components/layout/AppShell.jsx";
 import RightSidebar from "../../components/layout/RightSidebar.jsx";
+import ViewActionsBar from "../../components/layout/ViewActionsBar.jsx";
 import MegaFilterBar from "./components/MegaFilterBar.jsx";
 import TaskList from "./components/TaskList.jsx";
 
@@ -58,6 +59,12 @@ export default function DashboardPage() {
     <AppShell
       focusArea={focusArea}
       topBar={<MegaFilterBar onFocus={() => setFocusArea("filter")} />}
+      secondaryBar={
+        <ViewActionsBar
+          dimmed={focusArea === "filter"}
+          onFocus={() => setFocusArea("sidebar")}
+        />
+      }
       sidebar={
         <RightSidebar
           dimmed={focusArea === "filter"}

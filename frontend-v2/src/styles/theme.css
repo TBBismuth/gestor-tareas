@@ -40,6 +40,10 @@
   --state-inactive-text: #475569;
   --state-disabled-bg: #e5e7eb;
   --state-disabled-text: #94a3b8;
+  --state-danger-bg: #fef2f2;
+  --state-danger-bg-hover: #fee2e2;
+  --state-danger-border: #fca5a5;
+  --state-danger-text: #b91c1c;
 
   --priority-baja: #22c55e;
   --priority-media: #f0a92e;
@@ -91,6 +95,10 @@
   --state-inactive-text: #cbd5e1;
   --state-disabled-bg: #1f2937;
   --state-disabled-text: #64748b;
+  --state-danger-bg: #2b1218;
+  --state-danger-bg-hover: #451a22;
+  --state-danger-border: #be4458;
+  --state-danger-text: #fca5a5;
 
   --priority-baja: #34d399;
   --priority-media: #fdc63d;
@@ -165,6 +173,13 @@
 
 .floating-sidebar-handle[data-dragging="true"] {
   cursor: grabbing;
+}
+
+.danger-icon-button:hover,
+.danger-icon-button:focus-visible {
+  border-color: var(--state-danger-border);
+  background: var(--state-danger-bg-hover);
+  color: var(--state-danger-text);
 }
 
 .task-card-shell {
