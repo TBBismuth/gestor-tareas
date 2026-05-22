@@ -1,0 +1,65 @@
+<svg width="800" height="300" viewBox="0 0 800 300" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="depth-hole" cx="50%" cy="100%" r="80%" fx="50%" fy="95%">
+      <stop offset="0%" stop-color="#080d16" stop-opacity="1" />     <stop offset="45%" stop-color="#0f1627" stop-opacity="0.8" />    <stop offset="100%" stop-color="#111827" stop-opacity="0" />     </radialGradient>
+
+    <linearGradient id="neon-fade" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#60a5fa" stop-opacity="0" />
+      <stop offset="25%" stop-color="#60a5fa" stop-opacity="0.15" />
+      <stop offset="50%" stop-color="#60a5fa" stop-opacity="0.4" />
+      <stop offset="75%" stop-color="#60a5fa" stop-opacity="0.15" />
+      <stop offset="100%" stop-color="#60a5fa" stop-opacity="0" />
+    </linearGradient>
+
+    <filter id="neon-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="4" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <filter id="bokeh-blur">
+      <feGaussianBlur stdDeviation="5" />
+    </filter>
+  </defs>
+
+  <rect width="800" height="300" fill="#111827" />
+
+  <rect width="800" height="300" fill="url(#depth-hole)" />
+
+  <rect x="0" y="270" width="800" height="3" fill="url(#neon-fade)" filter="url(#neon-glow)" />
+  <rect x="200" y="271" width="400" height="1" fill="url(#neon-fade)" opacity="0.8" />
+
+  <g fill="#60a5fa" filter="url(#bokeh-blur)" opacity="0.12">
+    <circle cx="250" cy="250" r="12" />
+    <circle cx="550" cy="260" r="15" />
+    <circle cx="400" cy="230" r="18" />
+    <circle cx="150" cy="280" r="10" />
+    <circle cx="650" cy="240" r="14" />
+  </g>
+
+  <g fill="#60a5fa" filter="url(#neon-glow)" opacity="0.35">
+    <circle cx="300" cy="240" r="3" />
+    <circle cx="500" cy="220" r="2.5" />
+    <circle cx="400" cy="260" r="4" />
+    <circle cx="200" cy="270" r="3" />
+    <circle cx="600" cy="250" r="3.5" />
+    <circle cx="450" cy="190" r="2" />
+    <circle cx="350" cy="210" r="2" />
+  </g>
+
+  <g fill="#60a5fa" opacity="0.6">
+    <circle cx="380" cy="160" r="1.5" />
+    <circle cx="420" cy="140" r="1" />
+    <circle cx="280" cy="180" r="1.2" />
+    <circle cx="520" cy="170" r="1" />
+    <circle cx="330" cy="220" r="1.5" />
+    <circle cx="480" cy="240" r="1.5" />
+    <circle cx="230" cy="210" r="1" />
+    <circle cx="570" cy="200" r="1.2" />
+    <circle cx="400" cy="100" r="0.8" /> <circle cx="450" cy="120" r="1" />
+    <circle cx="320" cy="130" r="0.8" />
+  </g>
+
+</svg>

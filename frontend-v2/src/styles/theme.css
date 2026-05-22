@@ -462,6 +462,27 @@
   background: var(--state-danger-bg-hover);
 }
 
+.category-card {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--color-surface-card) 34%, transparent), color-mix(in srgb, var(--color-surface-card) 46%, transparent)),
+    linear-gradient(145deg, color-mix(in srgb, var(--color-surface-card-muted) 34%, transparent), transparent 58%),
+    url("/backgrounds/category-card-bg.svg") center bottom / cover no-repeat,
+    var(--color-surface-card);
+}
+
+.category-card-accent {
+  --category-accent-color: var(--color-brand);
+  position: absolute;
+  right: -1.8rem;
+  top: -1.8rem;
+  width: 6.5rem;
+  height: 6.5rem;
+  background: var(--category-accent-color);
+  clip-path: polygon(34% 0, 100% 0, 100% 100%, 0 100%);
+  opacity: 0.86;
+  pointer-events: none;
+}
+
 .task-card-shell {
   --task-priority-color: var(--priority-default);
   --task-state-color: var(--status-default);
