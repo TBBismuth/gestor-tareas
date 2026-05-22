@@ -7,13 +7,18 @@ import Button from "../ui/Button.jsx";
 import IconButton from "../ui/IconButton.jsx";
 
 const viewActions = [
-  { label: "Mis tareas", icon: ListTodo },
-  { label: "Mis categorias", icon: FolderKanban },
-  { label: "Mis grupos", icon: Layers3 },
-  { label: "Inteligente", icon: Brain },
+  { id: "mine", label: "Mis tareas", icon: ListTodo },
+  { id: "categories", label: "Mis categorias", icon: FolderKanban },
+  { id: "groups", label: "Mis grupos", icon: Layers3 },
+  { id: "smart", label: "Inteligente", icon: Brain },
 ];
 
-export default function ViewActions({ orientation = "vertical", className }) {
+export default function ViewActions({
+  activeView = "mine",
+  orientation = "vertical",
+  className,
+  onViewChange,
+}) {
   const isHorizontal = orientation === "horizontal";
   const navigate = useNavigate();
   const { logout } = useAuth();
@@ -26,11 +31,13 @@ export default function ViewActions({ orientation = "vertical", className }) {
 
   return (
     <div className={cn(isHorizontal ? "flex flex-wrap items-center gap-2" : "grid gap-2", className)}>
-      {viewActions.map(({ label, icon: Icon }) => (
+      {viewActions.map(({ id, label, icon: Icon }) => (
         <Button
-          key={label}
-          variant="secondary"
+          key={id}
+          variant={activeView === id ? "primary" : "secondary"}
+          aria-pressed={activeView === id}
           className={cn("shrink-0", isHorizontal ? "justify-center whitespace-nowrap" : "justify-start")}
+          onClick={() => onViewChange?.(id)}
         >
           <Icon size={17} />
           {label}

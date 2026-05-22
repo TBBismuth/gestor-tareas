@@ -22,9 +22,6 @@ export default function MegaFilterBar({ onFocus }) {
       <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
         <div className="flex items-start justify-between gap-3">
           <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted">
-            Megafiltro
-          </p>
           <h2 className="mt-1 text-lg font-semibold text-primary">
             Filtros avanzados de tareas
           </h2>

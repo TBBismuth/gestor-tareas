@@ -6,7 +6,12 @@ import ViewActions from "./ViewActions.jsx";
 
 const SIDEBAR_POSITION_KEY = "gestor-tareas.frontend-v2.sidebar-position";
 
-export default function RightSidebar({ dimmed = false, onFocus }) {
+export default function RightSidebar({
+  activeView = "mine",
+  dimmed = false,
+  onFocus,
+  onViewChange,
+}) {
   const { panelRef, position, isDragging, dragHandleProps, resetPosition } =
     useDraggablePanel(SIDEBAR_POSITION_KEY);
 
@@ -44,7 +49,11 @@ export default function RightSidebar({ dimmed = false, onFocus }) {
             </IconButton>
           </div>
           {/* Mobile queda pendiente para una version tipo drawer/bottom sheet. */}
-          <ViewActions className="mt-4" />
+          <ViewActions
+            activeView={activeView}
+            className="mt-4"
+            onViewChange={onViewChange}
+          />
         </div>
       </div>
     </div>

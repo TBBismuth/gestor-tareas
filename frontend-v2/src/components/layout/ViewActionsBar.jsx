@@ -1,7 +1,12 @@
 import { cn } from "../../lib/cn";
 import ViewActions from "./ViewActions.jsx";
 
-export default function ViewActionsBar({ dimmed = false, onFocus }) {
+export default function ViewActionsBar({
+  activeView = "mine",
+  dimmed = false,
+  onFocus,
+  onViewChange,
+}) {
   return (
     <section
       className={cn(
@@ -14,7 +19,11 @@ export default function ViewActionsBar({ dimmed = false, onFocus }) {
         <p className="shrink-0 text-xs font-semibold uppercase tracking-wide text-muted">
           Vistas
         </p>
-        <ViewActions orientation="horizontal" />
+        <ViewActions
+          activeView={activeView}
+          onViewChange={onViewChange}
+          orientation="horizontal"
+        />
       </div>
       {/* TODO mobile: convertir esta barra en drawer/bottom sheet cuando se disene la navegacion movil completa. */}
     </section>
