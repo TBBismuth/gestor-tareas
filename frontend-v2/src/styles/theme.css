@@ -53,6 +53,10 @@
   --state-danger-bg-hover: #fee2e2;
   --state-danger-border: #fca5a5;
   --state-danger-text: #b91c1c;
+  --state-success-bg: #dcfce7;
+  --state-success-bg-hover: #bbf7d0;
+  --state-success-border: #86efac;
+  --state-success-text: #166534;
 
   --priority-baja: #22c55e;
   --priority-media: #f0a92e;
@@ -117,6 +121,10 @@
   --state-danger-bg-hover: #451a22;
   --state-danger-border: #be4458;
   --state-danger-text: #fca5a5;
+  --state-success-bg: #0f2a1c;
+  --state-success-bg-hover: #16442a;
+  --state-success-border: #22c55e;
+  --state-success-text: #bbf7d0;
 
   --priority-baja: #34d399;
   --priority-media: #fdc63d;
@@ -432,6 +440,28 @@
   color: var(--state-danger-text);
 }
 
+.success-action-button {
+  border-color: var(--state-success-border);
+  background: var(--state-success-bg);
+  color: var(--state-success-text);
+}
+
+.success-action-button:hover,
+.success-action-button:focus-visible {
+  background: var(--state-success-bg-hover);
+}
+
+.danger-action-button {
+  border-color: var(--state-danger-border);
+  background: var(--state-danger-bg);
+  color: var(--state-danger-text);
+}
+
+.danger-action-button:hover,
+.danger-action-button:focus-visible {
+  background: var(--state-danger-bg-hover);
+}
+
 .task-card-shell {
   --task-priority-color: var(--priority-default);
   --task-state-color: var(--status-default);
@@ -472,4 +502,29 @@
 
 .task-card-detail {
   background: color-mix(in srgb, var(--color-surface-card-muted) 82%, var(--color-surface-card));
+}
+
+.task-card-meta-separator {
+  width: 1px;
+  align-self: stretch;
+  min-height: 1rem;
+  background: var(--color-border);
+}
+
+.task-card-meta {
+  display: inline-flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.5rem;
+}
+
+.task-card-meta span {
+  white-space: nowrap;
+}
+
+.task-card-meta span + span::before {
+  content: "|";
+  margin-right: 0.5rem;
+  color: var(--color-border-strong);
 }

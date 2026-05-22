@@ -1,14 +1,33 @@
 import { useState } from "react";
-import { ChevronDown, Users } from "lucide-react";
+import { Check, ChevronDown, Pencil, Trash2, Users } from "lucide-react";
 import Badge from "../../../components/ui/Badge.jsx";
+import Button from "../../../components/ui/Button.jsx";
 import { cn } from "../../../lib/cn";
-import { formatShortDate } from "../../../lib/dates";
 import { getPriorityVisual, getStateVisual } from "../../../styles/taskVisualMaps";
+import {
+  formatDuration,
+  formatGroupReviewState,
+  formatTaskDate,
+  formatTaskFullDate,
+  getTaskCategoryName,
+} from "../utils/taskFormatters.js";
+
+function DetailItem({ label, children }) {
+  return (
+    <div>
+      <dt className="font-semibold text-primary">{label}</dt>
+      <dd>{children}</dd>
+    </div>
+  );
+}
 
 export default function TaskCard({ task }) {
   const [expanded, setExpanded] = useState(false);
   const priority = getPriorityVisual(task.prioridad);
   const state = getStateVisual(task.estado);
+  const isGroupTask = task.origenTarea === "GRUPO";
+  const categoryName = getTaskCategoryName(task);
+  const metaItems = [formatDuration(task.tiempo), formatTaskDate(task.fechaEntrega), categoryName];
 
   return (
     <article
@@ -31,7 +50,7 @@ export default function TaskCard({ task }) {
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="truncate text-base font-semibold text-primary">{task.titulo}</h3>
-              {task.origenTarea === "GRUPO" && (
+              {isGroupTask && (
                 <Badge toneColor="var(--color-brand)">
                   <Users size={13} />
                   {task.nombreGrupoOrigen || "Grupo"}
@@ -41,9 +60,12 @@ export default function TaskCard({ task }) {
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <Badge toneColor={priority.color}>{priority.label}</Badge>
               <Badge toneColor={state.color}>{state.label}</Badge>
-              <span className="text-sm text-muted">{task.tiempo} min</span>
-              <span className="text-sm text-muted">{formatShortDate(task.fechaEntrega)}</span>
-              {task.categoria && <span className="text-sm text-muted">{task.categoria}</span>}
+              <span className="task-card-meta-separator" aria-hidden="true" />
+              <span className="task-card-meta text-sm text-muted">
+                {metaItems.map((item) => (
+                  <span key={item}>{item}</span>
+                ))}
+              </span>
             </div>
           </div>
 
@@ -58,21 +80,55 @@ export default function TaskCard({ task }) {
 
         {expanded && (
           <div className="task-card-detail border-t border-app px-4 py-4">
-            <p className="text-sm leading-6 text-secondary">{task.descripcion}</p>
-            <dl className="mt-3 grid gap-2 text-sm text-secondary sm:grid-cols-3">
-              <div>
-                <dt className="font-semibold text-primary">Origen</dt>
-                <dd>{task.origenTarea === "GRUPO" ? "Grupo" : "Personal"}</dd>
-              </div>
-              <div>
-                <dt className="font-semibold text-primary">Prioridad</dt>
-                <dd>{priority.label}</dd>
-              </div>
-              <div>
-                <dt className="font-semibold text-primary">Estado</dt>
-                <dd>{state.label}</dd>
-              </div>
+            <p className="text-sm leading-6 text-secondary">
+              {task.descripcion || "Sin descripcion."}
+            </p>
+            <dl className="mt-4 grid gap-3 text-sm text-secondary sm:grid-cols-2 xl:grid-cols-4">
+              <DetailItem label="Origen">{isGroupTask ? "Grupo" : "Personal"}</DetailItem>
+              {isGroupTask ? (
+                <>
+                  <DetailItem label="Estado grupal">
+                    {formatGroupReviewState(task.estadoRevisionAsignacion)}
+                  </DetailItem>
+                  <DetailItem label="Fecha de entrega">
+                    {formatTaskFullDate(task.fechaEntrega)}
+                  </DetailItem>
+                  <DetailItem label="Fecha de creacion">
+                    {formatTaskFullDate(task.fechaAgregado)}
+                  </DetailItem>
+                </>
+              ) : (
+                <>
+                  <DetailItem label="Categoria">{categoryName}</DetailItem>
+                  <DetailItem label="Fecha de entrega">
+                    {formatTaskFullDate(task.fechaEntrega)}
+                  </DetailItem>
+                  <DetailItem label="Fecha de creacion">
+                    {formatTaskFullDate(task.fechaAgregado)}
+                  </DetailItem>
+                </>
+              )}
             </dl>
+            {isGroupTask && task.comentarioRevision && (
+              <div className="mt-4 rounded-control border border-app bg-[color:var(--color-surface-card)] px-3 py-2 text-sm text-secondary">
+                <p className="font-semibold text-primary">Comentario de revision</p>
+                <p className="mt-1 leading-6">{task.comentarioRevision}</p>
+              </div>
+            )}
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <Button className="success-action-button">
+                <Check size={17} />
+                Completar
+              </Button>
+              <Button variant="secondary">
+                <Pencil size={17} />
+                Editar
+              </Button>
+              <Button variant="secondary" className="danger-action-button">
+                <Trash2 size={17} />
+                Borrar
+              </Button>
+            </div>
           </div>
         )}
       </div>

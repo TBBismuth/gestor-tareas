@@ -4,53 +4,7 @@ import RightSidebar from "../../components/layout/RightSidebar.jsx";
 import ViewActionsBar from "../../components/layout/ViewActionsBar.jsx";
 import MegaFilterBar from "./components/MegaFilterBar.jsx";
 import TaskList from "./components/TaskList.jsx";
-
-const mockTasks = [
-  {
-    idTarea: 1,
-    titulo: "Preparar defensa del TFG",
-    descripcion: "Revisar guion, capturas y flujo de demostracion.",
-    prioridad: "IMPRESCINDIBLE",
-    estado: "EN_CURSO",
-    tiempo: 90,
-    fechaEntrega: "2026-05-27T18:00:00",
-    categoria: "Universidad",
-    origenTarea: "PERSONAL",
-  },
-  {
-    idTarea: 2,
-    titulo: "Validar tareas asignadas del grupo",
-    descripcion: "Comprobar entregas pendientes y dejar comentarios de revision.",
-    prioridad: "ALTA",
-    estado: "VENCIDA",
-    tiempo: 45,
-    fechaEntrega: "2026-05-20T12:00:00",
-    categoria: "Grupo",
-    origenTarea: "GRUPO",
-    nombreGrupoOrigen: "Equipo backend",
-  },
-  {
-    idTarea: 3,
-    titulo: "Ordenar backlog visual",
-    descripcion: "Agrupar ideas de UI que no entran en el primer bloque.",
-    prioridad: "MEDIA",
-    estado: "SIN_FECHA",
-    tiempo: 30,
-    categoria: "Frontend",
-    origenTarea: "PERSONAL",
-  },
-  {
-    idTarea: 4,
-    titulo: "Cerrar checklist de documentacion",
-    descripcion: "Marcar puntos completados y dejar riesgos abiertos.",
-    prioridad: "BAJA",
-    estado: "COMPLETADA",
-    tiempo: 25,
-    fechaEntrega: "2026-05-21T09:00:00",
-    categoria: "Documentacion",
-    origenTarea: "PERSONAL",
-  },
-];
+import { mockTasks } from "./data/mockTasks.js";
 
 export default function DashboardPage() {
   const [focusArea, setFocusArea] = useState("filter");
