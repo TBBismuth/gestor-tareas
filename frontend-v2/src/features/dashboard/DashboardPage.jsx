@@ -6,12 +6,13 @@ import AppShell from "../../components/layout/AppShell.jsx";
 import RightSidebar from "../../components/layout/RightSidebar.jsx";
 import ViewActionsBar from "../../components/layout/ViewActionsBar.jsx";
 import Button from "../../components/ui/Button.jsx";
+import CategoryFormModal from "./components/CategoryFormModal.jsx";
 import CategoryGrid from "./components/CategoryGrid.jsx";
 import DeleteCategoryModal from "./components/DeleteCategoryModal.jsx";
 import MegaFilterBar from "./components/MegaFilterBar.jsx";
 import TaskFormModal from "./components/TaskFormModal.jsx";
 import TaskList from "./components/TaskList.jsx";
-import { getMyCategories } from "./api/categoriesApi.js";
+import { createCategory, getMyCategories } from "./api/categoriesApi.js";
 import { completeTask, createTask, getMyTasks } from "./api/tasksApi.js";
 import { mapTaskResponsesToCardTasks } from "./mappers/taskMapper.js";
 import { sortMyTasks } from "./utils/taskSorting.js";
@@ -37,6 +38,9 @@ function getTaskActionErrorMessage(error) {
 export default function DashboardPage() {
   const queryClient = useQueryClient();
   const [taskModalOpen, setTaskModalOpen] = useState(false);
+  const [categoryModalOpen, setCategoryModalOpen] = useState(false);
+  const [categoryModalSource, setCategoryModalSource] = useState(null);
+  const [categoryToSelectInTask, setCategoryToSelectInTask] = useState(null);
   const [categoryToDelete, setCategoryToDelete] = useState(null);
   const [focusArea, setFocusArea] = useState("filter");
   const [activeView, setActiveView] = useState(VIEW_MINE);
@@ -66,10 +70,35 @@ export default function DashboardPage() {
     onSuccess: () => {
       toast.success("Tarea creada.");
       setTaskModalOpen(false);
+      setCategoryToSelectInTask(null);
       queryClient.invalidateQueries({ queryKey: MY_TASKS_QUERY_KEY });
     },
     onError: (error) => {
       toast.error(error?.response?.data?.error || "No se pudo crear la tarea.");
+    },
+  });
+  const createCategoryMutation = useMutation({
+    mutationFn: createCategory,
+    onSuccess: (createdCategory) => {
+      toast.success("Categoría creada.");
+      queryClient.setQueryData(CATEGORIES_QUERY_KEY, (current = []) => {
+        if (current.some((category) => category.idCategoria === createdCategory.idCategoria)) {
+          return current;
+        }
+
+        return [...current, createdCategory];
+      });
+      queryClient.invalidateQueries({ queryKey: CATEGORIES_QUERY_KEY });
+
+      if (categoryModalSource === "task") {
+        setCategoryToSelectInTask(createdCategory);
+      }
+
+      setCategoryModalOpen(false);
+      setCategoryModalSource(null);
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.error || "No se pudo crear la categoría.");
     },
   });
 
@@ -81,11 +110,27 @@ export default function DashboardPage() {
 
   function handleHeaderAction() {
     if (activeView === VIEW_CATEGORIES) {
-      toast.info("Crear categoría se conectará en un bloque posterior.");
+      setCategoryModalSource("categories");
+      setCategoryModalOpen(true);
       return;
     }
 
+    setCategoryToSelectInTask(null);
     setTaskModalOpen(true);
+  }
+
+  function handleOpenCategoryFromTask() {
+    setCategoryModalSource("task");
+    setCategoryModalOpen(true);
+  }
+
+  function handleCloseCategoryModal() {
+    if (createCategoryMutation.isPending) {
+      return;
+    }
+
+    setCategoryModalOpen(false);
+    setCategoryModalSource(null);
   }
 
   function handleEditCategory() {
@@ -197,10 +242,22 @@ export default function DashboardPage() {
         categories={categoriesQuery.data ?? []}
         categoriesError={categoriesQuery.isError}
         categoriesLoading={categoriesQuery.isLoading}
+        categoryToSelect={categoryToSelectInTask}
         creating={createTaskMutation.isPending}
-        onClose={() => setTaskModalOpen(false)}
+        onClose={() => {
+          setTaskModalOpen(false);
+          setCategoryToSelectInTask(null);
+        }}
+        onCreateCategory={handleOpenCategoryFromTask}
         onSubmit={(payload) => createTaskMutation.mutateAsync(payload)}
         open={taskModalOpen}
+      />
+      <CategoryFormModal
+        creating={createCategoryMutation.isPending}
+        onClose={handleCloseCategoryModal}
+        onSubmit={(payload) => createCategoryMutation.mutateAsync(payload)}
+        open={categoryModalOpen}
+        zIndexClass={taskModalOpen ? "z-[60]" : "z-50"}
       />
       <DeleteCategoryModal
         category={categoryToDelete}

@@ -1,7 +1,6 @@
 import { Plus } from "lucide-react";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { toast } from "sonner";
 import Button from "../../../components/ui/Button.jsx";
 import Modal from "../../../components/ui/Modal.jsx";
 import { getPriorityVisual } from "../../../styles/taskVisualMaps.js";
@@ -56,15 +55,18 @@ export default function TaskFormModal({
   categories = [],
   categoriesError = false,
   categoriesLoading = false,
+  categoryToSelect,
   creating = false,
   open,
   onClose,
+  onCreateCategory,
   onSubmit,
 }) {
   const {
     register,
     handleSubmit,
     reset,
+    setValue,
     watch,
     formState: { errors },
   } = useForm({ defaultValues });
@@ -81,9 +83,14 @@ export default function TaskFormModal({
     }
   }, [open, reset]);
 
-  function handleCreateCategoryPlaceholder() {
-    toast.info("Crear categoria se conectara en un bloque posterior.");
-  }
+  useEffect(() => {
+    if (open && categoryToSelect?.idCategoria) {
+      setValue("idCategoria", String(categoryToSelect.idCategoria), {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+    }
+  }, [categoryToSelect, open, setValue]);
 
   async function submit(values) {
     try {
@@ -209,7 +216,7 @@ export default function TaskFormModal({
             </select>
             <Button
               className="shrink-0"
-              onClick={handleCreateCategoryPlaceholder}
+              onClick={onCreateCategory}
               type="button"
               variant="secondary"
             >

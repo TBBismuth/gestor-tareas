@@ -483,6 +483,10 @@
   pointer-events: none;
 }
 
+.peer:checked + .category-color-switch > span {
+  transform: translateX(1.25rem);
+}
+
 .task-card-shell {
   --task-priority-color: var(--priority-default);
   --task-state-color: var(--status-default);
