@@ -84,9 +84,11 @@ export default function TaskCard({ isCompleting = false, onComplete, task }) {
 
         {expanded && (
           <div className="task-card-detail border-t border-app px-4 py-4">
-            <p className="text-sm leading-6 text-secondary">
-              {task.descripcion || "Sin descripcion."}
-            </p>
+            {task.descripcion && (
+              <p className="task-card-detail-description text-sm leading-6 text-secondary">
+                {task.descripcion}
+              </p>
+            )}
             <dl className="mt-4 grid gap-3 text-sm text-secondary sm:grid-cols-2 xl:grid-cols-4">
               <DetailItem label="Origen">{isGroupTask ? "Grupo" : "Personal"}</DetailItem>
               {isGroupTask ? (

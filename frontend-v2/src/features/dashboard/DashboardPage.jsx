@@ -12,8 +12,10 @@ import TaskList from "./components/TaskList.jsx";
 import { getMyCategories } from "./api/categoriesApi.js";
 import { completeTask, createTask, getMyTasks } from "./api/tasksApi.js";
 import { mapTaskResponsesToCardTasks } from "./mappers/taskMapper.js";
+import { sortMyTasks } from "./utils/taskSorting.js";
 
 const VIEW_MINE = "mine";
+const VIEW_CATEGORIES = "categories";
 const MY_TASKS_QUERY_KEY = ["tasks", "mine"];
 const CATEGORIES_QUERY_KEY = ["categories", "mine"];
 
@@ -34,7 +36,7 @@ export default function DashboardPage() {
   const tasksQuery = useQuery({
     queryKey: MY_TASKS_QUERY_KEY,
     queryFn: getMyTasks,
-    select: mapTaskResponsesToCardTasks,
+    select: (data) => sortMyTasks(mapTaskResponsesToCardTasks(data)),
     enabled: activeView === VIEW_MINE,
   });
   const completeTaskMutation = useMutation({
@@ -60,6 +62,17 @@ export default function DashboardPage() {
   });
 
   const tasks = tasksQuery.data ?? [];
+  const headerActionLabel =
+    activeView === VIEW_CATEGORIES ? "Nueva categoria" : "Nueva tarea";
+
+  function handleHeaderAction() {
+    if (activeView === VIEW_CATEGORIES) {
+      toast.info("Crear categoria se conectara en un bloque posterior.");
+      return;
+    }
+
+    setTaskModalOpen(true);
+  }
 
   return (
     <AppShell
@@ -86,14 +99,11 @@ export default function DashboardPage() {
     >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted">
-            Pantalla principal
-          </p>
           <h1 className="mt-1 text-2xl font-semibold text-primary">Tareas</h1>
         </div>
-        <Button className="w-full sm:w-auto" onClick={() => setTaskModalOpen(true)}>
+        <Button className="w-full sm:w-auto" onClick={handleHeaderAction}>
           <Plus size={17} />
-          Nueva tarea
+          {headerActionLabel}
         </Button>
       </div>
       {activeView === VIEW_MINE ? (

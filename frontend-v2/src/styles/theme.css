@@ -504,6 +504,13 @@
   background: color-mix(in srgb, var(--color-surface-card-muted) 82%, var(--color-surface-card));
 }
 
+.task-card-detail-description {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 .task-card-meta-separator {
   width: 1px;
   align-self: stretch;

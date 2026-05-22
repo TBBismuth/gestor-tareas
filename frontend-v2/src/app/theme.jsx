@@ -5,19 +5,11 @@ const THEME_KEY = "gestor-tareas.frontend-v2.theme";
 const THEMES = ["light", "dark"];
 const ThemeContext = createContext(null);
 
-function getSystemTheme() {
-  if (window.matchMedia?.("(prefers-color-scheme: dark)").matches) {
-    return "dark";
-  }
-
-  return "light";
-}
-
 function getInitialTheme() {
   const storedTheme = readStorage(THEME_KEY);
   if (THEMES.includes(storedTheme)) return storedTheme;
 
-  return getSystemTheme();
+  return "dark";
 }
 
 function applyTheme(theme) {
