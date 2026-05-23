@@ -63,12 +63,11 @@ export default function DashboardPage() {
   const categoriesQuery = useQuery({
     queryKey: CATEGORIES_QUERY_KEY,
     queryFn: getMyCategories,
-    enabled: taskModalOpen || activeView === VIEW_CATEGORIES,
+    enabled: taskModalOpen || activeView === VIEW_MINE || activeView === VIEW_CATEGORIES,
   });
   const tasksQuery = useQuery({
     queryKey: MY_TASKS_QUERY_KEY,
     queryFn: getMyTasks,
-    select: (data) => sortMyTasks(mapTaskResponsesToCardTasks(data)),
     enabled: activeView === VIEW_MINE,
   });
   const completeTaskMutation = useMutation({
@@ -183,8 +182,8 @@ export default function DashboardPage() {
     },
   });
 
-  const tasks = tasksQuery.data ?? [];
   const categories = categoriesQuery.data ?? [];
+  const tasks = sortMyTasks(mapTaskResponsesToCardTasks(tasksQuery.data ?? [], categories));
   const headerActionLabel =
     activeView === VIEW_CATEGORIES ? "Nueva categoría" : "Nueva tarea";
   const pageTitle = viewTitles[activeView] || "Tareas";

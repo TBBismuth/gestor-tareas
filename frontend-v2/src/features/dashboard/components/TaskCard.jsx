@@ -4,6 +4,7 @@ import Badge from "../../../components/ui/Badge.jsx";
 import Button from "../../../components/ui/Button.jsx";
 import { cn } from "../../../lib/cn";
 import { getPriorityVisual, getStateVisual } from "../../../styles/taskVisualMaps";
+import CategoryLabel from "./CategoryLabel.jsx";
 import {
   formatDuration,
   formatGroupReviewState,
@@ -38,7 +39,14 @@ export default function TaskCard({
     task.estado === "COMPLETADA" ||
     task.estado === "COMPLETADA_CON_RETRASO";
   const categoryName = getTaskCategoryName(task);
-  const metaItems = [formatDuration(task.tiempo), formatTaskDate(task.fechaEntrega), categoryName];
+  const renderCategoryLabel = () => (
+    <CategoryLabel color={task.colorCategoria} icon={task.iconoCategoria} name={categoryName} />
+  );
+  const metaItems = [
+    formatDuration(task.tiempo),
+    formatTaskDate(task.fechaEntrega),
+    renderCategoryLabel(),
+  ];
 
   return (
     <article
@@ -73,8 +81,8 @@ export default function TaskCard({
               <Badge toneColor={state.color}>{state.label}</Badge>
               <span className="task-card-meta-separator" aria-hidden="true" />
               <span className="task-card-meta text-sm text-muted">
-                {metaItems.map((item) => (
-                  <span key={item}>{item}</span>
+                {metaItems.map((item, index) => (
+                  <span key={index}>{item}</span>
                 ))}
               </span>
             </div>
@@ -112,7 +120,7 @@ export default function TaskCard({
                 </>
               ) : (
                 <>
-                  <DetailItem label="Categoria">{categoryName}</DetailItem>
+                  <DetailItem label="Categoria">{renderCategoryLabel()}</DetailItem>
                   <DetailItem label="Fecha de entrega">
                     {formatTaskFullDate(task.fechaEntrega)}
                   </DetailItem>

@@ -521,12 +521,16 @@
   z-index: 1;
   margin-left: calc(var(--task-priority-width) * 0.86);
   margin-right: calc(var(--task-state-width) * 0.86);
-  background: var(--color-surface-card);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--color-surface-card) 34%, transparent), color-mix(in srgb, var(--color-surface-card) 46%, transparent)),
+    url("/backgrounds/task-card-bg.svg") center bottom / cover no-repeat,
+    var(--color-surface-card);
   min-height: 100%;
 }
 
 .task-card-detail {
-  background: color-mix(in srgb, var(--color-surface-card-muted) 82%, var(--color-surface-card));
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--color-surface-card-muted) 36%, transparent), color-mix(in srgb, var(--color-surface-card-muted) 46%, transparent));
 }
 
 .task-card-detail-description {
@@ -555,8 +559,35 @@
   white-space: nowrap;
 }
 
-.task-card-meta span + span::before {
+.task-card-meta > span + span::before {
   content: "|";
   margin-right: 0.5rem;
   color: var(--color-border-strong);
+}
+
+.category-label {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.35rem;
+  vertical-align: middle;
+}
+
+.category-label-icon {
+  flex: 0 0 auto;
+  line-height: 1;
+}
+
+.category-label-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.category-label-dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
 }
