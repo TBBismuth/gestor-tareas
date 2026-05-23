@@ -24,7 +24,6 @@ export default function RightSidebar({
           ? { left: `${position.x}px`, top: `${position.y}px` }
           : { visibility: "hidden" }
       }
-      onPointerDownCapture={onFocus}
     >
       <div
         className={cn(
@@ -52,6 +51,7 @@ export default function RightSidebar({
           <ViewActions
             activeView={activeView}
             className="mt-4"
+            onFocus={onFocus}
             onViewChange={onViewChange}
           />
         </div>

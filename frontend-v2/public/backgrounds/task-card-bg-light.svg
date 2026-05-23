@@ -1,0 +1,158 @@
+﻿<svg width="1650" height="500" viewBox="0 0 1650 500" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- 1. El 'agujero' de profundidad expansivo: Desde el fondo de la app hacia el color de tu tarjeta -->
+    <radialGradient id="depth-hole-wide" cx="50%" cy="100%" r="80%" fx="50%" fy="98%">
+      <stop offset="0%" stop-color="#f5f7fb" stop-opacity="1" />     <!-- Fondo general #f5f7fb -->
+      <stop offset="45%" stop-color="#eef2f7" stop-opacity="0.8" />    <!-- Color intermedio #eef2f7 -->
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />     <!-- Se funde con el #ffffff de la tarjeta -->
+    </radialGradient>
+
+    <!-- 2. Gradiente del neÃ³n del horizonte expansivo para que se desvanezca por los lados -->
+    <linearGradient id="neon-fade-wide" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#2563eb" stop-opacity="0" />
+      <stop offset="15%" stop-color="#2563eb" stop-opacity="0.1" />
+      <stop offset="35%" stop-color="#2563eb" stop-opacity="0.3" />
+      <stop offset="50%" stop-color="#2563eb" stop-opacity="0.6" />
+      <stop offset="65%" stop-color="#2563eb" stop-opacity="0.3" />
+      <stop offset="85%" stop-color="#2563eb" stop-opacity="0.1" />
+      <stop offset="100%" stop-color="#2563eb" stop-opacity="0" />
+    </linearGradient>
+    
+    <!-- 3. Gradientes para el "suelo" plano y la transiciÃ³n de profundidad -->
+    <linearGradient id="floor-layer-1" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#eef2f7" stop-opacity="0.9" />
+      <stop offset="100%" stop-color="#f5f7fb" stop-opacity="1" />
+    </linearGradient>
+
+    <!-- 4. Filtros para el efecto neÃ³n (Glow) y desenfoque de bokeh lejano -->
+    <filter id="neon-glow-wide" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="5" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <filter id="bokeh-blur-wide">
+      <feGaussianBlur stdDeviation="8" />
+    </filter>
+  </defs>
+
+  <!-- BASE: El color exacto de tu tarjeta #ffffff, 100% libre para UI arriba y centro -->
+  <rect width="1650" height="500" fill="#ffffff" />
+
+  <!-- PROFUNDIDAD: El agujero expansivo que mira hacia el fondo profundo de la app -->
+  <rect width="1650" height="500" fill="url(#depth-hole-wide)" />
+
+  <!-- HORIZONTE NEÃ“N (#2563eb) - Posicionado en Y=450 (sobre 500) -->
+  <!-- Resplandor difuso ancho centrado -->
+  <rect x="0" y="445" width="1650" height="10" fill="url(#neon-fade-wide)" filter="url(#neon-glow-wide)" opacity="0.9"/>
+  <!-- NÃºcleo brillante sutil en el centro, lÃ­nea muy baja -->
+  <rect x="550" y="450" width="550" height="1.5" fill="url(#neon-fade-wide)" opacity="1" />
+
+  <!-- CAPAS DE "SUELO" PROFUNDO - TransiciÃ³n plana mÃ­nima cerca del horizonte -->
+  <rect x="0" y="440" width="1650" height="60" fill="url(#floor-layer-1)" opacity="0.3"/>
+  <rect x="0" y="440" width="1650" height="20" fill="#eef2f7" opacity="0.8" />
+
+
+  <!-- EXTENSA DISPERSIÃ“N DE PARTÃCULAS (#2563eb) - MÃ¡s numerosas y vastas para el formato ancho -->
+  <g fill="#2563eb">
+    
+    <!-- Capa 1: Vasto campo lejano desenfocado (Nubes/Motes de ambiente profundo) -->
+    <g filter="url(#bokeh-blur-wide)" opacity="0.1">
+      <circle cx="350" cy="400" r="15" />
+      <circle cx="950" cy="420" r="18" />
+      <circle cx="1400" cy="380" r="14" />
+      <circle cx="150" cy="460" r="12" />
+      <circle cx="1250" cy="410" r="16" />
+      <circle cx="650" cy="390" r="15" />
+      <circle cx="800" cy="430" r="20" />
+      <circle cx="1100" cy="370" r="13" />
+      <circle cx="500" cy="440" r="17" />
+      <circle cx="200" cy="420" r="14" />
+    </g>
+    
+    <!-- Capa 2: Alta densidad de partÃ­culas medias con resplandor neÃ³n concentradas cerca del horizonte -->
+    <g filter="url(#neon-glow-wide)" opacity="0.4">
+      <!-- PartÃ­culas distantes laterales -->
+      <circle cx="100" cy="460" r="3" />
+      <circle cx="250" cy="430" r="4" />
+      <circle cx="1550" cy="470" r="3.5" />
+      <circle cx="1400" cy="440" r="4" />
+      
+      <!-- Campo central denso naciendo de la lÃ­nea principal del horizonte -->
+      <g opacity="0.95">
+        <circle cx="700" cy="440" r="4" />
+        <circle cx="950" cy="400" r="3" />
+        <circle cx="820" cy="460" r="5" />
+        <circle cx="600" cy="470" r="4.5" />
+        <circle cx="1050" cy="450" r="4" />
+        <circle cx="750" cy="410" r="3" />
+        <circle cx="900" cy="430" r="3.5" />
+        <circle cx="850" cy="390" r="3" />
+        <circle cx="650" cy="430" r="3.5" />
+        <circle cx="1000" cy="420" r="3" />
+        <circle cx="780" cy="450" r="4" />
+        <circle cx="920" cy="460" r="4.5" />
+        <circle cx="680" cy="400" r="3" />
+        <circle cx="980" cy="410" r="3" />
+        <circle cx="870" cy="420" r="3" />
+        <circle cx="620" cy="440" r="3.5" />
+        <circle cx="1030" cy="430" r="3" />
+        <circle cx="730" cy="450" r="4" />
+        <circle cx="970" cy="440" r="3.5" />
+        <circle cx="830" cy="400" r="3" />
+        <!-- Algunos motes subiendo mÃ¡s alto en esta capa neÃ³n -->
+        <circle cx="825" cy="350" r="2.5" />
+        <circle cx="875" cy="360" r="2.5" />
+        <circle cx="775" cy="340" r="2.5" />
+      </g>
+    </g>
+
+    <!-- Capa 3: PartÃ­culas finas en primer plano (NÃ­tidas, extensas y subiendo hacia el Ã¡rea limpia) -->
+    <g opacity="0.65">
+      <!-- DispersiÃ³n amplia, manteniendo el tercio superior limpio -->
+      <circle cx="450" cy="280" r="1.5" />
+      <circle cx="1200" cy="300" r="1" />
+      <circle cx="600" cy="320" r="1.2" />
+      <circle cx="1050" cy="310" r="1" />
+      <circle cx="780" cy="350" r="1.5" />
+      <circle cx="870" cy="370" r="1.5" />
+      <circle cx="350" cy="340" r="1" />
+      <circle cx="1300" cy="330" r="1.2" />
+      <circle cx="550" cy="380" r="1" />
+      <circle cx="1100" cy="400" r="1.2" />
+      <circle cx="720" cy="390" r="1" />
+      <circle cx="930" cy="410" r="1" />
+      <circle cx="810" cy="200" r="0.8" /> <!-- PartÃ­cula mÃ¡s alta cerca de la cÃ¡mara -->
+      <circle cx="840" cy="210" r="0.8" />
+      <circle cx="780" cy="190" r="0.8" />
+      
+      <!-- DispersiÃ³n extensa y densa en primer plano bajo la lÃ­nea limpia -->
+      <circle cx="680" cy="390" r="1.5" />
+      <circle cx="980" cy="410" r="1.5" />
+      <circle cx="825" cy="440" r="2" />
+      <circle cx="750" cy="400" r="1.5" />
+      <circle cx="900" cy="420" r="1.5" />
+      <circle cx="850" cy="380" r="1" />
+      <circle cx="650" cy="420" r="1.5" />
+      <circle cx="1000" cy="410" r="1" />
+      <circle cx="780" cy="430" r="1.5" />
+      <circle cx="920" cy="440" r="1.5" />
+      <circle cx="620" cy="430" r="1.2" />
+      <circle cx="1030" cy="420" r="1" />
+      <circle cx="730" cy="440" r="1.5" />
+      <circle cx="970" cy="430" r="1.2" />
+      <circle cx="830" cy="390" r="1" />
+      <circle cx="1100" cy="420" r="1.5" />
+      <circle cx="550" cy="440" r="1.5" />
+      <circle cx="1200" cy="450" r="1.5" />
+      <circle cx="450" cy="410" r="1.5" />
+      
+      <!-- Algunos motes extremos lejanos -->
+      <circle cx="50" cy="480" r="0.5" />
+      <circle cx="1600" cy="490" r="0.5" />
+    </g>
+  </g>
+
+</svg>

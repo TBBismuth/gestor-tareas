@@ -15,7 +15,7 @@ body {
   min-width: 320px;
   min-height: 100vh;
   background:
-    radial-gradient(circle at top left, var(--color-bg-accent-soft), transparent 34rem),
+    var(--app-bg-image) center center / cover no-repeat fixed,
     var(--color-bg-app);
   color: var(--color-text-primary);
   font-family:

@@ -17,13 +17,20 @@ export default function ViewActions({
   activeView = "mine",
   orientation = "vertical",
   className,
+  onFocus,
   onViewChange,
 }) {
   const isHorizontal = orientation === "horizontal";
   const navigate = useNavigate();
   const { logout } = useAuth();
 
+  function handleViewClick(id) {
+    onFocus?.();
+    onViewChange?.(id);
+  }
+
   function handleLogout() {
+    onFocus?.();
     logout();
     toast.success("Sesion cerrada.");
     navigate("/login", { replace: true });
@@ -37,19 +44,32 @@ export default function ViewActions({
           variant={activeView === id ? "primary" : "secondary"}
           aria-pressed={activeView === id}
           className={cn("shrink-0", isHorizontal ? "justify-center whitespace-nowrap" : "justify-start")}
-          onClick={() => onViewChange?.(id)}
+          onClick={() => handleViewClick(id)}
         >
           <Icon size={17} />
           {label}
         </Button>
       ))}
-      <IconButton
-        label="Cerrar sesion"
-        className={cn("danger-icon-button shrink-0", !isHorizontal && "mt-auto")}
-        onClick={handleLogout}
-      >
-        <LogOut size={17} />
-      </IconButton>
+      {isHorizontal ? (
+        <IconButton
+          label="Cerrar sesión"
+          className="danger-icon-button shrink-0"
+          onClick={handleLogout}
+        >
+          <LogOut size={17} />
+        </IconButton>
+      ) : (
+        <Button
+          aria-label="Cerrar sesión"
+          className="danger-icon-button mt-auto shrink-0 justify-start"
+          onClick={handleLogout}
+          title="Cerrar sesión"
+          variant="secondary"
+        >
+          <LogOut size={17} />
+          Cerrar sesión
+        </Button>
+      )}
     </div>
   );
 }

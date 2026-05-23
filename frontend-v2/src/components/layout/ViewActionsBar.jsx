@@ -13,7 +13,6 @@ export default function ViewActionsBar({
         "rounded-panel border border-app bg-panel p-3 shadow-panel transition duration-200 lg:hidden",
         dimmed && "opacity-55 saturate-50"
       )}
-      onClick={onFocus}
     >
       <div className="flex flex-wrap items-center gap-3">
         <p className="shrink-0 text-xs font-semibold uppercase tracking-wide text-muted">
@@ -21,6 +20,7 @@ export default function ViewActionsBar({
         </p>
         <ViewActions
           activeView={activeView}
+          onFocus={onFocus}
           onViewChange={onViewChange}
           orientation="horizontal"
         />

@@ -6,6 +6,7 @@
   --color-brand-soft: #dbeafe;
 
   --color-bg-app: #f5f7fb;
+  --app-bg-image: url("/backgrounds/app-bg-light.svg");
   --color-bg-accent-soft: rgba(37, 99, 235, 0.14);
   --color-bg-elevated: #ffffff;
   --color-bg-muted: #eef2f7;
@@ -23,6 +24,8 @@
   --color-surface-panel: rgba(255, 255, 255, 0.92);
   --color-surface-card: #ffffff;
   --color-surface-card-muted: #f8fafc;
+  --category-card-bg-image: url("/backgrounds/category-card-bg-light.svg");
+  --task-card-bg-image: url("/backgrounds/task-card-bg-light.svg");
 
   --color-text-primary: #111827;
   --color-text-secondary: #475569;
@@ -80,6 +83,7 @@
   --color-brand-soft: #172554;
 
   --color-bg-app: #080d16;
+  --app-bg-image: url("/backgrounds/app-bg.svg");
   --color-bg-accent-soft: rgba(96, 165, 250, 0.14);
   --color-bg-elevated: #101827;
   --color-bg-muted: #182235;
@@ -97,6 +101,8 @@
   --color-surface-panel: rgba(15, 23, 42, 0.9);
   --color-surface-card: #111827;
   --color-surface-card-muted: #172033;
+  --category-card-bg-image: url("/backgrounds/category-card-bg.svg");
+  --task-card-bg-image: url("/backgrounds/task-card-bg.svg");
 
   --color-text-primary: #f8fafc;
   --color-text-secondary: #cbd5e1;
@@ -141,7 +147,9 @@
 }
 
 .bg-app {
-  background: var(--color-bg-app);
+  background:
+    var(--app-bg-image) center center / cover no-repeat fixed,
+    var(--color-bg-app);
 }
 
 .bg-panel {
@@ -466,7 +474,7 @@
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--color-surface-card) 34%, transparent), color-mix(in srgb, var(--color-surface-card) 46%, transparent)),
     linear-gradient(145deg, color-mix(in srgb, var(--color-surface-card-muted) 34%, transparent), transparent 58%),
-    url("/backgrounds/category-card-bg.svg") center bottom / cover no-repeat,
+    var(--category-card-bg-image) center bottom / cover no-repeat,
     var(--color-surface-card);
 }
 
@@ -523,7 +531,7 @@
   margin-right: calc(var(--task-state-width) * 0.86);
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--color-surface-card) 34%, transparent), color-mix(in srgb, var(--color-surface-card) 46%, transparent)),
-    url("/backgrounds/task-card-bg.svg") center bottom / cover no-repeat,
+    var(--task-card-bg-image) center bottom / cover no-repeat,
     var(--color-surface-card);
   min-height: 100%;
 }
