@@ -21,6 +21,25 @@ const defaultValues = {
   tiempo: "",
 };
 
+function toDateTimeLocalValue(value) {
+  if (!value) return "";
+
+  return String(value).slice(0, 16);
+}
+
+function toFormValues(task) {
+  if (!task) return defaultValues;
+
+  return {
+    titulo: task.titulo || "",
+    descripcion: task.descripcion || "",
+    prioridad: task.prioridad || "MEDIA",
+    idCategoria: task.idCategoria ? String(task.idCategoria) : "",
+    fechaEntrega: toDateTimeLocalValue(task.fechaEntrega),
+    tiempo: task.tiempo ? String(task.tiempo) : "",
+  };
+}
+
 function FieldError({ error }) {
   if (!error) return null;
 
@@ -57,6 +76,8 @@ export default function TaskFormModal({
   categoriesLoading = false,
   categoryToSelect,
   creating = false,
+  initialTask = null,
+  mode = "create",
   open,
   onClose,
   onCreateCategory,
@@ -76,12 +97,18 @@ export default function TaskFormModal({
   const selectedCategory = categories.find(
     (category) => String(category.idCategoria) === String(selectedCategoryId)
   );
+  const isEditMode = mode === "edit";
+  const busyLabel = isEditMode ? "Guardando..." : "Guardando...";
+  const submitLabel = isEditMode ? "Guardar cambios" : "Guardar";
 
   useEffect(() => {
-    if (!open) {
-      reset(defaultValues);
+    if (open) {
+      reset(isEditMode ? toFormValues(initialTask) : defaultValues);
+      return;
     }
-  }, [open, reset]);
+
+    reset(defaultValues);
+  }, [initialTask, isEditMode, open, reset]);
 
   useEffect(() => {
     if (open && categoryToSelect?.idCategoria) {
@@ -102,7 +129,11 @@ export default function TaskFormModal({
   }
 
   return (
-    <Modal open={open} title="Nueva tarea" onClose={creating ? undefined : onClose}>
+    <Modal
+      open={open}
+      title={isEditMode ? "Editar tarea" : "Nueva tarea"}
+      onClose={creating ? undefined : onClose}
+    >
       <form className="grid gap-4" onSubmit={handleSubmit(submit)} noValidate>
         <div className="grid gap-2">
           <label className="text-sm font-semibold text-primary" htmlFor="task-title">
@@ -260,7 +291,7 @@ export default function TaskFormModal({
             Cancelar
           </Button>
           <Button disabled={creating} type="submit">
-            {creating ? "Guardando..." : "Guardar"}
+            {creating ? busyLabel : submitLabel}
           </Button>
         </div>
       </form>

@@ -21,7 +21,14 @@ function DetailItem({ label, children }) {
   );
 }
 
-export default function TaskCard({ isCompleting = false, onComplete, task }) {
+export default function TaskCard({
+  isCompleting = false,
+  isDeleting = false,
+  onComplete,
+  onDelete,
+  onEdit,
+  task,
+}) {
   const [expanded, setExpanded] = useState(false);
   const priority = getPriorityVisual(task.prioridad);
   const state = getStateVisual(task.estado);
@@ -132,13 +139,18 @@ export default function TaskCard({ isCompleting = false, onComplete, task }) {
                   {isCompleting ? "Completando..." : "Completar"}
                 </Button>
               )}
-              <Button variant="secondary">
+              <Button disabled={isDeleting} variant="secondary" onClick={() => onEdit?.(task)}>
                 <Pencil size={17} />
                 Editar
               </Button>
-              <Button variant="secondary" className="danger-action-button">
+              <Button
+                variant="secondary"
+                className="danger-action-button"
+                disabled={isDeleting}
+                onClick={() => onDelete?.(task)}
+              >
                 <Trash2 size={17} />
-                Borrar
+                {isDeleting ? "Eliminando..." : "Borrar"}
               </Button>
             </div>
           </div>

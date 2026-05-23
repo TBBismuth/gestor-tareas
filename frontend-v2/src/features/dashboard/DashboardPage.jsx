@@ -9,6 +9,7 @@ import Button from "../../components/ui/Button.jsx";
 import CategoryFormModal from "./components/CategoryFormModal.jsx";
 import CategoryGrid from "./components/CategoryGrid.jsx";
 import DeleteCategoryModal from "./components/DeleteCategoryModal.jsx";
+import DeleteTaskModal from "./components/DeleteTaskModal.jsx";
 import MegaFilterBar from "./components/MegaFilterBar.jsx";
 import TaskFormModal from "./components/TaskFormModal.jsx";
 import TaskList from "./components/TaskList.jsx";
@@ -18,7 +19,7 @@ import {
   getMyCategories,
   updateCategory,
 } from "./api/categoriesApi.js";
-import { completeTask, createTask, getMyTasks } from "./api/tasksApi.js";
+import { completeTask, createTask, deleteTask, getMyTasks, updateTask } from "./api/tasksApi.js";
 import { mapTaskResponsesToCardTasks } from "./mappers/taskMapper.js";
 import { sortMyTasks } from "./utils/taskSorting.js";
 
@@ -36,8 +37,8 @@ const viewTitles = {
   [VIEW_SMART]: "Inteligente",
 };
 
-function getTaskActionErrorMessage(error) {
-  return error?.response?.data?.error || "No se pudo completar la tarea.";
+function getActionErrorMessage(error, fallback) {
+  return error?.response?.data?.error || error?.response?.data?.message || fallback;
 }
 
 function getCategoryActionErrorMessage(error, fallback) {
@@ -47,6 +48,9 @@ function getCategoryActionErrorMessage(error, fallback) {
 export default function DashboardPage() {
   const queryClient = useQueryClient();
   const [taskModalOpen, setTaskModalOpen] = useState(false);
+  const [taskModalMode, setTaskModalMode] = useState("create");
+  const [taskToEdit, setTaskToEdit] = useState(null);
+  const [taskToDelete, setTaskToDelete] = useState(null);
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
   const [categoryModalMode, setCategoryModalMode] = useState("create");
   const [categoryModalSource, setCategoryModalSource] = useState(null);
@@ -74,7 +78,7 @@ export default function DashboardPage() {
       queryClient.invalidateQueries({ queryKey: MY_TASKS_QUERY_KEY });
     },
     onError: (error) => {
-      toast.error(getTaskActionErrorMessage(error));
+      toast.error(getActionErrorMessage(error, "No se pudo completar la tarea."));
     },
   });
   const createTaskMutation = useMutation({
@@ -87,6 +91,31 @@ export default function DashboardPage() {
     },
     onError: (error) => {
       toast.error(error?.response?.data?.error || "No se pudo crear la tarea.");
+    },
+  });
+  const updateTaskMutation = useMutation({
+    mutationFn: ({ id, payload }) => updateTask(id, payload),
+    onSuccess: () => {
+      toast.success("Tarea actualizada.");
+      setTaskModalOpen(false);
+      setTaskModalMode("create");
+      setTaskToEdit(null);
+      setCategoryToSelectInTask(null);
+      queryClient.invalidateQueries({ queryKey: MY_TASKS_QUERY_KEY });
+    },
+    onError: (error) => {
+      toast.error(getActionErrorMessage(error, "No se pudo actualizar la tarea."));
+    },
+  });
+  const deleteTaskMutation = useMutation({
+    mutationFn: ({ task }) => deleteTask(task.idTarea),
+    onSuccess: () => {
+      toast.success("Tarea eliminada.");
+      setTaskToDelete(null);
+      queryClient.invalidateQueries({ queryKey: MY_TASKS_QUERY_KEY });
+    },
+    onError: () => {
+      toast.error("No se pudo eliminar la tarea.");
     },
   });
   const createCategoryMutation = useMutation({
@@ -170,6 +199,8 @@ export default function DashboardPage() {
     }
 
     setCategoryToSelectInTask(null);
+    setTaskModalMode("create");
+    setTaskToEdit(null);
     setTaskModalOpen(true);
   }
 
@@ -189,6 +220,17 @@ export default function DashboardPage() {
     setCategoryModalMode("create");
     setCategoryModalSource(null);
     setCategoryToEdit(null);
+  }
+
+  function handleCloseTaskModal() {
+    if (createTaskMutation.isPending || updateTaskMutation.isPending) {
+      return;
+    }
+
+    setTaskModalOpen(false);
+    setTaskModalMode("create");
+    setTaskToEdit(null);
+    setCategoryToSelectInTask(null);
   }
 
   function handleEditCategory() {
@@ -252,6 +294,59 @@ export default function DashboardPage() {
     return createCategoryMutation.mutateAsync(payload);
   }
 
+  function isTaskCompleted(task) {
+    return (
+      task?.completada === true ||
+      task?.estado === "COMPLETADA" ||
+      task?.estado === "COMPLETADA_CON_RETRASO"
+    );
+  }
+
+  function handleEditTask(task) {
+    setTaskModalMode("edit");
+    setTaskToEdit(task);
+    setCategoryToSelectInTask(null);
+    setTaskModalOpen(true);
+  }
+
+  function handleDeleteTask(task) {
+    if (deleteTaskMutation.isPending) {
+      return;
+    }
+
+    if (isTaskCompleted(task)) {
+      deleteTaskMutation.mutate({ task });
+      return;
+    }
+
+    setTaskToDelete(task);
+  }
+
+  function handleConfirmDeleteTask() {
+    if (!taskToDelete || deleteTaskMutation.isPending) {
+      return;
+    }
+
+    deleteTaskMutation.mutate({ task: taskToDelete });
+  }
+
+  function handleSubmitTask(payload) {
+    if (taskModalMode === "edit" && taskToEdit) {
+      const completed = isTaskCompleted(taskToEdit);
+
+      return updateTaskMutation.mutateAsync({
+        id: taskToEdit.idTarea,
+        payload: {
+          ...payload,
+          completada: completed,
+          fechaCompletada: completed ? taskToEdit.fechaCompletada : null,
+        },
+      });
+    }
+
+    return createTaskMutation.mutateAsync(payload);
+  }
+
   return (
     <AppShell
       focusArea={focusArea}
@@ -304,8 +399,12 @@ export default function DashboardPage() {
           {tasks.length > 0 && (
             <TaskList
               completingTaskId={completeTaskMutation.variables?.idTarea}
+              deletingTaskId={deleteTaskMutation.variables?.task?.idTarea}
+              isDeleting={deleteTaskMutation.isPending}
               isCompleting={completeTaskMutation.isPending}
               onCompleteTask={(task) => completeTaskMutation.mutate(task)}
+              onDeleteTask={handleDeleteTask}
+              onEditTask={handleEditTask}
               tasks={tasks}
             />
           )}
@@ -347,13 +446,12 @@ export default function DashboardPage() {
         categoriesError={categoriesQuery.isError}
         categoriesLoading={categoriesQuery.isLoading}
         categoryToSelect={categoryToSelectInTask}
-        creating={createTaskMutation.isPending}
-        onClose={() => {
-          setTaskModalOpen(false);
-          setCategoryToSelectInTask(null);
-        }}
+        creating={createTaskMutation.isPending || updateTaskMutation.isPending}
+        initialTask={taskModalMode === "edit" ? taskToEdit : null}
+        mode={taskModalMode}
+        onClose={handleCloseTaskModal}
         onCreateCategory={handleOpenCategoryFromTask}
-        onSubmit={(payload) => createTaskMutation.mutateAsync(payload)}
+        onSubmit={handleSubmitTask}
         open={taskModalOpen}
       />
       <CategoryFormModal
@@ -377,6 +475,17 @@ export default function DashboardPage() {
         onConfirm={handleDeleteCategoryReal}
         onConfirmAndCreate={handleDeleteAndCreateCategoryReal}
         open={Boolean(categoryToDelete)}
+      />
+      <DeleteTaskModal
+        deleting={deleteTaskMutation.isPending}
+        onClose={() => {
+          if (!deleteTaskMutation.isPending) {
+            setTaskToDelete(null);
+          }
+        }}
+        onConfirm={handleConfirmDeleteTask}
+        open={Boolean(taskToDelete)}
+        task={taskToDelete}
       />
     </AppShell>
   );

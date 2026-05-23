@@ -2,8 +2,12 @@ import TaskCard from "./TaskCard.jsx";
 
 export default function TaskList({
   completingTaskId,
+  deletingTaskId,
   isCompleting = false,
+  isDeleting = false,
   onCompleteTask,
+  onDeleteTask,
+  onEditTask,
   tasks,
 }) {
   return (
@@ -11,8 +15,11 @@ export default function TaskList({
       {tasks.map((task) => (
         <TaskCard
           isCompleting={isCompleting && completingTaskId === task.idTarea}
+          isDeleting={isDeleting && deletingTaskId === task.idTarea}
           key={task.idTarea}
           onComplete={onCompleteTask}
+          onDelete={onDeleteTask}
+          onEdit={onEditTask}
           task={task}
         />
       ))}
