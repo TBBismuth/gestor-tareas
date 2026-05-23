@@ -12,7 +12,12 @@ import DeleteCategoryModal from "./components/DeleteCategoryModal.jsx";
 import MegaFilterBar from "./components/MegaFilterBar.jsx";
 import TaskFormModal from "./components/TaskFormModal.jsx";
 import TaskList from "./components/TaskList.jsx";
-import { createCategory, getMyCategories } from "./api/categoriesApi.js";
+import {
+  createCategory,
+  deleteCategory,
+  getMyCategories,
+  updateCategory,
+} from "./api/categoriesApi.js";
 import { completeTask, createTask, getMyTasks } from "./api/tasksApi.js";
 import { mapTaskResponsesToCardTasks } from "./mappers/taskMapper.js";
 import { sortMyTasks } from "./utils/taskSorting.js";
@@ -35,13 +40,20 @@ function getTaskActionErrorMessage(error) {
   return error?.response?.data?.error || "No se pudo completar la tarea.";
 }
 
+function getCategoryActionErrorMessage(error, fallback) {
+  return error?.response?.data?.error || error?.response?.data?.message || fallback;
+}
+
 export default function DashboardPage() {
   const queryClient = useQueryClient();
   const [taskModalOpen, setTaskModalOpen] = useState(false);
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
+  const [categoryModalMode, setCategoryModalMode] = useState("create");
   const [categoryModalSource, setCategoryModalSource] = useState(null);
+  const [categoryToEdit, setCategoryToEdit] = useState(null);
   const [categoryToSelectInTask, setCategoryToSelectInTask] = useState(null);
   const [categoryToDelete, setCategoryToDelete] = useState(null);
+  const [deleteShouldOpenCreate, setDeleteShouldOpenCreate] = useState(false);
   const [focusArea, setFocusArea] = useState("filter");
   const [activeView, setActiveView] = useState(VIEW_MINE);
   const categoriesQuery = useQuery({
@@ -95,10 +107,50 @@ export default function DashboardPage() {
       }
 
       setCategoryModalOpen(false);
+      setCategoryModalMode("create");
       setCategoryModalSource(null);
+      setCategoryToEdit(null);
     },
     onError: (error) => {
       toast.error(error?.response?.data?.error || "No se pudo crear la categoría.");
+    },
+  });
+
+  const updateCategoryMutation = useMutation({
+    mutationFn: ({ id, payload }) => updateCategory(id, payload),
+    onSuccess: () => {
+      toast.success("Categoría actualizada.");
+      setCategoryModalOpen(false);
+      setCategoryModalMode("create");
+      setCategoryModalSource(null);
+      setCategoryToEdit(null);
+      queryClient.invalidateQueries({ queryKey: CATEGORIES_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: MY_TASKS_QUERY_KEY });
+    },
+    onError: (error) => {
+      toast.error(getCategoryActionErrorMessage(error, "No se pudo actualizar la categoría."));
+    },
+  });
+  const deleteCategoryMutation = useMutation({
+    mutationFn: ({ category }) => deleteCategory(category.idCategoria),
+    onSuccess: (_data, variables) => {
+      toast.success("Categoría eliminada.");
+      setCategoryToDelete(null);
+      queryClient.invalidateQueries({ queryKey: CATEGORIES_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: MY_TASKS_QUERY_KEY });
+
+      if (variables.openCreateAfter) {
+        setCategoryModalMode("create");
+        setCategoryModalSource("categories");
+        setCategoryToEdit(null);
+        setCategoryModalOpen(true);
+      }
+
+      setDeleteShouldOpenCreate(false);
+    },
+    onError: (error) => {
+      toast.error(getCategoryActionErrorMessage(error, "No se pudo eliminar la categoría."));
+      setDeleteShouldOpenCreate(false);
     },
   });
 
@@ -110,7 +162,9 @@ export default function DashboardPage() {
 
   function handleHeaderAction() {
     if (activeView === VIEW_CATEGORIES) {
+      setCategoryModalMode("create");
       setCategoryModalSource("categories");
+      setCategoryToEdit(null);
       setCategoryModalOpen(true);
       return;
     }
@@ -120,17 +174,21 @@ export default function DashboardPage() {
   }
 
   function handleOpenCategoryFromTask() {
+    setCategoryModalMode("create");
     setCategoryModalSource("task");
+    setCategoryToEdit(null);
     setCategoryModalOpen(true);
   }
 
   function handleCloseCategoryModal() {
-    if (createCategoryMutation.isPending) {
+    if (createCategoryMutation.isPending || updateCategoryMutation.isPending) {
       return;
     }
 
     setCategoryModalOpen(false);
+    setCategoryModalMode("create");
     setCategoryModalSource(null);
+    setCategoryToEdit(null);
   }
 
   function handleEditCategory() {
@@ -146,6 +204,52 @@ export default function DashboardPage() {
     toast.info("Eliminar categoría se conectará en un bloque posterior.");
     toast.info("Crear categoría se conectará en un bloque posterior.");
     setCategoryToDelete(null);
+  }
+
+  function handleEditCategoryReal(category) {
+    if (category.protegida) {
+      return;
+    }
+
+    setCategoryModalMode("edit");
+    setCategoryModalSource("categories");
+    setCategoryToEdit(category);
+    setCategoryModalOpen(true);
+  }
+
+  function handleDeleteCategoryReal() {
+    if (!categoryToDelete || categoryToDelete.protegida) {
+      return;
+    }
+
+    setDeleteShouldOpenCreate(false);
+    deleteCategoryMutation.mutate({
+      category: categoryToDelete,
+      openCreateAfter: false,
+    });
+  }
+
+  function handleDeleteAndCreateCategoryReal() {
+    if (!categoryToDelete || categoryToDelete.protegida) {
+      return;
+    }
+
+    setDeleteShouldOpenCreate(true);
+    deleteCategoryMutation.mutate({
+      category: categoryToDelete,
+      openCreateAfter: true,
+    });
+  }
+
+  function handleSubmitCategory(payload) {
+    if (categoryModalMode === "edit" && categoryToEdit) {
+      return updateCategoryMutation.mutateAsync({
+        id: categoryToEdit.idCategoria,
+        payload,
+      });
+    }
+
+    return createCategoryMutation.mutateAsync(payload);
   }
 
   return (
@@ -228,7 +332,7 @@ export default function DashboardPage() {
             <CategoryGrid
               categories={categories}
               onDelete={setCategoryToDelete}
-              onEdit={handleEditCategory}
+              onEdit={handleEditCategoryReal}
             />
           )}
         </>
@@ -253,17 +357,25 @@ export default function DashboardPage() {
         open={taskModalOpen}
       />
       <CategoryFormModal
-        creating={createCategoryMutation.isPending}
+        creating={createCategoryMutation.isPending || updateCategoryMutation.isPending}
+        initialCategory={categoryModalMode === "edit" ? categoryToEdit : null}
+        mode={categoryModalMode}
         onClose={handleCloseCategoryModal}
-        onSubmit={(payload) => createCategoryMutation.mutateAsync(payload)}
+        onSubmit={handleSubmitCategory}
         open={categoryModalOpen}
         zIndexClass={taskModalOpen ? "z-[60]" : "z-50"}
       />
       <DeleteCategoryModal
         category={categoryToDelete}
-        onClose={() => setCategoryToDelete(null)}
-        onConfirm={handleDeleteCategoryPlaceholder}
-        onConfirmAndCreate={handleDeleteAndCreateCategoryPlaceholder}
+        deleting={deleteCategoryMutation.isPending}
+        onClose={() => {
+          if (!deleteCategoryMutation.isPending) {
+            setCategoryToDelete(null);
+            setDeleteShouldOpenCreate(false);
+          }
+        }}
+        onConfirm={handleDeleteCategoryReal}
+        onConfirmAndCreate={handleDeleteAndCreateCategoryReal}
         open={Boolean(categoryToDelete)}
       />
     </AppShell>

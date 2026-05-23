@@ -3,6 +3,7 @@ import Modal from "../../../components/ui/Modal.jsx";
 
 export default function DeleteCategoryModal({
   category,
+  deleting = false,
   onClose,
   onConfirm,
   onConfirmAndCreate,
@@ -20,18 +21,19 @@ export default function DeleteCategoryModal({
           </p>
         </div>
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-          <Button type="button" variant="secondary" onClick={onClose}>
+          <Button disabled={deleting} type="button" variant="secondary" onClick={onClose}>
             Cancelar
           </Button>
           <Button
             className="danger-action-button"
+            disabled={deleting}
             type="button"
             variant="secondary"
             onClick={onConfirm}
           >
-            Borrar
+            {deleting ? "Borrando..." : "Borrar"}
           </Button>
-          <Button type="button" onClick={onConfirmAndCreate}>
+          <Button disabled={deleting} type="button" onClick={onConfirmAndCreate}>
             Borrar y crear otra
           </Button>
         </div>

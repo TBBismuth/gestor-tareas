@@ -64,6 +64,8 @@ function toCategoryPayload(values) {
 
 export default function CategoryFormModal({
   creating = false,
+  initialCategory = null,
+  mode = "create",
   onClose,
   onSubmit,
   open,
@@ -81,13 +83,26 @@ export default function CategoryFormModal({
   const useColor = watch("useColor");
   const color = watch("color");
   const selectedIcon = watch("icono");
+  const isEditMode = mode === "edit";
 
   useEffect(() => {
-    if (!open) {
+    if (open) {
+      reset(
+        initialCategory
+          ? {
+              nombre: initialCategory.nombre || "",
+              useColor: Boolean(initialCategory.color),
+              color: initialCategory.color || defaultValues.color,
+              icono: initialCategory.icono || "",
+            }
+          : defaultValues
+      );
+      setIconDropdownOpen(false);
+    } else {
       reset(defaultValues);
       setIconDropdownOpen(false);
     }
-  }, [open, reset]);
+  }, [initialCategory, open, reset]);
 
   async function submit(values) {
     try {
@@ -101,7 +116,7 @@ export default function CategoryFormModal({
   return (
     <Modal
       open={open}
-      title="Nueva categoría"
+      title={isEditMode ? "Editar categoría" : "Nueva categoría"}
       onClose={creating ? undefined : onClose}
       zIndexClass={zIndexClass}
     >
@@ -223,7 +238,13 @@ export default function CategoryFormModal({
             Cancelar
           </Button>
           <Button disabled={creating} type="submit">
-            {creating ? "Creando..." : "Crear categoría"}
+            {creating
+              ? isEditMode
+                ? "Guardando..."
+                : "Creando..."
+              : isEditMode
+                ? "Guardar cambios"
+                : "Crear categoría"}
           </Button>
         </div>
       </form>

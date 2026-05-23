@@ -473,13 +473,13 @@
 .category-card-accent {
   --category-accent-color: var(--color-brand);
   position: absolute;
-  right: -1.8rem;
-  top: -1.8rem;
-  width: 6.5rem;
-  height: 6.5rem;
+  right: 0;
+  top: 0;
+  width: 5.5rem;
+  height: 100%;
   background: var(--category-accent-color);
-  clip-path: polygon(34% 0, 100% 0, 100% 100%, 0 100%);
-  opacity: 0.86;
+  clip-path: polygon(45% 0, 100% 0, 100% 100%, 20% 100%);
+  opacity: 0.95;
   pointer-events: none;
 }
 
