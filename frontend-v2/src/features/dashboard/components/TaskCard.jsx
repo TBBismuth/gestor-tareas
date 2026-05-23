@@ -136,31 +136,33 @@ export default function TaskCard({
                 <p className="mt-1 leading-6">{task.comentarioRevision}</p>
               </div>
             )}
-            <div className="mt-4 flex flex-wrap items-center gap-2">
-              {!isCompleted && (
-                <Button
-                  className="success-action-button"
-                  disabled={isCompleting}
-                  onClick={() => onComplete?.(task)}
-                >
-                  <Check size={17} />
-                  {isCompleting ? "Completando..." : "Completar"}
+            {!isGroupTask && (
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                {!isCompleted && (
+                  <Button
+                    className="success-action-button"
+                    disabled={isCompleting}
+                    onClick={() => onComplete?.(task)}
+                  >
+                    <Check size={17} />
+                    {isCompleting ? "Completando..." : "Completar"}
+                  </Button>
+                )}
+                <Button disabled={isDeleting} variant="secondary" onClick={() => onEdit?.(task)}>
+                  <Pencil size={17} />
+                  Editar
                 </Button>
-              )}
-              <Button disabled={isDeleting} variant="secondary" onClick={() => onEdit?.(task)}>
-                <Pencil size={17} />
-                Editar
-              </Button>
-              <Button
-                variant="secondary"
-                className="danger-action-button"
-                disabled={isDeleting}
-                onClick={() => onDelete?.(task)}
-              >
-                <Trash2 size={17} />
-                {isDeleting ? "Eliminando..." : "Borrar"}
-              </Button>
-            </div>
+                <Button
+                  variant="secondary"
+                  className="danger-action-button"
+                  disabled={isDeleting}
+                  onClick={() => onDelete?.(task)}
+                >
+                  <Trash2 size={17} />
+                  {isDeleting ? "Eliminando..." : "Borrar"}
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </div>

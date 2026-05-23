@@ -5,6 +5,11 @@ export async function getMyTasks() {
   return Array.isArray(data) ? data : [];
 }
 
+export async function getRecommendedTasks() {
+  const { data } = await apiClient.post("/tarea/recomendadas", {});
+  return Array.isArray(data) ? data : [];
+}
+
 export async function completeTask(taskId) {
   const { data } = await apiClient.patch(`/tarea/completar/${taskId}`);
   return data;

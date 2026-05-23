@@ -19,8 +19,18 @@ import {
   getMyCategories,
   updateCategory,
 } from "./api/categoriesApi.js";
-import { completeTask, createTask, deleteTask, getMyTasks, updateTask } from "./api/tasksApi.js";
-import { mapTaskResponsesToCardTasks } from "./mappers/taskMapper.js";
+import {
+  completeTask,
+  createTask,
+  deleteTask,
+  getMyTasks,
+  getRecommendedTasks,
+  updateTask,
+} from "./api/tasksApi.js";
+import {
+  mapRecommendedTaskResponsesToCardTasks,
+  mapTaskResponsesToCardTasks,
+} from "./mappers/taskMapper.js";
 import { sortMyTasks } from "./utils/taskSorting.js";
 
 const VIEW_MINE = "mine";
@@ -28,6 +38,7 @@ const VIEW_CATEGORIES = "categories";
 const VIEW_GROUPS = "groups";
 const VIEW_SMART = "smart";
 const MY_TASKS_QUERY_KEY = ["tasks", "mine"];
+const RECOMMENDED_TASKS_QUERY_KEY = ["tasks", "recommended"];
 const CATEGORIES_QUERY_KEY = ["categories", "mine"];
 
 const viewTitles = {
@@ -63,18 +74,28 @@ export default function DashboardPage() {
   const categoriesQuery = useQuery({
     queryKey: CATEGORIES_QUERY_KEY,
     queryFn: getMyCategories,
-    enabled: taskModalOpen || activeView === VIEW_MINE || activeView === VIEW_CATEGORIES,
+    enabled:
+      taskModalOpen ||
+      activeView === VIEW_MINE ||
+      activeView === VIEW_CATEGORIES ||
+      activeView === VIEW_SMART,
   });
   const tasksQuery = useQuery({
     queryKey: MY_TASKS_QUERY_KEY,
     queryFn: getMyTasks,
     enabled: activeView === VIEW_MINE,
   });
+  const recommendedTasksQuery = useQuery({
+    queryKey: RECOMMENDED_TASKS_QUERY_KEY,
+    queryFn: getRecommendedTasks,
+    enabled: activeView === VIEW_SMART,
+  });
   const completeTaskMutation = useMutation({
     mutationFn: (task) => completeTask(task.idTarea),
     onSuccess: () => {
       toast.success("Tarea completada.");
       queryClient.invalidateQueries({ queryKey: MY_TASKS_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: RECOMMENDED_TASKS_QUERY_KEY });
     },
     onError: (error) => {
       toast.error(getActionErrorMessage(error, "No se pudo completar la tarea."));
@@ -87,6 +108,7 @@ export default function DashboardPage() {
       setTaskModalOpen(false);
       setCategoryToSelectInTask(null);
       queryClient.invalidateQueries({ queryKey: MY_TASKS_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: RECOMMENDED_TASKS_QUERY_KEY });
     },
     onError: (error) => {
       toast.error(error?.response?.data?.error || "No se pudo crear la tarea.");
@@ -101,6 +123,7 @@ export default function DashboardPage() {
       setTaskToEdit(null);
       setCategoryToSelectInTask(null);
       queryClient.invalidateQueries({ queryKey: MY_TASKS_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: RECOMMENDED_TASKS_QUERY_KEY });
     },
     onError: (error) => {
       toast.error(getActionErrorMessage(error, "No se pudo actualizar la tarea."));
@@ -112,6 +135,7 @@ export default function DashboardPage() {
       toast.success("Tarea eliminada.");
       setTaskToDelete(null);
       queryClient.invalidateQueries({ queryKey: MY_TASKS_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: RECOMMENDED_TASKS_QUERY_KEY });
     },
     onError: () => {
       toast.error("No se pudo eliminar la tarea.");
@@ -184,6 +208,10 @@ export default function DashboardPage() {
 
   const categories = categoriesQuery.data ?? [];
   const tasks = sortMyTasks(mapTaskResponsesToCardTasks(tasksQuery.data ?? [], categories));
+  const recommendedTasks = mapRecommendedTaskResponsesToCardTasks(
+    recommendedTasksQuery.data ?? [],
+    categories
+  );
   const headerActionLabel =
     activeView === VIEW_CATEGORIES ? "Nueva categoría" : "Nueva tarea";
   const pageTitle = viewTitles[activeView] || "Tareas";
@@ -435,7 +463,38 @@ export default function DashboardPage() {
           )}
         </>
       )}
-      {activeView !== VIEW_MINE && activeView !== VIEW_CATEGORIES && (
+      {activeView === VIEW_SMART && (
+        <>
+          {recommendedTasksQuery.isLoading && (
+            <p className="mt-5 rounded-control border border-app bg-[color:var(--color-surface-card-muted)] px-4 py-3 text-sm text-secondary">
+              Cargando recomendaciones...
+            </p>
+          )}
+          {recommendedTasksQuery.isError && (
+            <p className="mt-5 rounded-control border border-app bg-[color:var(--state-danger-bg)] px-4 py-3 text-sm text-[color:var(--state-danger-text)]">
+              No se pudieron cargar las recomendaciones.
+            </p>
+          )}
+          {recommendedTasksQuery.isSuccess && recommendedTasks.length === 0 && (
+            <p className="mt-5 rounded-control border border-app bg-[color:var(--color-surface-card-muted)] px-4 py-3 text-sm text-secondary">
+              Todavía no hay tareas recomendadas.
+            </p>
+          )}
+          {recommendedTasks.length > 0 && (
+            <TaskList
+              completingTaskId={completeTaskMutation.variables?.idTarea}
+              deletingTaskId={deleteTaskMutation.variables?.task?.idTarea}
+              isCompleting={completeTaskMutation.isPending}
+              isDeleting={deleteTaskMutation.isPending}
+              onCompleteTask={(task) => completeTaskMutation.mutate(task)}
+              onDeleteTask={handleDeleteTask}
+              onEditTask={handleEditTask}
+              tasks={recommendedTasks}
+            />
+          )}
+        </>
+      )}
+      {activeView !== VIEW_MINE && activeView !== VIEW_CATEGORIES && activeView !== VIEW_SMART && (
         <p className="mt-5 rounded-control border border-app bg-[color:var(--color-surface-card-muted)] px-4 py-3 text-sm text-secondary">
           Esta vista se conectara en un bloque posterior.
         </p>
