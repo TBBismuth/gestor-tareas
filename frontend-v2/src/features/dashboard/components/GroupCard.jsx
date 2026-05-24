@@ -1,4 +1,14 @@
-import { ChevronDown, KeyRound, Layers3, LogOut, Pencil, Power, Trash2, Users } from "lucide-react";
+import {
+  ChevronDown,
+  ClipboardList,
+  KeyRound,
+  Layers3,
+  LogOut,
+  Pencil,
+  Power,
+  Trash2,
+  Users,
+} from "lucide-react";
 import { useState } from "react";
 import Badge from "../../../components/ui/Badge.jsx";
 import Button from "../../../components/ui/Button.jsx";
@@ -33,6 +43,7 @@ export default function GroupCard({
   onEdit,
   onInvite,
   onLeave,
+  onOpenAssignments,
   onToggleActive,
   onViewMembers,
 }) {
@@ -138,6 +149,18 @@ export default function GroupCard({
           >
             <Users size={15} />
             Ver miembros
+          </Button>
+          <Button
+            size="sm"
+            type="button"
+            variant="secondary"
+            onClick={(event) => {
+              event.stopPropagation();
+              onOpenAssignments?.(group, canEdit ? "admin" : "member");
+            }}
+          >
+            <ClipboardList size={15} />
+            {canEdit ? "Asignaciones" : "Mis tareas"}
           </Button>
         </div>
 

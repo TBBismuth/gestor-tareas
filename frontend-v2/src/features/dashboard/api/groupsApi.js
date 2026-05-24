@@ -38,6 +38,16 @@ export async function getGroupMembers(groupId) {
   return Array.isArray(data) ? data : [];
 }
 
+export async function getGroupAssignments(groupId) {
+  const { data } = await apiClient.get(`/grupo/${groupId}/asignaciones`);
+  return Array.isArray(data) ? data : [];
+}
+
+export async function getGroupAssignmentDetail(groupId, assignmentId) {
+  const { data } = await apiClient.get(`/grupo/${groupId}/asignaciones/${assignmentId}`);
+  return data;
+}
+
 export async function addGroupMember(groupId, payload) {
   const { data } = await apiClient.post(`/grupo/${groupId}/miembros/add`, payload);
   return data;

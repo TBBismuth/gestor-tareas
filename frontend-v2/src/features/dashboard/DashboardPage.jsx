@@ -13,6 +13,7 @@ import DeleteGroupModal from "./components/DeleteGroupModal.jsx";
 import DeleteTaskModal from "./components/DeleteTaskModal.jsx";
 import GroupFormModal from "./components/GroupFormModal.jsx";
 import GroupGrid from "./components/GroupGrid.jsx";
+import GroupAssignmentsModal from "./components/GroupAssignmentsModal.jsx";
 import GroupMembersModal from "./components/GroupMembersModal.jsx";
 import InvitationCodeModal from "./components/InvitationCodeModal.jsx";
 import JoinGroupModal from "./components/JoinGroupModal.jsx";
@@ -40,6 +41,7 @@ import {
   completeTask,
   createTask,
   deleteTask,
+  getAssignedGroupTasks,
   getMyTasks,
   getRecommendedTasks,
   updateTask,
@@ -94,6 +96,8 @@ export default function DashboardPage() {
   const [groupToDelete, setGroupToDelete] = useState(null);
   const [groupToLeave, setGroupToLeave] = useState(null);
   const [groupToInvite, setGroupToInvite] = useState(null);
+  const [groupToViewAssignments, setGroupToViewAssignments] = useState(null);
+  const [groupAssignmentsMode, setGroupAssignmentsMode] = useState("member");
   const [joinGroupModalOpen, setJoinGroupModalOpen] = useState(false);
   const [groupToViewMembers, setGroupToViewMembers] = useState(null);
   const [groupRoles, setGroupRoles] = useState({});
@@ -111,6 +115,11 @@ export default function DashboardPage() {
   const tasksQuery = useQuery({
     queryKey: MY_TASKS_QUERY_KEY,
     queryFn: getMyTasks,
+    enabled: activeView === VIEW_MINE,
+  });
+  const assignedGroupTasksQuery = useQuery({
+    queryKey: ["tasks", "assigned-group"],
+    queryFn: () => getAssignedGroupTasks(),
     enabled: activeView === VIEW_MINE,
   });
   const recommendedTasksQuery = useQuery({
@@ -309,7 +318,13 @@ export default function DashboardPage() {
   });
 
   const categories = categoriesQuery.data ?? [];
-  const tasks = sortMyTasks(mapTaskResponsesToCardTasks(tasksQuery.data ?? [], categories));
+  const tasks = sortMyTasks(
+    mapTaskResponsesToCardTasks(
+      tasksQuery.data ?? [],
+      categories,
+      assignedGroupTasksQuery.data ?? []
+    )
+  );
   const recommendedTasks = mapRecommendedTaskResponsesToCardTasks(
     recommendedTasksQuery.data ?? [],
     categories
@@ -387,6 +402,11 @@ export default function DashboardPage() {
 
   function handleViewGroupMembers(group) {
     setGroupToViewMembers(group);
+  }
+
+  function handleOpenGroupAssignments(group, mode) {
+    setGroupToViewAssignments(group);
+    setGroupAssignmentsMode(mode);
   }
 
   function handleEditGroup(group) {
@@ -622,17 +642,17 @@ export default function DashboardPage() {
       </div>
       {activeView === VIEW_MINE && (
         <>
-          {tasksQuery.isLoading && (
+          {(tasksQuery.isLoading || assignedGroupTasksQuery.isLoading) && (
             <p className="mt-5 rounded-control border border-app bg-[color:var(--color-surface-card-muted)] px-4 py-3 text-sm text-secondary">
               Cargando tareas...
             </p>
           )}
-          {tasksQuery.isError && (
+          {(tasksQuery.isError || assignedGroupTasksQuery.isError) && (
             <p className="mt-5 rounded-control border border-app bg-[color:var(--state-danger-bg)] px-4 py-3 text-sm text-[color:var(--state-danger-text)]">
               No se pudieron cargar tus tareas.
             </p>
           )}
-          {tasksQuery.isSuccess && tasks.length === 0 && (
+          {tasksQuery.isSuccess && assignedGroupTasksQuery.isSuccess && tasks.length === 0 && (
             <p className="mt-5 rounded-control border border-app bg-[color:var(--color-surface-card-muted)] px-4 py-3 text-sm text-secondary">
               Todavia no tienes tareas.
             </p>
@@ -703,6 +723,7 @@ export default function DashboardPage() {
               onEdit={handleEditGroup}
               onInvite={setGroupToInvite}
               onLeave={setGroupToLeave}
+              onOpenAssignments={handleOpenGroupAssignments}
               onToggleActive={handleToggleGroupActive}
               onViewMembers={handleViewGroupMembers}
             />
@@ -790,6 +811,12 @@ export default function DashboardPage() {
         onClose={() => setGroupToViewMembers(null)}
         onMembersLoaded={handleMembersLoaded}
         open={Boolean(groupToViewMembers)}
+      />
+      <GroupAssignmentsModal
+        group={groupToViewAssignments}
+        mode={groupAssignmentsMode}
+        onClose={() => setGroupToViewAssignments(null)}
+        open={Boolean(groupToViewAssignments)}
       />
       <InvitationCodeModal
         canRegenerate={

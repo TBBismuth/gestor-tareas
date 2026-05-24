@@ -10,6 +10,12 @@ export async function getRecommendedTasks() {
   return Array.isArray(data) ? data : [];
 }
 
+export async function getAssignedGroupTasks(groupId) {
+  const endpoint = groupId ? `/tarea/asignadas-grupo/${groupId}` : "/tarea/asignadas-grupo";
+  const { data } = await apiClient.get(endpoint);
+  return Array.isArray(data) ? data : [];
+}
+
 export async function completeTask(taskId) {
   const { data } = await apiClient.patch(`/tarea/completar/${taskId}`);
   return data;

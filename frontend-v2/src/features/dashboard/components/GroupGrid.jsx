@@ -8,6 +8,7 @@ export default function GroupGrid({
   onEdit,
   onInvite,
   onLeave,
+  onOpenAssignments,
   onToggleActive,
   onViewMembers,
 }) {
@@ -23,6 +24,7 @@ export default function GroupGrid({
           onEdit={onEdit}
           onInvite={onInvite}
           onLeave={onLeave}
+          onOpenAssignments={onOpenAssignments}
           onToggleActive={onToggleActive}
           onViewMembers={onViewMembers}
         />

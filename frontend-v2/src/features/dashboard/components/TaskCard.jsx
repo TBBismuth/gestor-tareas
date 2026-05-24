@@ -6,6 +6,7 @@ import { cn } from "../../../lib/cn";
 import { getPriorityVisual, getStateVisual } from "../../../styles/taskVisualMaps";
 import CategoryLabel from "./CategoryLabel.jsx";
 import {
+  formatAssignmentType,
   formatDuration,
   formatGroupReviewState,
   formatTaskDate,
@@ -42,11 +43,17 @@ export default function TaskCard({
   const renderCategoryLabel = () => (
     <CategoryLabel color={task.colorCategoria} icon={task.iconoCategoria} name={categoryName} />
   );
-  const metaItems = [
-    formatDuration(task.tiempo),
-    formatTaskDate(task.fechaEntrega),
-    renderCategoryLabel(),
-  ];
+  const metaItems = isGroupTask
+    ? [
+        formatDuration(task.tiempo),
+        formatTaskDate(task.fechaEntrega),
+        formatAssignmentType(task.tipoAsignacion),
+      ]
+    : [
+        formatDuration(task.tiempo),
+        formatTaskDate(task.fechaEntrega),
+        renderCategoryLabel(),
+      ];
 
   return (
     <article
@@ -116,6 +123,9 @@ export default function TaskCard({
                   </DetailItem>
                   <DetailItem label="Fecha de creacion">
                     {formatTaskFullDate(task.fechaAgregado)}
+                  </DetailItem>
+                  <DetailItem label="Tipo">
+                    {formatAssignmentType(task.tipoAsignacion)}
                   </DetailItem>
                 </>
               ) : (

@@ -27,6 +27,8 @@ const groupReviewLabels = {
 };
 
 const assignmentTypeLabels = {
+  TODO_GRUPO: "Todo el grupo",
+  SELECCION_MANUAL: "Seleccion manual",
   INDIVIDUAL: "Individual",
   GRUPAL: "Grupal",
   TODOS: "Todos los miembros",
