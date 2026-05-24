@@ -1,14 +1,22 @@
 import { useEffect, useMemo, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ClipboardList, Plus, Users } from "lucide-react";
+import { toast } from "sonner";
 import Badge from "../../../components/ui/Badge.jsx";
 import Button from "../../../components/ui/Button.jsx";
 import Modal from "../../../components/ui/Modal.jsx";
 import { getPriorityVisual } from "../../../styles/taskVisualMaps.js";
 import { cn } from "../../../lib/cn.js";
-import { getGroupAssignmentDetail, getGroupAssignments } from "../api/groupsApi.js";
+import {
+  getGroupAssignmentDetail,
+  getGroupAssignments,
+  reopenGroupAssignmentMember,
+  validateGroupAssignmentMember,
+} from "../api/groupsApi.js";
 import { getAssignedGroupTasks } from "../api/tasksApi.js";
 import GroupAssignmentFormModal from "./GroupAssignmentFormModal.jsx";
+import ReopenAssignmentModal from "./ReopenAssignmentModal.jsx";
+import ValidateAssignmentModal from "./ValidateAssignmentModal.jsx";
 import {
   formatAssignmentType,
   formatDuration,
@@ -99,9 +107,12 @@ function AssignmentSummaryCard({ assignment, active, onSelect }) {
   );
 }
 
-function RecipientCard({ recipient }) {
+function RecipientCard({ onReopen, onValidate, recipient, reviewing = false }) {
   const displayName =
     recipient.nombreUsuarioMiembro || recipient.emailUsuarioMiembro || "Destinatario";
+  const canValidate = recipient.estadoRevision === "ENTREGADA";
+  const canReopen =
+    recipient.estadoRevision === "ENTREGADA" || recipient.estadoRevision === "VALIDADA";
 
   return (
     <article className="rounded-control border border-app bg-[color:var(--color-surface-card-muted)] p-3">
@@ -131,11 +142,45 @@ function RecipientCard({ recipient }) {
           <p className="mt-1 leading-6">{recipient.comentarioRevision}</p>
         </div>
       )}
+      {(canValidate || canReopen) && (
+        <div className="mt-3 flex flex-wrap justify-end gap-2">
+          {canValidate && (
+            <Button
+              className="success-action-button"
+              disabled={reviewing}
+              onClick={() => onValidate?.(recipient)}
+              size="sm"
+              type="button"
+            >
+              Validar
+            </Button>
+          )}
+          {canReopen && (
+            <Button
+              className="danger-action-button"
+              disabled={reviewing}
+              onClick={() => onReopen?.(recipient)}
+              size="sm"
+              type="button"
+              variant="secondary"
+            >
+              Reabrir
+            </Button>
+          )}
+        </div>
+      )}
     </article>
   );
 }
 
-function AssignmentDetail({ detail, loading, error }) {
+function AssignmentDetail({
+  detail,
+  loading,
+  error,
+  onReopenRecipient,
+  onValidateRecipient,
+  reviewingRecipientId,
+}) {
   if (loading) {
     return <StateMessage>Cargando detalle...</StateMessage>;
   }
@@ -190,7 +235,10 @@ function AssignmentDetail({ detail, loading, error }) {
             {recipients.map((recipient) => (
               <RecipientCard
                 key={recipient.idAsignacionGrupoMiembro}
+                onReopen={onReopenRecipient}
+                onValidate={onValidateRecipient}
                 recipient={recipient}
+                reviewing={reviewingRecipientId === recipient.idAsignacionGrupoMiembro}
               />
             ))}
           </div>
@@ -204,6 +252,8 @@ function AdminAssignmentsView({ group, open }) {
   const queryClient = useQueryClient();
   const [selectedAssignmentId, setSelectedAssignmentId] = useState(null);
   const [formOpen, setFormOpen] = useState(false);
+  const [recipientToValidate, setRecipientToValidate] = useState(null);
+  const [recipientToReopen, setRecipientToReopen] = useState(null);
   const groupId = group?.idGrupo;
   const assignmentsQuery = useQuery({
     queryKey: ["groups", groupId, "assignments"],
@@ -224,6 +274,8 @@ function AdminAssignmentsView({ group, open }) {
     if (!open) {
       setSelectedAssignmentId(null);
       setFormOpen(false);
+      setRecipientToValidate(null);
+      setRecipientToReopen(null);
     }
   }, [open]);
 
@@ -246,6 +298,47 @@ function AdminAssignmentsView({ group, open }) {
     queryClient.invalidateQueries({ queryKey: ["tasks", "assigned-group"] });
     queryClient.invalidateQueries({ queryKey: ["groups", groupId, "assigned-tasks"] });
   }
+
+  function invalidateReviewQueries() {
+    queryClient.invalidateQueries({ queryKey: ["groups", groupId, "assignments"] });
+    queryClient.invalidateQueries({
+      queryKey: ["groups", groupId, "assignments", selectedAssignmentId],
+    });
+    queryClient.invalidateQueries({ queryKey: ["tasks", "mine"] });
+    queryClient.invalidateQueries({ queryKey: ["tasks", "recommended"] });
+    queryClient.invalidateQueries({ queryKey: ["tasks", "assigned-group"] });
+    queryClient.invalidateQueries({ queryKey: ["groups", groupId, "assigned-tasks"] });
+  }
+
+  const validateMutation = useMutation({
+    mutationFn: ({ recipient, payload }) =>
+      validateGroupAssignmentMember(recipient.idAsignacionGrupoMiembro, payload),
+    onSuccess: () => {
+      toast.success("Entrega validada.");
+      setRecipientToValidate(null);
+      invalidateReviewQueries();
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.error || "No se pudo validar la entrega.");
+    },
+  });
+  const reopenMutation = useMutation({
+    mutationFn: ({ recipient, payload }) =>
+      reopenGroupAssignmentMember(recipient.idAsignacionGrupoMiembro, payload),
+    onSuccess: () => {
+      toast.success("Entrega reabierta.");
+      setRecipientToReopen(null);
+      invalidateReviewQueries();
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.error || "No se pudo reabrir la entrega.");
+    },
+  });
+
+  const reviewingRecipientId =
+    validateMutation.variables?.recipient?.idAsignacionGrupoMiembro ||
+    reopenMutation.variables?.recipient?.idAsignacionGrupoMiembro ||
+    null;
 
   const content = (() => {
     if (assignmentsQuery.isLoading) {
@@ -284,6 +377,13 @@ function AdminAssignmentsView({ group, open }) {
             detail={detailQuery.data}
             error={detailQuery.isError}
             loading={detailQuery.isLoading || detailQuery.isFetching}
+            onReopenRecipient={setRecipientToReopen}
+            onValidateRecipient={setRecipientToValidate}
+            reviewingRecipientId={
+              validateMutation.isPending || reopenMutation.isPending
+                ? reviewingRecipientId
+                : null
+            }
           />
         </section>
       </div>
@@ -310,6 +410,32 @@ function AdminAssignmentsView({ group, open }) {
         onClose={() => setFormOpen(false)}
         onCreated={handleCreated}
         open={formOpen}
+      />
+      <ValidateAssignmentModal
+        onClose={() => {
+          if (!validateMutation.isPending) {
+            setRecipientToValidate(null);
+          }
+        }}
+        onConfirm={(payload) =>
+          validateMutation.mutateAsync({ recipient: recipientToValidate, payload })
+        }
+        open={Boolean(recipientToValidate)}
+        recipient={recipientToValidate}
+        validating={validateMutation.isPending}
+      />
+      <ReopenAssignmentModal
+        onClose={() => {
+          if (!reopenMutation.isPending) {
+            setRecipientToReopen(null);
+          }
+        }}
+        onConfirm={(payload) =>
+          reopenMutation.mutateAsync({ recipient: recipientToReopen, payload })
+        }
+        open={Boolean(recipientToReopen)}
+        recipient={recipientToReopen}
+        reopening={reopenMutation.isPending}
       />
     </>
   );

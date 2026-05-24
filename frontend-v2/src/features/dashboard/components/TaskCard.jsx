@@ -23,6 +23,17 @@ function DetailItem({ label, children }) {
   );
 }
 
+const groupReviewHeaderBadges = {
+  REABIERTA: {
+    label: "Reabierta",
+    toneColor: "var(--state-warning-text)",
+  },
+  VALIDADA: {
+    label: "Validada",
+    toneColor: "var(--state-success-text)",
+  },
+};
+
 export default function TaskCard({
   isCompleting = false,
   isDeleting = false,
@@ -43,6 +54,9 @@ export default function TaskCard({
     isGroupTask &&
     (task.estadoRevisionAsignacion === "PENDIENTE" ||
       task.estadoRevisionAsignacion === "REABIERTA");
+  const groupReviewHeaderBadge = isGroupTask
+    ? groupReviewHeaderBadges[task.estadoRevisionAsignacion]
+    : null;
   const categoryName = getTaskCategoryName(task);
   const renderCategoryLabel = () => (
     <CategoryLabel color={task.colorCategoria} icon={task.iconoCategoria} name={categoryName} />
@@ -84,6 +98,11 @@ export default function TaskCard({
                 <Badge toneColor="var(--color-brand)">
                   <Users size={13} />
                   {task.nombreGrupoOrigen || "Grupo"}
+                </Badge>
+              )}
+              {groupReviewHeaderBadge && (
+                <Badge toneColor={groupReviewHeaderBadge.toneColor}>
+                  {groupReviewHeaderBadge.label}
                 </Badge>
               )}
             </div>

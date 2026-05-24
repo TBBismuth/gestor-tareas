@@ -53,6 +53,22 @@ export async function createGroupAssignment(groupId, payload) {
   return data;
 }
 
+export async function validateGroupAssignmentMember(assignmentMemberId, payload = null) {
+  const { data } = await apiClient.patch(
+    `/grupo/asignaciones/${assignmentMemberId}/validate`,
+    payload
+  );
+  return data;
+}
+
+export async function reopenGroupAssignmentMember(assignmentMemberId, payload) {
+  const { data } = await apiClient.patch(
+    `/grupo/asignaciones/${assignmentMemberId}/reopen`,
+    payload
+  );
+  return data;
+}
+
 export async function addGroupMember(groupId, payload) {
   const { data } = await apiClient.post(`/grupo/${groupId}/miembros/add`, payload);
   return data;
