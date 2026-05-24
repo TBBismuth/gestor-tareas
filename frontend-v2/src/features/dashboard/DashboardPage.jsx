@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Plus } from "lucide-react";
+import { Plus, UserPlus } from "lucide-react";
 import AppShell from "../../components/layout/AppShell.jsx";
 import RightSidebar from "../../components/layout/RightSidebar.jsx";
 import ViewActionsBar from "../../components/layout/ViewActionsBar.jsx";
@@ -9,16 +9,33 @@ import Button from "../../components/ui/Button.jsx";
 import CategoryFormModal from "./components/CategoryFormModal.jsx";
 import CategoryGrid from "./components/CategoryGrid.jsx";
 import DeleteCategoryModal from "./components/DeleteCategoryModal.jsx";
+import DeleteGroupModal from "./components/DeleteGroupModal.jsx";
 import DeleteTaskModal from "./components/DeleteTaskModal.jsx";
+import GroupFormModal from "./components/GroupFormModal.jsx";
+import GroupGrid from "./components/GroupGrid.jsx";
+import GroupMembersModal from "./components/GroupMembersModal.jsx";
+import InvitationCodeModal from "./components/InvitationCodeModal.jsx";
+import JoinGroupModal from "./components/JoinGroupModal.jsx";
+import LeaveGroupModal from "./components/LeaveGroupModal.jsx";
 import MegaFilterBar from "./components/MegaFilterBar.jsx";
 import TaskFormModal from "./components/TaskFormModal.jsx";
 import TaskList from "./components/TaskList.jsx";
+import { useAuth } from "../auth/AuthContext.jsx";
 import {
   createCategory,
   deleteCategory,
   getMyCategories,
   updateCategory,
 } from "./api/categoriesApi.js";
+import {
+  createGroup,
+  deleteGroup,
+  getMyGroups,
+  joinGroup,
+  leaveGroup,
+  toggleGroupActive,
+  updateGroup,
+} from "./api/groupsApi.js";
 import {
   completeTask,
   createTask,
@@ -40,6 +57,7 @@ const VIEW_SMART = "smart";
 const MY_TASKS_QUERY_KEY = ["tasks", "mine"];
 const RECOMMENDED_TASKS_QUERY_KEY = ["tasks", "recommended"];
 const CATEGORIES_QUERY_KEY = ["categories", "mine"];
+const GROUPS_QUERY_KEY = ["groups", "mine"];
 
 const viewTitles = {
   [VIEW_MINE]: "Tareas",
@@ -58,6 +76,7 @@ function getCategoryActionErrorMessage(error, fallback) {
 
 export default function DashboardPage() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const [taskModalOpen, setTaskModalOpen] = useState(false);
   const [taskModalMode, setTaskModalMode] = useState("create");
   const [taskToEdit, setTaskToEdit] = useState(null);
@@ -69,6 +88,15 @@ export default function DashboardPage() {
   const [categoryToSelectInTask, setCategoryToSelectInTask] = useState(null);
   const [categoryToDelete, setCategoryToDelete] = useState(null);
   const [deleteShouldOpenCreate, setDeleteShouldOpenCreate] = useState(false);
+  const [groupModalOpen, setGroupModalOpen] = useState(false);
+  const [groupModalMode, setGroupModalMode] = useState("create");
+  const [groupToEdit, setGroupToEdit] = useState(null);
+  const [groupToDelete, setGroupToDelete] = useState(null);
+  const [groupToLeave, setGroupToLeave] = useState(null);
+  const [groupToInvite, setGroupToInvite] = useState(null);
+  const [joinGroupModalOpen, setJoinGroupModalOpen] = useState(false);
+  const [groupToViewMembers, setGroupToViewMembers] = useState(null);
+  const [groupRoles, setGroupRoles] = useState({});
   const [focusArea, setFocusArea] = useState("filter");
   const [activeView, setActiveView] = useState(VIEW_MINE);
   const categoriesQuery = useQuery({
@@ -89,6 +117,11 @@ export default function DashboardPage() {
     queryKey: RECOMMENDED_TASKS_QUERY_KEY,
     queryFn: getRecommendedTasks,
     enabled: activeView === VIEW_SMART,
+  });
+  const groupsQuery = useQuery({
+    queryKey: GROUPS_QUERY_KEY,
+    queryFn: getMyGroups,
+    enabled: activeView === VIEW_GROUPS,
   });
   const completeTaskMutation = useMutation({
     mutationFn: (task) => completeTask(task.idTarea),
@@ -205,6 +238,75 @@ export default function DashboardPage() {
       setDeleteShouldOpenCreate(false);
     },
   });
+  const createGroupMutation = useMutation({
+    mutationFn: createGroup,
+    onSuccess: () => {
+      toast.success("Grupo creado.");
+      setGroupModalOpen(false);
+      setGroupModalMode("create");
+      setGroupToEdit(null);
+      queryClient.invalidateQueries({ queryKey: GROUPS_QUERY_KEY });
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.error || "No se pudo crear el grupo.");
+    },
+  });
+  const updateGroupMutation = useMutation({
+    mutationFn: ({ id, payload }) => updateGroup(id, payload),
+    onSuccess: () => {
+      toast.success("Grupo actualizado.");
+      setGroupModalOpen(false);
+      setGroupModalMode("create");
+      setGroupToEdit(null);
+      queryClient.invalidateQueries({ queryKey: GROUPS_QUERY_KEY });
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.error || "No se pudo actualizar el grupo.");
+    },
+  });
+  const toggleGroupActiveMutation = useMutation({
+    mutationFn: ({ group }) => toggleGroupActive(group.idGrupo, !group.activo),
+    onSuccess: (_data, variables) => {
+      toast.success(variables.group.activo ? "Grupo inactivado." : "Grupo activado.");
+      queryClient.invalidateQueries({ queryKey: GROUPS_QUERY_KEY });
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.error || "No se pudo cambiar el estado del grupo.");
+    },
+  });
+  const deleteGroupMutation = useMutation({
+    mutationFn: ({ group }) => deleteGroup(group.idGrupo),
+    onSuccess: () => {
+      toast.success("Grupo eliminado.");
+      setGroupToDelete(null);
+      queryClient.invalidateQueries({ queryKey: GROUPS_QUERY_KEY });
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.error || "No se pudo eliminar el grupo.");
+    },
+  });
+  const leaveGroupMutation = useMutation({
+    mutationFn: ({ group }) => leaveGroup(group.idGrupo),
+    onSuccess: () => {
+      toast.success("Has salido del grupo.");
+      setGroupToLeave(null);
+      queryClient.invalidateQueries({ queryKey: GROUPS_QUERY_KEY });
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.error || "No se pudo salir del grupo.");
+    },
+  });
+  const joinGroupMutation = useMutation({
+    mutationFn: joinGroup,
+    onSuccess: () => {
+      toast.success("Te has unido al grupo.");
+      setJoinGroupModalOpen(false);
+      queryClient.invalidateQueries({ queryKey: GROUPS_QUERY_KEY });
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.error || "No se pudo unir al grupo.");
+    },
+  });
 
   const categories = categoriesQuery.data ?? [];
   const tasks = sortMyTasks(mapTaskResponsesToCardTasks(tasksQuery.data ?? [], categories));
@@ -212,8 +314,13 @@ export default function DashboardPage() {
     recommendedTasksQuery.data ?? [],
     categories
   );
+  const groups = groupsQuery.data ?? [];
   const headerActionLabel =
-    activeView === VIEW_CATEGORIES ? "Nueva categoría" : "Nueva tarea";
+    activeView === VIEW_CATEGORIES
+      ? "Nueva categoría"
+      : activeView === VIEW_GROUPS
+        ? "Nuevo grupo"
+        : "Nueva tarea";
   const pageTitle = viewTitles[activeView] || "Tareas";
 
   function handleHeaderAction() {
@@ -222,6 +329,13 @@ export default function DashboardPage() {
       setCategoryModalSource("categories");
       setCategoryToEdit(null);
       setCategoryModalOpen(true);
+      return;
+    }
+
+    if (activeView === VIEW_GROUPS) {
+      setGroupModalMode("create");
+      setGroupToEdit(null);
+      setGroupModalOpen(true);
       return;
     }
 
@@ -237,6 +351,94 @@ export default function DashboardPage() {
     setCategoryToEdit(null);
     setCategoryModalOpen(true);
   }
+
+  function handleCloseGroupModal() {
+    if (createGroupMutation.isPending || updateGroupMutation.isPending) {
+      return;
+    }
+
+    setGroupModalOpen(false);
+    setGroupModalMode("create");
+    setGroupToEdit(null);
+  }
+
+  function handleCloseJoinGroupModal() {
+    if (joinGroupMutation.isPending) {
+      return;
+    }
+
+    setJoinGroupModalOpen(false);
+  }
+
+  function handleSubmitGroup(payload) {
+    if (groupModalMode === "edit" && groupToEdit) {
+      return updateGroupMutation.mutateAsync({
+        id: groupToEdit.idGrupo,
+        payload,
+      });
+    }
+
+    return createGroupMutation.mutateAsync(payload);
+  }
+
+  function handleSubmitJoinGroup(payload) {
+    return joinGroupMutation.mutateAsync(payload);
+  }
+
+  function handleViewGroupMembers(group) {
+    setGroupToViewMembers(group);
+  }
+
+  function handleEditGroup(group) {
+    setGroupModalMode("edit");
+    setGroupToEdit(group);
+    setGroupModalOpen(true);
+  }
+
+  function handleToggleGroupActive(group) {
+    if (toggleGroupActiveMutation.isPending) {
+      return;
+    }
+
+    toggleGroupActiveMutation.mutate({ group });
+  }
+
+  function handleConfirmDeleteGroup() {
+    if (!groupToDelete || deleteGroupMutation.isPending) {
+      return;
+    }
+
+    deleteGroupMutation.mutate({ group: groupToDelete });
+  }
+
+  function handleConfirmLeaveGroup() {
+    if (!groupToLeave || leaveGroupMutation.isPending) {
+      return;
+    }
+
+    leaveGroupMutation.mutate({ group: groupToLeave });
+  }
+
+  const handleMembersLoaded = useCallback((groupId, members) => {
+    const currentMembership = members.find(
+      (member) => String(member.idUsuario) === String(user?.idUsuario)
+    );
+
+    if (!currentMembership?.rol) {
+      return;
+    }
+
+    setGroupRoles((current) => {
+      if (current[groupId] === currentMembership.rol) {
+        return current;
+      }
+
+      return {
+        ...current,
+        [groupId]: currentMembership.rol,
+      };
+    });
+  }, [user?.idUsuario]);
 
   function handleCloseCategoryModal() {
     if (createCategoryMutation.isPending || updateCategoryMutation.isPending) {
@@ -401,10 +603,22 @@ export default function DashboardPage() {
         <div>
           <h1 className="mt-1 text-2xl font-semibold text-primary">{pageTitle}</h1>
         </div>
-        <Button className="w-full sm:w-auto" onClick={handleHeaderAction}>
-          <Plus size={17} />
-          {headerActionLabel}
-        </Button>
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+          {activeView === VIEW_GROUPS && (
+            <Button
+              className="w-full sm:w-auto"
+              onClick={() => setJoinGroupModalOpen(true)}
+              variant="secondary"
+            >
+              <UserPlus size={17} />
+              Unirse por código
+            </Button>
+          )}
+          <Button className="w-full sm:w-auto" onClick={handleHeaderAction}>
+            <Plus size={17} />
+            {headerActionLabel}
+          </Button>
+        </div>
       </div>
       {activeView === VIEW_MINE && (
         <>
@@ -463,6 +677,38 @@ export default function DashboardPage() {
           )}
         </>
       )}
+      {activeView === VIEW_GROUPS && (
+        <>
+          {groupsQuery.isLoading && (
+            <p className="mt-5 rounded-control border border-app bg-[color:var(--color-surface-card-muted)] px-4 py-3 text-sm text-secondary">
+              Cargando grupos...
+            </p>
+          )}
+          {groupsQuery.isError && (
+            <p className="mt-5 rounded-control border border-app bg-[color:var(--state-danger-bg)] px-4 py-3 text-sm text-[color:var(--state-danger-text)]">
+              No se pudieron cargar los grupos.
+            </p>
+          )}
+          {groupsQuery.isSuccess && groups.length === 0 && (
+            <p className="mt-5 rounded-control border border-app bg-[color:var(--color-surface-card-muted)] px-4 py-3 text-sm text-secondary">
+              Todavía no perteneces a ningún grupo.
+            </p>
+          )}
+          {groups.length > 0 && (
+            <GroupGrid
+              currentUserId={user?.idUsuario}
+              groupRoles={groupRoles}
+              groups={groups}
+              onDelete={setGroupToDelete}
+              onEdit={handleEditGroup}
+              onInvite={setGroupToInvite}
+              onLeave={setGroupToLeave}
+              onToggleActive={handleToggleGroupActive}
+              onViewMembers={handleViewGroupMembers}
+            />
+          )}
+        </>
+      )}
       {activeView === VIEW_SMART && (
         <>
           {recommendedTasksQuery.isLoading && (
@@ -494,7 +740,10 @@ export default function DashboardPage() {
           )}
         </>
       )}
-      {activeView !== VIEW_MINE && activeView !== VIEW_CATEGORIES && activeView !== VIEW_SMART && (
+      {activeView !== VIEW_MINE &&
+        activeView !== VIEW_CATEGORIES &&
+        activeView !== VIEW_GROUPS &&
+        activeView !== VIEW_SMART && (
         <p className="mt-5 rounded-control border border-app bg-[color:var(--color-surface-card-muted)] px-4 py-3 text-sm text-secondary">
           Esta vista se conectara en un bloque posterior.
         </p>
@@ -520,6 +769,59 @@ export default function DashboardPage() {
         onSubmit={handleSubmitCategory}
         open={categoryModalOpen}
         zIndexClass={taskModalOpen ? "z-[60]" : "z-50"}
+      />
+      <GroupFormModal
+        creating={createGroupMutation.isPending || updateGroupMutation.isPending}
+        initialGroup={groupModalMode === "edit" ? groupToEdit : null}
+        mode={groupModalMode}
+        onClose={handleCloseGroupModal}
+        onSubmit={handleSubmitGroup}
+        open={groupModalOpen}
+      />
+      <JoinGroupModal
+        joining={joinGroupMutation.isPending}
+        onClose={handleCloseJoinGroupModal}
+        onSubmit={handleSubmitJoinGroup}
+        open={joinGroupModalOpen}
+      />
+      <GroupMembersModal
+        currentUserId={user?.idUsuario}
+        group={groupToViewMembers}
+        onClose={() => setGroupToViewMembers(null)}
+        onMembersLoaded={handleMembersLoaded}
+        open={Boolean(groupToViewMembers)}
+      />
+      <InvitationCodeModal
+        canRegenerate={
+          groupToInvite?.idCreador != null &&
+          user?.idUsuario != null &&
+          String(groupToInvite.idCreador) === String(user.idUsuario)
+        }
+        group={groupToInvite}
+        onClose={() => setGroupToInvite(null)}
+        open={Boolean(groupToInvite)}
+      />
+      <DeleteGroupModal
+        deleting={deleteGroupMutation.isPending}
+        group={groupToDelete}
+        onClose={() => {
+          if (!deleteGroupMutation.isPending) {
+            setGroupToDelete(null);
+          }
+        }}
+        onConfirm={handleConfirmDeleteGroup}
+        open={Boolean(groupToDelete)}
+      />
+      <LeaveGroupModal
+        group={groupToLeave}
+        leaving={leaveGroupMutation.isPending}
+        onClose={() => {
+          if (!leaveGroupMutation.isPending) {
+            setGroupToLeave(null);
+          }
+        }}
+        onConfirm={handleConfirmLeaveGroup}
+        open={Boolean(groupToLeave)}
       />
       <DeleteCategoryModal
         category={categoryToDelete}

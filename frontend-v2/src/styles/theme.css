@@ -491,6 +491,21 @@
   pointer-events: none;
 }
 
+.group-card-description {
+  display: -webkit-box;
+  max-width: 100%;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.group-card-actions-panel {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--color-surface-card-muted) 58%, transparent), color-mix(in srgb, var(--color-surface-card-muted) 70%, transparent));
+  backdrop-filter: blur(2px);
+}
+
 .peer:checked + .category-color-switch > span {
   transform: translateX(1.25rem);
 }
