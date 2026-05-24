@@ -793,9 +793,10 @@ export default function DashboardPage() {
       />
       <InvitationCodeModal
         canRegenerate={
-          groupToInvite?.idCreador != null &&
-          user?.idUsuario != null &&
-          String(groupToInvite.idCreador) === String(user.idUsuario)
+          groupToInvite?.creadorActual === true ||
+          (groupToInvite?.idCreador != null &&
+            user?.idUsuario != null &&
+            String(groupToInvite.idCreador) === String(user.idUsuario))
         }
         group={groupToInvite}
         onClose={() => setGroupToInvite(null)}

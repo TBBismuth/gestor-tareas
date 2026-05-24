@@ -17,7 +17,7 @@ export default function GroupGrid({
         <GroupCard
           currentUserId={currentUserId}
           group={group}
-          knownRole={groupRoles[group.idGrupo]}
+          knownRole={group.rolUsuarioActual || groupRoles[group.idGrupo]}
           key={group.idGrupo}
           onDelete={onDelete}
           onEdit={onEdit}

@@ -14,6 +14,7 @@ import com.tugestor.gestortareas.dto.GrupoActivoRequest;
 import com.tugestor.gestortareas.dto.GrupoJoinRequest;
 import com.tugestor.gestortareas.dto.GrupoMiembroAddRequest;
 import com.tugestor.gestortareas.dto.GrupoRequest;
+import com.tugestor.gestortareas.dto.GrupoResponse;
 import com.tugestor.gestortareas.dto.GrupoRolRequest;
 import com.tugestor.gestortareas.dto.GrupoTransferirOwnershipRequest;
 import com.tugestor.gestortareas.model.Grupo;
@@ -279,6 +280,16 @@ public class GrupoServiceImpl implements GrupoService {
 		miembro.setFechaUnion(LocalDateTime.now());
 		miembro.setAnadidoPor(null);
 		return gmr.save(miembro);
+	}
+
+	@Override
+	public GrupoResponse construirGrupoResponse(Grupo grupo) {
+		Usuario actual = getUsuarioActual();
+		boolean creadorActual = esCreador(grupo, actual);
+		RolGrupo rolUsuarioActual = gmr.findByGrupoAndUsuario(grupo, actual)
+				.map(GrupoMiembro::getRol)
+				.orElse(null);
+		return new GrupoResponse(grupo, rolUsuarioActual, creadorActual);
 	}
 
 	private Grupo obtenerGrupo(Long id) {

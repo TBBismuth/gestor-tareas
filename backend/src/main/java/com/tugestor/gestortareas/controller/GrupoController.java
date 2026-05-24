@@ -53,7 +53,7 @@ public class GrupoController {
 	})
 	public List<GrupoResponse> listarGrupos(){
 		List<Grupo> grupos = gs.obtenerMisGrupos();
-		return grupos.stream().map(GrupoResponse::new).toList();
+		return grupos.stream().map(gs::construirGrupoResponse).toList();
 	}
 
 	@PostMapping("/add")
@@ -68,7 +68,7 @@ public class GrupoController {
 	})
 	public GrupoResponse aniadirGrupo(@Valid @RequestBody GrupoRequest grupoRequest){
 		Grupo grupo = gs.guardarGrupo(grupoRequest);
-		return new GrupoResponse(grupo);
+		return gs.construirGrupoResponse(grupo);
 	}
 
 	@GetMapping("/{id}")
@@ -87,7 +87,7 @@ public class GrupoController {
 	})
 	public GrupoResponse listarGrupoId(@PathVariable Long id) {
 		Grupo grupo = gs.obtenerPorId(id);
-		return new GrupoResponse(grupo);
+		return gs.construirGrupoResponse(grupo);
 	}
 
 	@PutMapping("/update/{id}")
@@ -106,7 +106,7 @@ public class GrupoController {
 	})
 	public GrupoResponse modificarGrupo(@PathVariable Long id, @Valid @RequestBody GrupoRequest grupoRequest) {
 		Grupo grupo = gs.actualizarGrupo(id, grupoRequest);
-		return new GrupoResponse(grupo);
+		return gs.construirGrupoResponse(grupo);
 	}
 
 	@DeleteMapping("/delete/{id}")
@@ -144,7 +144,7 @@ public class GrupoController {
 	public GrupoResponse cambiarActivoGrupo(@PathVariable Long id,
 			@Valid @RequestBody GrupoActivoRequest grupoActivoRequest) {
 		Grupo grupo = gs.cambiarActivo(id, grupoActivoRequest);
-		return new GrupoResponse(grupo);
+		return gs.construirGrupoResponse(grupo);
 	}
 
 	@GetMapping("/{id}/miembros")
@@ -259,7 +259,7 @@ public class GrupoController {
 	public GrupoResponse transferirOwnership(@PathVariable Long id,
 			@Valid @RequestBody GrupoTransferirOwnershipRequest transferirOwnershipRequest) {
 		Grupo grupo = gs.transferirOwnership(id, transferirOwnershipRequest);
-		return new GrupoResponse(grupo);
+		return gs.construirGrupoResponse(grupo);
 	}
 
 	@GetMapping("/{id}/invitation-code")

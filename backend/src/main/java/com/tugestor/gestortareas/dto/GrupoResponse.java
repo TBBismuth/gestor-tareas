@@ -3,6 +3,7 @@ package com.tugestor.gestortareas.dto;
 import java.time.LocalDateTime;
 
 import com.tugestor.gestortareas.model.Grupo;
+import com.tugestor.gestortareas.model.RolGrupo;
 
 public class GrupoResponse {
 	private Long idGrupo;
@@ -15,6 +16,8 @@ public class GrupoResponse {
 	private LocalDateTime fechaCreacion;
 	private Long idCreador;
 	private String nombreCreador;
+	private RolGrupo rolUsuarioActual;
+	private boolean creadorActual;
 
 	public GrupoResponse() {
 	}
@@ -31,6 +34,11 @@ public class GrupoResponse {
 			this.idCreador = grupo.getCreador().getIdUsuario();
 			this.nombreCreador = grupo.getCreador().getNombre();
 		}
+	}
+	public GrupoResponse(Grupo grupo, RolGrupo rolUsuarioActual, boolean creadorActual) {
+		this(grupo);
+		this.rolUsuarioActual = rolUsuarioActual;
+		this.creadorActual = creadorActual;
 	}
 
 	public Long getIdGrupo() {
@@ -92,5 +100,17 @@ public class GrupoResponse {
 	}
 	public void setNombreCreador(String nombreCreador) {
 		this.nombreCreador = nombreCreador;
+	}
+	public RolGrupo getRolUsuarioActual() {
+		return rolUsuarioActual;
+	}
+	public void setRolUsuarioActual(RolGrupo rolUsuarioActual) {
+		this.rolUsuarioActual = rolUsuarioActual;
+	}
+	public boolean isCreadorActual() {
+		return creadorActual;
+	}
+	public void setCreadorActual(boolean creadorActual) {
+		this.creadorActual = creadorActual;
 	}
 }

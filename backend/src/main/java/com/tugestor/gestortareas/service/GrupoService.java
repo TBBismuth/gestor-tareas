@@ -6,6 +6,7 @@ import com.tugestor.gestortareas.dto.GrupoActivoRequest;
 import com.tugestor.gestortareas.dto.GrupoJoinRequest;
 import com.tugestor.gestortareas.dto.GrupoMiembroAddRequest;
 import com.tugestor.gestortareas.dto.GrupoRequest;
+import com.tugestor.gestortareas.dto.GrupoResponse;
 import com.tugestor.gestortareas.dto.GrupoRolRequest;
 import com.tugestor.gestortareas.dto.GrupoTransferirOwnershipRequest;
 import com.tugestor.gestortareas.model.Grupo;
@@ -27,4 +28,5 @@ public interface GrupoService {
 	String obtenerCodigoInvitacion(Long idGrupo);
 	String regenerarCodigoInvitacion(Long idGrupo);
 	GrupoMiembro unirsePorCodigo(GrupoJoinRequest grupoJoinRequest);
+	GrupoResponse construirGrupoResponse(Grupo grupo);
 }

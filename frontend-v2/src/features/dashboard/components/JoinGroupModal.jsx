@@ -1,5 +1,7 @@
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
+import { Clipboard } from "lucide-react";
+import { toast } from "sonner";
 import Button from "../../../components/ui/Button.jsx";
 import Modal from "../../../components/ui/Modal.jsx";
 
@@ -18,6 +20,7 @@ export default function JoinGroupModal({ joining = false, onClose, onSubmit, ope
     register,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors },
   } = useForm({ defaultValues });
 
@@ -31,6 +34,24 @@ export default function JoinGroupModal({ joining = false, onClose, onSubmit, ope
       reset(defaultValues);
     } catch {
       // El contenedor muestra el mensaje de error de la mutacion.
+    }
+  }
+
+  async function handlePasteCode() {
+    if (!navigator.clipboard?.readText) {
+      toast.error("No se pudo pegar el código.");
+      return;
+    }
+
+    try {
+      const clipboardText = await navigator.clipboard.readText();
+      setValue("codigoInvitacion", clipboardText.trim(), {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+      toast.success("Código pegado.");
+    } catch {
+      toast.error("No se pudo pegar el código.");
     }
   }
 
@@ -52,9 +73,13 @@ export default function JoinGroupModal({ joining = false, onClose, onSubmit, ope
           <FieldError error={errors.codigoInvitacion} />
         </div>
 
-        <div className="mt-2 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <div className="mt-2 flex flex-wrap justify-end gap-2">
           <Button disabled={joining} onClick={onClose} type="button" variant="secondary">
             Cancelar
+          </Button>
+          <Button disabled={joining} onClick={handlePasteCode} type="button" variant="secondary">
+            <Clipboard size={15} />
+            Pegar código
           </Button>
           <Button disabled={joining} type="submit">
             {joining ? "Uniendo..." : "Unirse"}

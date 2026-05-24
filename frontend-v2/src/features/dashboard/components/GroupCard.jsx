@@ -38,16 +38,19 @@ export default function GroupCard({
 }) {
   const [expanded, setExpanded] = useState(false);
   const isCreator =
-    group.idCreador != null &&
-    currentUserId != null &&
-    String(group.idCreador) === String(currentUserId);
-  const roleLabel = isCreator ? "Creador" : knownRole === "ADMIN" ? "Admin" : "Miembro";
-  const canEdit = isCreator || knownRole === "ADMIN";
-  const canInvite = isCreator || knownRole === "ADMIN";
+    group.creadorActual === true ||
+    (group.idCreador != null &&
+      currentUserId != null &&
+      String(group.idCreador) === String(currentUserId));
+  const userRole = group.rolUsuarioActual || knownRole;
+  const roleLabel = isCreator ? "Creador" : userRole === "ADMIN" ? "Admin" : "Miembro";
+  const canEdit = isCreator || userRole === "ADMIN";
+  const canInvite = isCreator || userRole === "ADMIN";
   const canToggleActive = isCreator;
   const canDelete = isCreator;
   const canLeave = !isCreator;
   const hasSecondaryActions = canEdit || canInvite || canToggleActive || canDelete || canLeave;
+  const actionCount = [canEdit, canInvite, canToggleActive, canLeave, canDelete].filter(Boolean).length;
 
   function runAction(action) {
     action?.(group);
@@ -138,7 +141,13 @@ export default function GroupCard({
             <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted">
               Acciones del grupo
             </p>
-            <div className="grid gap-2 sm:grid-cols-2">
+            <div
+              className={cn(
+                actionCount === 1
+                  ? "flex flex-wrap justify-start gap-2"
+                  : "grid gap-2 sm:grid-cols-2"
+              )}
+            >
               {canEdit && (
                 <SecondaryActionButton icon={Pencil} onClick={() => runAction(onEdit)}>
                   Editar
