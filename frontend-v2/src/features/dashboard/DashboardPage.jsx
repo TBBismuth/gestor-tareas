@@ -19,6 +19,7 @@ import InvitationCodeModal from "./components/InvitationCodeModal.jsx";
 import JoinGroupModal from "./components/JoinGroupModal.jsx";
 import LeaveGroupModal from "./components/LeaveGroupModal.jsx";
 import MegaFilterBar from "./components/MegaFilterBar.jsx";
+import QuickTaskSearch from "./components/QuickTaskSearch.jsx";
 import TaskFormModal from "./components/TaskFormModal.jsx";
 import TaskList from "./components/TaskList.jsx";
 import { useAuth } from "../auth/AuthContext.jsx";
@@ -50,6 +51,7 @@ import {
   mapRecommendedTaskResponsesToCardTasks,
   mapTaskResponsesToCardTasks,
 } from "./mappers/taskMapper.js";
+import { filterTasksByQuickSearch } from "./utils/taskSearch.js";
 import { sortMyTasks } from "./utils/taskSorting.js";
 
 const VIEW_MINE = "mine";
@@ -103,6 +105,7 @@ export default function DashboardPage() {
   const [groupRoles, setGroupRoles] = useState({});
   const [focusArea, setFocusArea] = useState("filter");
   const [activeView, setActiveView] = useState(VIEW_MINE);
+  const [quickSearch, setQuickSearch] = useState("");
   const categoriesQuery = useQuery({
     queryKey: CATEGORIES_QUERY_KEY,
     queryFn: getMyCategories,
@@ -349,7 +352,10 @@ export default function DashboardPage() {
     recommendedTasksQuery.data ?? [],
     categories
   );
+  const filteredTasks = filterTasksByQuickSearch(tasks, quickSearch);
+  const filteredRecommendedTasks = filterTasksByQuickSearch(recommendedTasks, quickSearch);
   const groups = groupsQuery.data ?? [];
+  const showQuickTaskSearch = activeView === VIEW_MINE || activeView === VIEW_SMART;
   const headerActionLabel =
     activeView === VIEW_CATEGORIES
       ? "Nueva categoría"
@@ -654,6 +660,9 @@ export default function DashboardPage() {
               Unirse por código
             </Button>
           )}
+          {showQuickTaskSearch && (
+            <QuickTaskSearch value={quickSearch} onChange={setQuickSearch} />
+          )}
           <Button className="w-full sm:w-auto" onClick={handleHeaderAction}>
             <Plus size={17} />
             {headerActionLabel}
@@ -677,7 +686,12 @@ export default function DashboardPage() {
               Todavia no tienes tareas.
             </p>
           )}
-          {tasks.length > 0 && (
+          {tasks.length > 0 && filteredTasks.length === 0 && (
+            <p className="mt-5 rounded-control border border-app bg-[color:var(--color-surface-card-muted)] px-4 py-3 text-sm text-secondary">
+              No hay tareas que coincidan con la búsqueda.
+            </p>
+          )}
+          {filteredTasks.length > 0 && (
             <TaskList
               completingTaskId={completeTaskMutation.variables?.idTarea}
               deletingTaskId={deleteTaskMutation.variables?.task?.idTarea}
@@ -686,7 +700,7 @@ export default function DashboardPage() {
               onCompleteTask={(task) => completeTaskMutation.mutate(task)}
               onDeleteTask={handleDeleteTask}
               onEditTask={handleEditTask}
-              tasks={tasks}
+              tasks={filteredTasks}
             />
           )}
         </>
@@ -767,7 +781,12 @@ export default function DashboardPage() {
               Todavía no hay tareas recomendadas.
             </p>
           )}
-          {recommendedTasks.length > 0 && (
+          {recommendedTasks.length > 0 && filteredRecommendedTasks.length === 0 && (
+            <p className="mt-5 rounded-control border border-app bg-[color:var(--color-surface-card-muted)] px-4 py-3 text-sm text-secondary">
+              No hay tareas que coincidan con la búsqueda.
+            </p>
+          )}
+          {filteredRecommendedTasks.length > 0 && (
             <TaskList
               completingTaskId={completeTaskMutation.variables?.idTarea}
               deletingTaskId={deleteTaskMutation.variables?.task?.idTarea}
@@ -776,7 +795,7 @@ export default function DashboardPage() {
               onCompleteTask={(task) => completeTaskMutation.mutate(task)}
               onDeleteTask={handleDeleteTask}
               onEditTask={handleEditTask}
-              tasks={recommendedTasks}
+              tasks={filteredRecommendedTasks}
             />
           )}
         </>
