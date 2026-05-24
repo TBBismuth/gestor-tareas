@@ -12,7 +12,7 @@ export default function GroupGrid({
   onViewMembers,
 }) {
   return (
-    <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+    <div className="mt-5 grid items-start gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
       {groups.map((group) => (
         <GroupCard
           currentUserId={currentUserId}

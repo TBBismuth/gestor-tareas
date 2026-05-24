@@ -52,6 +52,11 @@ export async function updateGroupMemberRole(groupId, userId, payload) {
   return data;
 }
 
+export async function transferGroupOwnership(groupId, payload) {
+  const { data } = await apiClient.patch(`/grupo/${groupId}/transfer-ownership`, payload);
+  return data;
+}
+
 export async function getInvitationCode(id) {
   const { data } = await apiClient.get(`/grupo/${id}/invitation-code`);
   return data;

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Shield, ShieldMinus, Trash2, UserCheck, UserPlus, Users } from "lucide-react";
+import { Crown, Shield, ShieldMinus, Trash2, UserCheck, UserPlus, Users } from "lucide-react";
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import Badge from "../../../components/ui/Badge.jsx";
@@ -10,16 +10,22 @@ import {
   addGroupMember,
   getGroupMembers,
   removeGroupMember,
+  transferGroupOwnership,
   updateGroupMemberRole,
 } from "../api/groupsApi.js";
 import RemoveGroupMemberModal from "./RemoveGroupMemberModal.jsx";
+import TransferGroupOwnershipModal from "./TransferGroupOwnershipModal.jsx";
 
 const addMemberDefaultValues = {
   email: "",
 };
 
 function getRoleLabel(member, group) {
-  if (member.creador || String(member.idUsuario) === String(group?.idCreador)) {
+  if (member.creador === true) {
+    return "Creador";
+  }
+
+  if (member.creador == null && String(member.idUsuario) === String(group?.idCreador)) {
     return "Creador";
   }
 
@@ -53,6 +59,7 @@ export default function GroupMembersModal({
 }) {
   const queryClient = useQueryClient();
   const [memberToRemove, setMemberToRemove] = useState(null);
+  const [memberToTransferOwnership, setMemberToTransferOwnership] = useState(null);
   const groupId = group?.idGrupo;
   const membersQueryKey = ["groups", groupId, "members"];
   const {
@@ -70,8 +77,7 @@ export default function GroupMembersModal({
   const currentMember = members.find(
     (member) => String(member.idUsuario) === String(currentUserId)
   );
-  const currentUserIsCreator =
-    currentMember?.creador || String(group?.idCreador) === String(currentUserId);
+  const currentUserIsCreator = membersQuery.isSuccess && currentMember?.creador === true;
   const currentUserIsAdmin = currentUserIsCreator || currentMember?.rol === "ADMIN";
   const canAddMembers = currentUserIsAdmin;
   const canChangeRoles = currentUserIsCreator;
@@ -111,11 +117,24 @@ export default function GroupMembersModal({
       toast.error(error?.response?.data?.error || "No se pudo actualizar el rol.");
     },
   });
+  const transferOwnershipMutation = useMutation({
+    mutationFn: ({ member }) => transferGroupOwnership(groupId, { idUsuario: member.idUsuario }),
+    onSuccess: () => {
+      toast.success("Propiedad transferida.");
+      setMemberToTransferOwnership(null);
+      queryClient.invalidateQueries({ queryKey: membersQueryKey });
+      queryClient.invalidateQueries({ queryKey: ["groups", "mine"] });
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.error || "No se pudo transferir la propiedad.");
+    },
+  });
 
   useEffect(() => {
     if (!open) {
       reset(addMemberDefaultValues);
       setMemberToRemove(null);
+      setMemberToTransferOwnership(null);
     }
   }, [open, reset]);
 
@@ -127,7 +146,7 @@ export default function GroupMembersModal({
 
   function canRemoveMember(member) {
     const targetIsCurrentUser = String(member.idUsuario) === String(currentUserId);
-    const targetIsCreator = member.creador || String(member.idUsuario) === String(group?.idCreador);
+    const targetIsCreator = member.creador === true;
 
     if (targetIsCurrentUser || targetIsCreator) {
       return false;
@@ -142,9 +161,16 @@ export default function GroupMembersModal({
 
   function canChangeMemberRole(member) {
     const targetIsCurrentUser = String(member.idUsuario) === String(currentUserId);
-    const targetIsCreator = member.creador || String(member.idUsuario) === String(group?.idCreador);
+    const targetIsCreator = member.creador === true;
 
     return canChangeRoles && !targetIsCurrentUser && !targetIsCreator;
+  }
+
+  function canTransferOwnershipToMember(member) {
+    const targetIsCurrentUser = String(member.idUsuario) === String(currentUserId);
+    const targetIsCreator = member.creador === true;
+
+    return currentUserIsCreator && !targetIsCurrentUser && !targetIsCreator && member.rol === "ADMIN";
   }
 
   function handleAddMember(values) {
@@ -157,6 +183,14 @@ export default function GroupMembersModal({
     }
 
     removeMemberMutation.mutate({ member: memberToRemove });
+  }
+
+  function handleConfirmTransferOwnership() {
+    if (!memberToTransferOwnership || transferOwnershipMutation.isPending) {
+      return;
+    }
+
+    transferOwnershipMutation.mutate({ member: memberToTransferOwnership });
   }
 
   function handleToggleRole(member) {
@@ -236,6 +270,7 @@ export default function GroupMembersModal({
               const roleLabel = getRoleLabel(member, group);
               const removable = canRemoveMember(member);
               const roleEditable = canChangeMemberRole(member);
+              const ownershipTransferable = canTransferOwnershipToMember(member);
 
               return (
                 <article
@@ -261,8 +296,20 @@ export default function GroupMembersModal({
                       {isCurrentUser && <Badge>Tu</Badge>}
                     </div>
                   </div>
-                  {(removable || roleEditable) && (
+                  {(ownershipTransferable || removable || roleEditable) && (
                     <div className="mt-3 flex flex-wrap justify-end gap-2">
+                      {ownershipTransferable && (
+                        <Button
+                          disabled={transferOwnershipMutation.isPending}
+                          onClick={() => setMemberToTransferOwnership(member)}
+                          size="sm"
+                          type="button"
+                          variant="secondary"
+                        >
+                          <Crown size={15} />
+                          Transferir propiedad
+                        </Button>
+                      )}
                       {roleEditable && (
                         <Button
                           disabled={updateRoleMutation.isPending}
@@ -310,6 +357,17 @@ export default function GroupMembersModal({
         onConfirm={handleConfirmRemoveMember}
         open={Boolean(memberToRemove)}
         removing={removeMemberMutation.isPending}
+      />
+      <TransferGroupOwnershipModal
+        member={memberToTransferOwnership}
+        onClose={() => {
+          if (!transferOwnershipMutation.isPending) {
+            setMemberToTransferOwnership(null);
+          }
+        }}
+        onConfirm={handleConfirmTransferOwnership}
+        open={Boolean(memberToTransferOwnership)}
+        transferring={transferOwnershipMutation.isPending}
       />
     </Modal>
   );

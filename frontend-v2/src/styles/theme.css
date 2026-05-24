@@ -491,6 +491,22 @@
   pointer-events: none;
 }
 
+.group-card--collapsed {
+  min-height: 13.75rem;
+}
+
+.group-card--expanded-single {
+  min-height: 20rem;
+}
+
+.group-card--expanded-multi {
+  min-height: 23.75rem;
+}
+
+.group-card--collapsed .group-card-description {
+  -webkit-line-clamp: 2;
+}
+
 .group-card-description {
   display: -webkit-box;
   max-width: 100%;

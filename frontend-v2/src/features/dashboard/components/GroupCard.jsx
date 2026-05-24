@@ -51,6 +51,11 @@ export default function GroupCard({
   const canLeave = !isCreator;
   const hasSecondaryActions = canEdit || canInvite || canToggleActive || canDelete || canLeave;
   const actionCount = [canEdit, canInvite, canToggleActive, canLeave, canDelete].filter(Boolean).length;
+  const visualState = !expanded
+    ? "collapsed"
+    : actionCount === 1
+      ? "expanded-single"
+      : "expanded-multi";
 
   function runAction(action) {
     action?.(group);
@@ -68,8 +73,11 @@ export default function GroupCard({
     <article
       className={cn(
         "category-card group relative overflow-hidden rounded-panel border border-app bg-card p-4 shadow-card transition-[box-shadow,transform] hover:-translate-y-0.5",
+        visualState === "collapsed" && "group-card--collapsed",
+        visualState === "expanded-single" && "group-card--expanded-single",
+        visualState === "expanded-multi" && "group-card--expanded-multi",
         hasSecondaryActions && "cursor-pointer",
-        expanded && "xl:col-span-2 2xl:col-span-2"
+        visualState === "expanded-multi" && "xl:col-span-2 2xl:col-span-2"
       )}
       aria-expanded={expanded}
       onClick={toggleExpanded}
