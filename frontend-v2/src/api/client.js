@@ -13,16 +13,56 @@ export const apiClient = axios.create({
   },
 });
 
+let refreshPromise = null;
+let sessionExpiredNotified = false;
+
 function isAuthEndpoint(url = "") {
   return ["/usuario/login", "/usuario/add", "/usuario/refresh"].some((endpoint) =>
     url.includes(endpoint)
   );
 }
 
+function notifySessionExpired() {
+  clearSession();
+
+  if (!sessionExpiredNotified) {
+    sessionExpiredNotified = true;
+    window.dispatchEvent(new Event("auth:session-expired"));
+  }
+}
+
+async function refreshAccessToken(refreshToken) {
+  if (!refreshPromise) {
+    refreshPromise = apiClient
+      .post("/usuario/refresh", { refreshToken })
+      .then(({ data }) => {
+        const accessToken = data?.accessToken || data?.token;
+
+        if (!accessToken) {
+          throw new Error("No access token returned by refresh endpoint.");
+        }
+
+        saveAccessToken(accessToken);
+        sessionExpiredNotified = false;
+        return accessToken;
+      })
+      .finally(() => {
+        refreshPromise = null;
+      });
+  }
+
+  return refreshPromise;
+}
+
 apiClient.interceptors.request.use((config) => {
   const accessToken = getAccessToken();
 
-  if (accessToken) {
+  if (config.url?.includes("/usuario/login") || config.url?.includes("/usuario/add")) {
+    sessionExpiredNotified = false;
+  }
+
+  if (accessToken && !isAuthEndpoint(config.url)) {
+    config.headers = config.headers || {};
     config.headers.Authorization = `Bearer ${accessToken}`;
   }
 
@@ -47,28 +87,19 @@ apiClient.interceptors.response.use(
     const refreshToken = getRefreshToken();
 
     if (!refreshToken) {
-      clearSession();
-      window.dispatchEvent(new Event("auth:session-expired"));
+      notifySessionExpired();
       return Promise.reject(error);
     }
 
     originalRequest._retry = true;
 
     try {
-      const { data } = await apiClient.post("/usuario/refresh", { refreshToken });
-      const accessToken = data?.accessToken || data?.token;
-
-      if (!accessToken) {
-        throw new Error("No access token returned by refresh endpoint.");
-      }
-
-      saveAccessToken(accessToken);
+      const accessToken = await refreshAccessToken(refreshToken);
       originalRequest.headers = originalRequest.headers || {};
       originalRequest.headers.Authorization = `Bearer ${accessToken}`;
       return apiClient(originalRequest);
     } catch (refreshError) {
-      clearSession();
-      window.dispatchEvent(new Event("auth:session-expired"));
+      notifySessionExpired();
       return Promise.reject(refreshError);
     }
   }
