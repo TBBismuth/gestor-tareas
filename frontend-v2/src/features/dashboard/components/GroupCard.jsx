@@ -173,7 +173,7 @@ export default function GroupCard({
         <button
           aria-label={expanded ? "Contraer acciones del grupo" : "Expandir acciones del grupo"}
           aria-expanded={expanded}
-          className="absolute bottom-2 left-1/2 z-20 grid size-8 -translate-x-1/2 place-items-center rounded-full border border-app bg-[color:var(--color-surface-card-muted)] text-secondary shadow-control transition hover:bg-[color:var(--color-bg-muted)] hover:text-primary"
+          className="absolute bottom-2 left-1/2 z-20 grid size-8 -translate-x-1/2 place-items-center text-secondary transition hover:text-primary"
           type="button"
           onClick={(event) => {
             event.stopPropagation();

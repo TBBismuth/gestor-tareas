@@ -38,6 +38,20 @@ export async function getGroupMembers(groupId) {
   return Array.isArray(data) ? data : [];
 }
 
+export async function addGroupMember(groupId, payload) {
+  const { data } = await apiClient.post(`/grupo/${groupId}/miembros/add`, payload);
+  return data;
+}
+
+export async function removeGroupMember(groupId, userId) {
+  await apiClient.delete(`/grupo/${groupId}/miembros/delete/${userId}`);
+}
+
+export async function updateGroupMemberRole(groupId, userId, payload) {
+  const { data } = await apiClient.patch(`/grupo/${groupId}/miembros/rol/${userId}`, payload);
+  return data;
+}
+
 export async function getInvitationCode(id) {
   const { data } = await apiClient.get(`/grupo/${id}/invitation-code`);
   return data;
