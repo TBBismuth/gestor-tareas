@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { ClipboardList, Users } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { ClipboardList, Plus, Users } from "lucide-react";
 import Badge from "../../../components/ui/Badge.jsx";
+import Button from "../../../components/ui/Button.jsx";
 import Modal from "../../../components/ui/Modal.jsx";
 import { getPriorityVisual } from "../../../styles/taskVisualMaps.js";
 import { cn } from "../../../lib/cn.js";
 import { getGroupAssignmentDetail, getGroupAssignments } from "../api/groupsApi.js";
 import { getAssignedGroupTasks } from "../api/tasksApi.js";
+import GroupAssignmentFormModal from "./GroupAssignmentFormModal.jsx";
 import {
   formatAssignmentType,
   formatDuration,
@@ -199,7 +201,9 @@ function AssignmentDetail({ detail, loading, error }) {
 }
 
 function AdminAssignmentsView({ group, open }) {
+  const queryClient = useQueryClient();
   const [selectedAssignmentId, setSelectedAssignmentId] = useState(null);
+  const [formOpen, setFormOpen] = useState(false);
   const groupId = group?.idGrupo;
   const assignmentsQuery = useQuery({
     queryKey: ["groups", groupId, "assignments"],
@@ -219,6 +223,7 @@ function AdminAssignmentsView({ group, open }) {
   useEffect(() => {
     if (!open) {
       setSelectedAssignmentId(null);
+      setFormOpen(false);
     }
   }, [open]);
 
@@ -228,45 +233,85 @@ function AdminAssignmentsView({ group, open }) {
     }
   }, [assignments, selectedAssignmentId]);
 
-  if (assignmentsQuery.isLoading) {
-    return <StateMessage>Cargando asignaciones...</StateMessage>;
+  function handleCreated(assignment) {
+    const assignmentId = assignment?.idAsignacionGrupo;
+    setFormOpen(false);
+    if (assignmentId) {
+      setSelectedAssignmentId(assignmentId);
+    }
+    queryClient.invalidateQueries({ queryKey: ["groups", groupId, "assignments"] });
+    queryClient.invalidateQueries({ queryKey: ["groups", groupId, "assignments", assignmentId] });
+    queryClient.invalidateQueries({ queryKey: ["tasks", "mine"] });
+    queryClient.invalidateQueries({ queryKey: ["tasks", "recommended"] });
+    queryClient.invalidateQueries({ queryKey: ["tasks", "assigned-group"] });
+    queryClient.invalidateQueries({ queryKey: ["groups", groupId, "assigned-tasks"] });
   }
 
-  if (assignmentsQuery.isError) {
-    return <StateMessage tone="danger">No se pudieron cargar las asignaciones.</StateMessage>;
-  }
+  const content = (() => {
+    if (assignmentsQuery.isLoading) {
+      return <StateMessage>Cargando asignaciones...</StateMessage>;
+    }
 
-  if (assignments.length === 0) {
-    return <StateMessage>Este grupo todavia no tiene asignaciones.</StateMessage>;
-  }
+    if (assignmentsQuery.isError) {
+      return <StateMessage tone="danger">No se pudieron cargar las asignaciones.</StateMessage>;
+    }
+
+    if (assignments.length === 0) {
+      return <StateMessage>Este grupo todavia no tiene asignaciones.</StateMessage>;
+    }
+
+    return (
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.25fr)]">
+        <section>
+          <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-primary">
+            <ClipboardList size={17} />
+            Asignaciones
+          </h3>
+          <div className="grid max-h-[60vh] gap-2 overflow-y-auto pr-1">
+            {assignments.map((assignment) => (
+              <AssignmentSummaryCard
+                active={String(selectedAssignment?.idAsignacionGrupo) === String(assignment.idAsignacionGrupo)}
+                assignment={assignment}
+                key={assignment.idAsignacionGrupo}
+                onSelect={(nextAssignment) => setSelectedAssignmentId(nextAssignment.idAsignacionGrupo)}
+              />
+            ))}
+          </div>
+        </section>
+        <section>
+          <h3 className="mb-3 text-sm font-semibold text-primary">Detalle</h3>
+          <AssignmentDetail
+            detail={detailQuery.data}
+            error={detailQuery.isError}
+            loading={detailQuery.isLoading || detailQuery.isFetching}
+          />
+        </section>
+      </div>
+    );
+  })();
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.25fr)]">
-      <section>
-        <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-primary">
-          <ClipboardList size={17} />
-          Asignaciones
-        </h3>
-        <div className="grid max-h-[60vh] gap-2 overflow-y-auto pr-1">
-          {assignments.map((assignment) => (
-            <AssignmentSummaryCard
-              active={String(selectedAssignment?.idAsignacionGrupo) === String(assignment.idAsignacionGrupo)}
-              assignment={assignment}
-              key={assignment.idAsignacionGrupo}
-              onSelect={(nextAssignment) => setSelectedAssignmentId(nextAssignment.idAsignacionGrupo)}
-            />
-          ))}
+    <>
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h3 className="text-sm font-semibold text-primary">Asignaciones</h3>
+          <p className="mt-1 text-sm text-muted">
+            Consulta las asignaciones del grupo y crea nuevas tareas grupales.
+          </p>
         </div>
-      </section>
-      <section>
-        <h3 className="mb-3 text-sm font-semibold text-primary">Detalle</h3>
-        <AssignmentDetail
-          detail={detailQuery.data}
-          error={detailQuery.isError}
-          loading={detailQuery.isLoading || detailQuery.isFetching}
-        />
-      </section>
-    </div>
+        <Button className="shrink-0" onClick={() => setFormOpen(true)} type="button">
+          <Plus size={17} />
+          Nueva asignacion
+        </Button>
+      </div>
+      {content}
+      <GroupAssignmentFormModal
+        group={group}
+        onClose={() => setFormOpen(false)}
+        onCreated={handleCreated}
+        open={formOpen}
+      />
+    </>
   );
 }
 

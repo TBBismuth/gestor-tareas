@@ -39,6 +39,10 @@ export default function TaskCard({
     task.completada ||
     task.estado === "COMPLETADA" ||
     task.estado === "COMPLETADA_CON_RETRASO";
+  const canDeliverGroupTask =
+    isGroupTask &&
+    (task.estadoRevisionAsignacion === "PENDIENTE" ||
+      task.estadoRevisionAsignacion === "REABIERTA");
   const categoryName = getTaskCategoryName(task);
   const renderCategoryLabel = () => (
     <CategoryLabel color={task.colorCategoria} icon={task.iconoCategoria} name={categoryName} />
@@ -146,33 +150,46 @@ export default function TaskCard({
                 <p className="mt-1 leading-6">{task.comentarioRevision}</p>
               </div>
             )}
-            {!isGroupTask && (
-              <div className="mt-4 flex flex-wrap items-center gap-2">
-                {!isCompleted && (
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              {isGroupTask ? (
+                canDeliverGroupTask && (
                   <Button
                     className="success-action-button"
                     disabled={isCompleting}
                     onClick={() => onComplete?.(task)}
                   >
                     <Check size={17} />
-                    {isCompleting ? "Completando..." : "Completar"}
+                    {isCompleting ? "Entregando..." : "Entregar"}
                   </Button>
-                )}
-                <Button disabled={isDeleting} variant="secondary" onClick={() => onEdit?.(task)}>
-                  <Pencil size={17} />
-                  Editar
-                </Button>
-                <Button
-                  variant="secondary"
-                  className="danger-action-button"
-                  disabled={isDeleting}
-                  onClick={() => onDelete?.(task)}
-                >
-                  <Trash2 size={17} />
-                  {isDeleting ? "Eliminando..." : "Borrar"}
-                </Button>
-              </div>
-            )}
+                )
+              ) : (
+                <>
+                  {!isCompleted && (
+                    <Button
+                      className="success-action-button"
+                      disabled={isCompleting}
+                      onClick={() => onComplete?.(task)}
+                    >
+                      <Check size={17} />
+                      {isCompleting ? "Completando..." : "Completar"}
+                    </Button>
+                  )}
+                  <Button disabled={isDeleting} variant="secondary" onClick={() => onEdit?.(task)}>
+                    <Pencil size={17} />
+                    Editar
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    className="danger-action-button"
+                    disabled={isDeleting}
+                    onClick={() => onDelete?.(task)}
+                  >
+                    <Trash2 size={17} />
+                    {isDeleting ? "Eliminando..." : "Borrar"}
+                  </Button>
+                </>
+              )}
+            </div>
           </div>
         )}
       </div>

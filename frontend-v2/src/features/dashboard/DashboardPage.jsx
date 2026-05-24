@@ -134,13 +134,33 @@ export default function DashboardPage() {
   });
   const completeTaskMutation = useMutation({
     mutationFn: (task) => completeTask(task.idTarea),
-    onSuccess: () => {
-      toast.success("Tarea completada.");
+    onSuccess: (_data, task) => {
+      const isGroupTask = task?.origenTarea === "GRUPO";
+      toast.success(isGroupTask ? "Tarea entregada." : "Tarea completada.");
       queryClient.invalidateQueries({ queryKey: MY_TASKS_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: RECOMMENDED_TASKS_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ["tasks", "assigned-group"] });
+      if (isGroupTask && task.idGrupoOrigen) {
+        queryClient.invalidateQueries({
+          queryKey: ["groups", task.idGrupoOrigen, "assigned-tasks"],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ["groups", task.idGrupoOrigen, "assignments"],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ["groups", task.idGrupoOrigen, "assignments"],
+          exact: false,
+        });
+      }
     },
-    onError: (error) => {
-      toast.error(getActionErrorMessage(error, "No se pudo completar la tarea."));
+    onError: (error, task) => {
+      const isGroupTask = task?.origenTarea === "GRUPO";
+      toast.error(
+        getActionErrorMessage(
+          error,
+          isGroupTask ? "No se pudo entregar la tarea." : "No se pudo completar la tarea."
+        )
+      );
     },
   });
   const createTaskMutation = useMutation({
