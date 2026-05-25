@@ -10,6 +10,11 @@ export async function getRecommendedTasks() {
   return Array.isArray(data) ? data : [];
 }
 
+export async function filterCombinedTasks(filters) {
+  const { data } = await apiClient.post("/tarea/filtrar-combinado", filters ?? {});
+  return Array.isArray(data) ? data : [];
+}
+
 export async function getAssignedGroupTasks(groupId) {
   const endpoint = groupId ? `/tarea/asignadas-grupo/${groupId}` : "/tarea/asignadas-grupo";
   const { data } = await apiClient.get(endpoint);

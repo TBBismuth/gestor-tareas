@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Check, ChevronDown, Pencil, Trash2, Users } from "lucide-react";
+import { AlignLeft, Check, ChevronDown, Pencil, Trash2, Users } from "lucide-react";
 import Badge from "../../../components/ui/Badge.jsx";
 import Button from "../../../components/ui/Button.jsx";
 import { cn } from "../../../lib/cn";
 import { getPriorityVisual, getStateVisual } from "../../../styles/taskVisualMaps";
 import CategoryLabel from "./CategoryLabel.jsx";
+import DescriptionModal from "./DescriptionModal.jsx";
 import {
   formatAssignmentType,
   formatDuration,
@@ -43,6 +44,7 @@ export default function TaskCard({
   task,
 }) {
   const [expanded, setExpanded] = useState(false);
+  const [descriptionOpen, setDescriptionOpen] = useState(false);
   const priority = getPriorityVisual(task.prioridad);
   const state = getStateVisual(task.estado);
   const isGroupTask = task.origenTarea === "GRUPO";
@@ -129,10 +131,16 @@ export default function TaskCard({
 
         {expanded && (
           <div className="task-card-detail border-t border-app px-4 py-4">
-            {task.descripcion && (
-              <p className="task-card-detail-description text-sm leading-6 text-secondary">
-                {task.descripcion}
-              </p>
+            {task.descripcion?.trim() && (
+              <Button
+                size="sm"
+                type="button"
+                variant="secondary"
+                onClick={() => setDescriptionOpen(true)}
+              >
+                <AlignLeft size={15} />
+                Ver descripcion
+              </Button>
             )}
             <dl className="mt-4 grid gap-3 text-sm text-secondary sm:grid-cols-2 xl:grid-cols-4">
               <DetailItem label="Origen">{isGroupTask ? "Grupo" : "Personal"}</DetailItem>
@@ -212,6 +220,12 @@ export default function TaskCard({
           </div>
         )}
       </div>
+      <DescriptionModal
+        description={task.descripcion}
+        onClose={() => setDescriptionOpen(false)}
+        open={descriptionOpen}
+        title="Descripcion de la tarea"
+      />
     </article>
   );
 }

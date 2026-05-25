@@ -42,6 +42,7 @@ import {
   completeTask,
   createTask,
   deleteTask,
+  filterCombinedTasks,
   getAssignedGroupTasks,
   getMyTasks,
   getRecommendedTasks,
@@ -63,6 +64,19 @@ const RECOMMENDED_TASKS_QUERY_KEY = ["tasks", "recommended"];
 const CATEGORIES_QUERY_KEY = ["categories", "mine"];
 const GROUPS_QUERY_KEY = ["groups", "mine"];
 
+const DEFAULT_MEGA_FILTERS = {
+  origen: "TODAS",
+  idGrupo: "",
+  prioridades: [],
+  estados: [],
+  idCategoria: "",
+  palabrasClave: "",
+  tiempoMax: "",
+  fechaEntregaExacta: "",
+  fechaEntregaHasta: "",
+  criterioOrdenActivo: "FECHA_AGREGADO",
+};
+
 const viewTitles = {
   [VIEW_MINE]: "Tareas",
   [VIEW_CATEGORIES]: "Categorías",
@@ -76,6 +90,47 @@ function getActionErrorMessage(error, fallback) {
 
 function getCategoryActionErrorMessage(error, fallback) {
   return error?.response?.data?.error || error?.response?.data?.message || fallback;
+}
+
+function buildCombinedFilterPayload(filters) {
+  const payload = {
+    origen: filters.origen || "TODAS",
+    criterioOrdenActivo: filters.criterioOrdenActivo || "FECHA_AGREGADO",
+  };
+
+  if (filters.idGrupo) {
+    payload.idGrupo = Number(filters.idGrupo);
+  }
+
+  if (filters.idCategoria) {
+    payload.idCategoria = Number(filters.idCategoria);
+  }
+
+  if (filters.prioridades.length > 0) {
+    payload.prioridades = filters.prioridades;
+  }
+
+  if (filters.estados.length > 0) {
+    payload.estados = filters.estados;
+  }
+
+  const palabrasClave = filters.palabrasClave.trim();
+  if (palabrasClave) {
+    payload.palabrasClave = palabrasClave;
+  }
+
+  const tiempoMax = Number(filters.tiempoMax);
+  if (Number.isFinite(tiempoMax) && tiempoMax > 0) {
+    payload.tiempoMax = tiempoMax;
+  }
+
+  if (filters.fechaEntregaExacta) {
+    payload.fechaEntregaExacta = filters.fechaEntregaExacta;
+  } else if (filters.fechaEntregaHasta) {
+    payload.fechaEntregaHasta = filters.fechaEntregaHasta;
+  }
+
+  return payload;
 }
 
 export default function DashboardPage() {
@@ -106,14 +161,14 @@ export default function DashboardPage() {
   const [focusArea, setFocusArea] = useState("filter");
   const [activeView, setActiveView] = useState(VIEW_MINE);
   const [quickSearch, setQuickSearch] = useState("");
+  const [megaFilters, setMegaFilters] = useState(DEFAULT_MEGA_FILTERS);
+  const [isMegaFilterActive, setIsMegaFilterActive] = useState(false);
+  const [appliedMegaFilters, setAppliedMegaFilters] = useState(null);
+  const [megaFilterRunId, setMegaFilterRunId] = useState(0);
   const categoriesQuery = useQuery({
     queryKey: CATEGORIES_QUERY_KEY,
     queryFn: getMyCategories,
-    enabled:
-      taskModalOpen ||
-      activeView === VIEW_MINE ||
-      activeView === VIEW_CATEGORIES ||
-      activeView === VIEW_SMART,
+    enabled: true,
   });
   const tasksQuery = useQuery({
     queryKey: MY_TASKS_QUERY_KEY,
@@ -133,7 +188,12 @@ export default function DashboardPage() {
   const groupsQuery = useQuery({
     queryKey: GROUPS_QUERY_KEY,
     queryFn: getMyGroups,
-    enabled: activeView === VIEW_GROUPS,
+    enabled: true,
+  });
+  const combinedFilterQuery = useQuery({
+    queryKey: ["tasks", "combined-filter", appliedMegaFilters, megaFilterRunId],
+    queryFn: () => filterCombinedTasks(appliedMegaFilters),
+    enabled: isMegaFilterActive && Boolean(appliedMegaFilters),
   });
   const completeTaskMutation = useMutation({
     mutationFn: (task) => completeTask(task.idTarea),
@@ -143,6 +203,7 @@ export default function DashboardPage() {
       queryClient.invalidateQueries({ queryKey: MY_TASKS_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: RECOMMENDED_TASKS_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: ["tasks", "assigned-group"] });
+      queryClient.invalidateQueries({ queryKey: ["tasks", "combined-filter"] });
       if (isGroupTask && task.idGrupoOrigen) {
         queryClient.invalidateQueries({
           queryKey: ["groups", task.idGrupoOrigen, "assigned-tasks"],
@@ -174,6 +235,7 @@ export default function DashboardPage() {
       setCategoryToSelectInTask(null);
       queryClient.invalidateQueries({ queryKey: MY_TASKS_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: RECOMMENDED_TASKS_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ["tasks", "combined-filter"] });
     },
     onError: (error) => {
       toast.error(error?.response?.data?.error || "No se pudo crear la tarea.");
@@ -189,6 +251,7 @@ export default function DashboardPage() {
       setCategoryToSelectInTask(null);
       queryClient.invalidateQueries({ queryKey: MY_TASKS_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: RECOMMENDED_TASKS_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ["tasks", "combined-filter"] });
     },
     onError: (error) => {
       toast.error(getActionErrorMessage(error, "No se pudo actualizar la tarea."));
@@ -201,6 +264,7 @@ export default function DashboardPage() {
       setTaskToDelete(null);
       queryClient.invalidateQueries({ queryKey: MY_TASKS_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: RECOMMENDED_TASKS_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ["tasks", "combined-filter"] });
     },
     onError: () => {
       toast.error("No se pudo eliminar la tarea.");
@@ -352,19 +416,56 @@ export default function DashboardPage() {
     recommendedTasksQuery.data ?? [],
     categories
   );
+  const megaFilteredTasks = mapRecommendedTaskResponsesToCardTasks(
+    combinedFilterQuery.data ?? [],
+    categories
+  );
   const filteredTasks = filterTasksByQuickSearch(tasks, quickSearch);
   const filteredRecommendedTasks = filterTasksByQuickSearch(recommendedTasks, quickSearch);
+  const filteredMegaTasks = filterTasksByQuickSearch(megaFilteredTasks, quickSearch);
   const groups = groupsQuery.data ?? [];
-  const showQuickTaskSearch = activeView === VIEW_MINE || activeView === VIEW_SMART;
-  const headerActionLabel =
-    activeView === VIEW_CATEGORIES
+  const showQuickTaskSearch =
+    isMegaFilterActive || activeView === VIEW_MINE || activeView === VIEW_SMART;
+  const visibleActiveView = isMegaFilterActive ? null : activeView;
+  const headerActionLabel = isMegaFilterActive
+    ? "Nueva tarea"
+    : activeView === VIEW_CATEGORIES
       ? "Nueva categoría"
       : activeView === VIEW_GROUPS
         ? "Nuevo grupo"
         : "Nueva tarea";
-  const pageTitle = viewTitles[activeView] || "Tareas";
+  const pageTitle = isMegaFilterActive
+    ? "Resultados filtrados"
+    : viewTitles[activeView] || "Tareas";
+
+  function handleApplyMegaFilters() {
+    setAppliedMegaFilters(buildCombinedFilterPayload(megaFilters));
+    setIsMegaFilterActive(true);
+    setFocusArea("filter");
+    setMegaFilterRunId((current) => current + 1);
+  }
+
+  function handleClearMegaFilters() {
+    setMegaFilters(DEFAULT_MEGA_FILTERS);
+    setAppliedMegaFilters(null);
+    setIsMegaFilterActive(false);
+    setActiveView(VIEW_MINE);
+  }
+
+  function handleViewChange(view) {
+    setIsMegaFilterActive(false);
+    setActiveView(view);
+  }
 
   function handleHeaderAction() {
+    if (isMegaFilterActive) {
+      setCategoryToSelectInTask(null);
+      setTaskModalMode("create");
+      setTaskToEdit(null);
+      setTaskModalOpen(true);
+      return;
+    }
+
     if (activeView === VIEW_CATEGORIES) {
       setCategoryModalMode("create");
       setCategoryModalSource("categories");
@@ -626,22 +727,33 @@ export default function DashboardPage() {
     <AppShell
       focusArea={focusArea}
       topBar={
-        <MegaFilterBar onFocus={() => setFocusArea("filter")} />
+        <MegaFilterBar
+          categories={categories}
+          categoriesLoading={categoriesQuery.isLoading}
+          filters={megaFilters}
+          groups={groups}
+          groupsLoading={groupsQuery.isLoading}
+          isApplying={combinedFilterQuery.isFetching}
+          onApply={handleApplyMegaFilters}
+          onClear={handleClearMegaFilters}
+          onFiltersChange={setMegaFilters}
+          onFocus={() => setFocusArea("filter")}
+        />
       }
       secondaryBar={
         <ViewActionsBar
-          activeView={activeView}
+          activeView={visibleActiveView}
           dimmed={focusArea === "filter"}
           onFocus={() => setFocusArea("sidebar")}
-          onViewChange={setActiveView}
+          onViewChange={handleViewChange}
         />
       }
       sidebar={
         <RightSidebar
-          activeView={activeView}
+          activeView={visibleActiveView}
           dimmed={focusArea === "filter"}
           onFocus={() => setFocusArea("sidebar")}
-          onViewChange={setActiveView}
+          onViewChange={handleViewChange}
         />
       }
     >
@@ -650,7 +762,7 @@ export default function DashboardPage() {
           <h1 className="mt-1 text-2xl font-semibold text-primary">{pageTitle}</h1>
         </div>
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-          {activeView === VIEW_GROUPS && (
+          {!isMegaFilterActive && activeView === VIEW_GROUPS && (
             <Button
               className="w-full sm:w-auto"
               onClick={() => setJoinGroupModalOpen(true)}
@@ -669,7 +781,43 @@ export default function DashboardPage() {
           </Button>
         </div>
       </div>
-      {activeView === VIEW_MINE && (
+      {isMegaFilterActive && (
+        <>
+          {combinedFilterQuery.isFetching && (
+            <p className="mt-5 rounded-control border border-app bg-[color:var(--color-surface-card-muted)] px-4 py-3 text-sm text-secondary">
+              Aplicando filtros...
+            </p>
+          )}
+          {combinedFilterQuery.isError && (
+            <p className="mt-5 rounded-control border border-app bg-[color:var(--state-danger-bg)] px-4 py-3 text-sm text-[color:var(--state-danger-text)]">
+              No se pudieron aplicar los filtros.
+            </p>
+          )}
+          {combinedFilterQuery.isSuccess && megaFilteredTasks.length === 0 && (
+            <p className="mt-5 rounded-control border border-app bg-[color:var(--color-surface-card-muted)] px-4 py-3 text-sm text-secondary">
+              No hay tareas que coincidan con los filtros.
+            </p>
+          )}
+          {megaFilteredTasks.length > 0 && filteredMegaTasks.length === 0 && (
+            <p className="mt-5 rounded-control border border-app bg-[color:var(--color-surface-card-muted)] px-4 py-3 text-sm text-secondary">
+              No hay tareas que coincidan con la bÃºsqueda.
+            </p>
+          )}
+          {filteredMegaTasks.length > 0 && (
+            <TaskList
+              completingTaskId={completeTaskMutation.variables?.idTarea}
+              deletingTaskId={deleteTaskMutation.variables?.task?.idTarea}
+              isCompleting={completeTaskMutation.isPending}
+              isDeleting={deleteTaskMutation.isPending}
+              onCompleteTask={(task) => completeTaskMutation.mutate(task)}
+              onDeleteTask={handleDeleteTask}
+              onEditTask={handleEditTask}
+              tasks={filteredMegaTasks}
+            />
+          )}
+        </>
+      )}
+      {!isMegaFilterActive && activeView === VIEW_MINE && (
         <>
           {(tasksQuery.isLoading || assignedGroupTasksQuery.isLoading) && (
             <p className="mt-5 rounded-control border border-app bg-[color:var(--color-surface-card-muted)] px-4 py-3 text-sm text-secondary">
@@ -705,7 +853,7 @@ export default function DashboardPage() {
           )}
         </>
       )}
-      {activeView === VIEW_CATEGORIES && (
+      {!isMegaFilterActive && activeView === VIEW_CATEGORIES && (
         <>
           {categoriesQuery.isLoading && (
             <p className="mt-5 rounded-control border border-app bg-[color:var(--color-surface-card-muted)] px-4 py-3 text-sm text-secondary">
@@ -731,7 +879,7 @@ export default function DashboardPage() {
           )}
         </>
       )}
-      {activeView === VIEW_GROUPS && (
+      {!isMegaFilterActive && activeView === VIEW_GROUPS && (
         <>
           {groupsQuery.isLoading && (
             <p className="mt-5 rounded-control border border-app bg-[color:var(--color-surface-card-muted)] px-4 py-3 text-sm text-secondary">
@@ -764,7 +912,7 @@ export default function DashboardPage() {
           )}
         </>
       )}
-      {activeView === VIEW_SMART && (
+      {!isMegaFilterActive && activeView === VIEW_SMART && (
         <>
           {recommendedTasksQuery.isLoading && (
             <p className="mt-5 rounded-control border border-app bg-[color:var(--color-surface-card-muted)] px-4 py-3 text-sm text-secondary">
@@ -800,7 +948,8 @@ export default function DashboardPage() {
           )}
         </>
       )}
-      {activeView !== VIEW_MINE &&
+      {!isMegaFilterActive &&
+        activeView !== VIEW_MINE &&
         activeView !== VIEW_CATEGORIES &&
         activeView !== VIEW_GROUPS &&
         activeView !== VIEW_SMART && (

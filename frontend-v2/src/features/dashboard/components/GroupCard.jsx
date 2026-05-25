@@ -1,6 +1,7 @@
 import {
   ChevronDown,
   ClipboardList,
+  AlignLeft,
   KeyRound,
   Layers3,
   LogOut,
@@ -13,6 +14,7 @@ import { useState } from "react";
 import Badge from "../../../components/ui/Badge.jsx";
 import Button from "../../../components/ui/Button.jsx";
 import { cn } from "../../../lib/cn";
+import DescriptionModal from "./DescriptionModal.jsx";
 
 function SecondaryActionButton({ children, danger = false, icon: Icon, onClick }) {
   return (
@@ -48,6 +50,7 @@ export default function GroupCard({
   onViewMembers,
 }) {
   const [expanded, setExpanded] = useState(false);
+  const [descriptionOpen, setDescriptionOpen] = useState(false);
   const isCreator =
     group.creadorActual === true ||
     (group.idCreador != null &&
@@ -120,10 +123,20 @@ export default function GroupCard({
             <Layers3 className="shrink-0 text-muted" size={18} aria-hidden="true" />
           </div>
 
-          {group.descripcion && (
-            <p className="group-card-description mt-3 text-sm leading-6 text-secondary">
-              {group.descripcion}
-            </p>
+          {group.descripcion?.trim() && (
+            <Button
+              className="mt-3"
+              size="sm"
+              type="button"
+              variant="secondary"
+              onClick={(event) => {
+                event.stopPropagation();
+                setDescriptionOpen(true);
+              }}
+            >
+              <AlignLeft size={15} />
+              Ver descripcion
+            </Button>
           )}
 
           {group.nombreCreador && (
@@ -226,6 +239,12 @@ export default function GroupCard({
           />
         </button>
       )}
+      <DescriptionModal
+        description={group.descripcion}
+        onClose={() => setDescriptionOpen(false)}
+        open={descriptionOpen}
+        title="Descripcion del grupo"
+      />
     </article>
   );
 }
