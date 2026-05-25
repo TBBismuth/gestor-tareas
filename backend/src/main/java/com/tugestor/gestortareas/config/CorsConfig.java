@@ -17,7 +17,8 @@ public class CorsConfig {
 				"http://localhost:5173",
 				"http://localhost:4173",
 				"http://127.0.0.1:5173",
-				"https://gestor-tareas-five-pi.vercel.app" //Dominio real de Vercel
+				"https://gestor-tareas-five-pi.vercel.app", //Dominio real de Vercel
+				"https://gestortareas-v2.vercel.app"	
 				));
 		cors.setAllowedMethods(List.of("GET","POST","PUT","PATCH","DELETE","OPTIONS"));
 		cors.setAllowedHeaders(List.of("Authorization","Content-Type","Accept"));
