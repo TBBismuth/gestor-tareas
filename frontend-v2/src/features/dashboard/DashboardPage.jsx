@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Plus, UserPlus } from "lucide-react";
@@ -46,6 +46,8 @@ import {
   getAssignedGroupTasks,
   getMyTasks,
   getRecommendedTasks,
+  getSavedAdvancedFilter,
+  saveAdvancedFilter,
   updateTask,
 } from "./api/tasksApi.js";
 import {
@@ -76,6 +78,14 @@ const DEFAULT_MEGA_FILTERS = {
   fechaEntregaHasta: "",
   criterioOrdenActivo: "FECHA_AGREGADO",
 };
+
+function getDefaultMegaFilters() {
+  return {
+    ...DEFAULT_MEGA_FILTERS,
+    prioridades: [],
+    estados: [],
+  };
+}
 
 const viewTitles = {
   [VIEW_MINE]: "Tareas",
@@ -133,6 +143,41 @@ function buildCombinedFilterPayload(filters) {
   return payload;
 }
 
+function buildSavedAdvancedFilterPayload(filters) {
+  return {
+    ...buildCombinedFilterPayload(filters),
+    prioridades: filters.prioridades,
+    estados: filters.estados,
+  };
+}
+
+function normalizeSavedEnumList(savedList, legacyValue) {
+  if (Array.isArray(savedList)) {
+    return savedList.filter(Boolean);
+  }
+
+  return legacyValue ? [legacyValue] : [];
+}
+
+function normalizeSavedMegaFilters(savedFilter) {
+  if (!savedFilter || typeof savedFilter !== "object") {
+    return getDefaultMegaFilters();
+  }
+
+  return {
+    origen: savedFilter.origen || "TODAS",
+    idGrupo: savedFilter.idGrupo == null ? "" : String(savedFilter.idGrupo),
+    prioridades: normalizeSavedEnumList(savedFilter.prioridades, savedFilter.prioridad),
+    estados: normalizeSavedEnumList(savedFilter.estados, savedFilter.estado),
+    idCategoria: savedFilter.idCategoria == null ? "" : String(savedFilter.idCategoria),
+    palabrasClave: savedFilter.palabrasClave || "",
+    tiempoMax: savedFilter.tiempoMax == null ? "" : String(savedFilter.tiempoMax),
+    fechaEntregaExacta: savedFilter.fechaEntregaExacta || "",
+    fechaEntregaHasta: savedFilter.fechaEntregaHasta || "",
+    criterioOrdenActivo: savedFilter.criterioOrdenActivo || "FECHA_AGREGADO",
+  };
+}
+
 export default function DashboardPage() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -161,7 +206,7 @@ export default function DashboardPage() {
   const [focusArea, setFocusArea] = useState("filter");
   const [activeView, setActiveView] = useState(VIEW_MINE);
   const [quickSearch, setQuickSearch] = useState("");
-  const [megaFilters, setMegaFilters] = useState(DEFAULT_MEGA_FILTERS);
+  const [megaFilters, setMegaFilters] = useState(() => getDefaultMegaFilters());
   const [isMegaFilterActive, setIsMegaFilterActive] = useState(false);
   const [appliedMegaFilters, setAppliedMegaFilters] = useState(null);
   const [megaFilterRunId, setMegaFilterRunId] = useState(0);
@@ -190,10 +235,21 @@ export default function DashboardPage() {
     queryFn: getMyGroups,
     enabled: true,
   });
+  const savedAdvancedFilterQuery = useQuery({
+    queryKey: ["tasks", "saved-advanced-filter"],
+    queryFn: getSavedAdvancedFilter,
+    retry: false,
+  });
   const combinedFilterQuery = useQuery({
     queryKey: ["tasks", "combined-filter", appliedMegaFilters, megaFilterRunId],
     queryFn: () => filterCombinedTasks(appliedMegaFilters),
     enabled: isMegaFilterActive && Boolean(appliedMegaFilters),
+  });
+  const saveAdvancedFilterMutation = useMutation({
+    mutationFn: saveAdvancedFilter,
+    onError: () => {
+      toast.error("No se pudo guardar el filtro.");
+    },
   });
   const completeTaskMutation = useMutation({
     mutationFn: (task) => completeTask(task.idTarea),
@@ -438,18 +494,32 @@ export default function DashboardPage() {
     ? "Resultados filtrados"
     : viewTitles[activeView] || "Tareas";
 
+  useEffect(() => {
+    if (!savedAdvancedFilterQuery.isSuccess) {
+      return;
+    }
+
+    setMegaFilters(normalizeSavedMegaFilters(savedAdvancedFilterQuery.data));
+  }, [savedAdvancedFilterQuery.data, savedAdvancedFilterQuery.isSuccess]);
+
   function handleApplyMegaFilters() {
-    setAppliedMegaFilters(buildCombinedFilterPayload(megaFilters));
+    const filterPayload = buildCombinedFilterPayload(megaFilters);
+
+    setAppliedMegaFilters(filterPayload);
     setIsMegaFilterActive(true);
     setFocusArea("filter");
     setMegaFilterRunId((current) => current + 1);
+    saveAdvancedFilterMutation.mutate(buildSavedAdvancedFilterPayload(megaFilters));
   }
 
   function handleClearMegaFilters() {
-    setMegaFilters(DEFAULT_MEGA_FILTERS);
+    const defaultFilters = getDefaultMegaFilters();
+
+    setMegaFilters(defaultFilters);
     setAppliedMegaFilters(null);
     setIsMegaFilterActive(false);
     setActiveView(VIEW_MINE);
+    saveAdvancedFilterMutation.mutate(buildSavedAdvancedFilterPayload(defaultFilters));
   }
 
   function handleViewChange(view) {

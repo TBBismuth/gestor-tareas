@@ -15,6 +15,16 @@ export async function filterCombinedTasks(filters) {
   return Array.isArray(data) ? data : [];
 }
 
+export async function getSavedAdvancedFilter() {
+  const { data } = await apiClient.get("/tarea/filtro-combinado/save");
+  return data ?? null;
+}
+
+export async function saveAdvancedFilter(filter) {
+  const { data } = await apiClient.put("/tarea/filtro-combinado/save", filter ?? {});
+  return data ?? null;
+}
+
 export async function getAssignedGroupTasks(groupId) {
   const endpoint = groupId ? `/tarea/asignadas-grupo/${groupId}` : "/tarea/asignadas-grupo";
   const { data } = await apiClient.get(endpoint);
