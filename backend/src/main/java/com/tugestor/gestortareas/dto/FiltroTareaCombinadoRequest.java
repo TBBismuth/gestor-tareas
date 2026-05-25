@@ -1,6 +1,7 @@
 package com.tugestor.gestortareas.dto;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import com.tugestor.gestortareas.model.CriterioOrdenTareaCombinado;
 import com.tugestor.gestortareas.model.Estado;
@@ -11,7 +12,9 @@ public class FiltroTareaCombinadoRequest {
 	private OrigenTareaFiltro origen = OrigenTareaFiltro.TODAS;
 	private Long idGrupo;
 	private Prioridad prioridad;
+	private List<Prioridad> prioridades;
 	private Estado estado;
+	private List<Estado> estados;
 	private CriterioOrdenTareaCombinado criterioOrdenActivo = CriterioOrdenTareaCombinado.FECHA_AGREGADO;
 	private String palabrasClave;
 	private Integer tiempoMax;
@@ -41,11 +44,23 @@ public class FiltroTareaCombinadoRequest {
 	public void setPrioridad(Prioridad prioridad) {
 		this.prioridad = prioridad;
 	}
+	public List<Prioridad> getPrioridades() {
+		return prioridades;
+	}
+	public void setPrioridades(List<Prioridad> prioridades) {
+		this.prioridades = prioridades;
+	}
 	public Estado getEstado() {
 		return estado;
 	}
 	public void setEstado(Estado estado) {
 		this.estado = estado;
+	}
+	public List<Estado> getEstados() {
+		return estados;
+	}
+	public void setEstados(List<Estado> estados) {
+		this.estados = estados;
 	}
 	public CriterioOrdenTareaCombinado getCriterioOrdenActivo() {
 		return criterioOrdenActivo;

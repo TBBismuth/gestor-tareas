@@ -2,6 +2,7 @@ package com.tugestor.gestortareas.dto;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 import com.tugestor.gestortareas.model.CriterioOrdenTareaCombinado;
 import com.tugestor.gestortareas.model.Estado;
@@ -13,7 +14,9 @@ public class EstadoFiltroTareaResponse {
 	private OrigenTareaFiltro origen;
 	private Long idGrupo;
 	private Prioridad prioridad;
+	private List<Prioridad> prioridades;
 	private Estado estado;
+	private List<Estado> estados;
 	private String palabrasClave;
 	private Integer tiempoMax;
 	private Long idCategoria;
@@ -30,7 +33,9 @@ public class EstadoFiltroTareaResponse {
 		this.origen = estadoFiltro.getOrigen();
 		this.idGrupo = estadoFiltro.getIdGrupo();
 		this.prioridad = estadoFiltro.getPrioridad();
+		this.prioridades = estadoFiltro.getPrioridades();
 		this.estado = estadoFiltro.getEstado();
+		this.estados = estadoFiltro.getEstados();
 		this.palabrasClave = estadoFiltro.getPalabrasClave();
 		this.tiempoMax = estadoFiltro.getTiempoMax();
 		this.idCategoria = estadoFiltro.getIdCategoria();
@@ -58,8 +63,14 @@ public class EstadoFiltroTareaResponse {
 	public Prioridad getPrioridad() {
 		return prioridad;
 	}
+	public List<Prioridad> getPrioridades() {
+		return prioridades;
+	}
 	public Estado getEstado() {
 		return estado;
+	}
+	public List<Estado> getEstados() {
+		return estados;
 	}
 	public String getPalabrasClave() {
 		return palabrasClave;

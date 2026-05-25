@@ -2,7 +2,12 @@ package com.tugestor.gestortareas.model;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -25,8 +30,18 @@ public class EstadoFiltroTarea {
 	private Long idGrupo;
 	@Enumerated(EnumType.STRING)
 	private Prioridad prioridad;
+	@ElementCollection
+	@CollectionTable(name = "estado_filtro_tarea_prioridades", joinColumns = @JoinColumn(name = "estado_filtro_tarea_id"))
+	@Column(name = "prioridad")
+	@Enumerated(EnumType.STRING)
+	private List<Prioridad> prioridades = new ArrayList<>();
 	@Enumerated(EnumType.STRING)
 	private Estado estado;
+	@ElementCollection
+	@CollectionTable(name = "estado_filtro_tarea_estados", joinColumns = @JoinColumn(name = "estado_filtro_tarea_id"))
+	@Column(name = "estado")
+	@Enumerated(EnumType.STRING)
+	private List<Estado> estados = new ArrayList<>();
 	private String palabrasClave;
 	private Integer tiempoMax;
 	private Long idCategoria;
@@ -68,11 +83,23 @@ public class EstadoFiltroTarea {
 	public void setPrioridad(Prioridad prioridad) {
 		this.prioridad = prioridad;
 	}
+	public List<Prioridad> getPrioridades() {
+		return prioridades;
+	}
+	public void setPrioridades(List<Prioridad> prioridades) {
+		this.prioridades = prioridades != null ? new ArrayList<>(prioridades) : new ArrayList<>();
+	}
 	public Estado getEstado() {
 		return estado;
 	}
 	public void setEstado(Estado estado) {
 		this.estado = estado;
+	}
+	public List<Estado> getEstados() {
+		return estados;
+	}
+	public void setEstados(List<Estado> estados) {
+		this.estados = estados != null ? new ArrayList<>(estados) : new ArrayList<>();
 	}
 	public String getPalabrasClave() {
 		return palabrasClave;

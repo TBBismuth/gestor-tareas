@@ -25,16 +25,24 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.access.AccessDeniedException;
 
+import com.tugestor.gestortareas.dto.FiltroTareaCombinadoRequest;
 import com.tugestor.gestortareas.dto.TareaRequest;
+import com.tugestor.gestortareas.dto.TareaFiltroCombinadoResponse;
 import com.tugestor.gestortareas.dto.TareaResponse;
 import com.tugestor.gestortareas.model.Categoria;
 import com.tugestor.gestortareas.model.Estado;
+import com.tugestor.gestortareas.model.EstadoFiltroTarea;
 import com.tugestor.gestortareas.model.Prioridad;
 import com.tugestor.gestortareas.model.Tarea;
 import com.tugestor.gestortareas.model.Usuario;
+import com.tugestor.gestortareas.repository.AsignacionGrupoMiembroRepository;
 import com.tugestor.gestortareas.repository.CategoriaRepository;
+import com.tugestor.gestortareas.repository.EstadoFiltroTareaRepository;
+import com.tugestor.gestortareas.repository.GrupoMiembroRepository;
+import com.tugestor.gestortareas.repository.GrupoRepository;
 import com.tugestor.gestortareas.repository.TareaRepository;
 import com.tugestor.gestortareas.repository.UsuarioRepository;
+import com.tugestor.gestortareas.service.scoring.TareaInteligenteRankingService;
 
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ValidationException;
@@ -48,6 +56,16 @@ public class TareaServiceImplTest {
 	private CategoriaRepository cr;
 	@Mock
 	private UsuarioRepository ur;
+	@Mock
+	private AsignacionGrupoMiembroRepository agmr;
+	@Mock
+	private GrupoRepository gr;
+	@Mock
+	private GrupoMiembroRepository gmr;
+	@Mock
+	private EstadoFiltroTareaRepository eftr;
+	@Mock
+	private TareaInteligenteRankingService rankingInteligenteService;
 	// La clase que estamos probando con los mocks inyectados
 	@InjectMocks
 	private TareaServiceImpl tsimpl;
@@ -1199,5 +1217,153 @@ public class TareaServiceImplTest {
 
 		verify(tr, times(1))
 		.findByUsuarioEmailAndFechaEntregaBetween(eq(emailUsuario), eq(inicioHoy), eq(inicioManiana));
+	}
+
+	@Test
+	void filtrarCombinado_prioridadLegacy_filtraPorPrioridadUnica() {
+		String emailUsuario = "filtro@ejemplo.com";
+		FiltroTareaCombinadoRequest filtro = new FiltroTareaCombinadoRequest();
+		filtro.setPrioridad(Prioridad.ALTA);
+		prepararFiltroCombinado(emailUsuario, tareasFiltroCombinado());
+
+		List<TareaFiltroCombinadoResponse> resultado = tsimpl.filtrarCombinado(filtro, emailUsuario);
+
+		assertEquals(1, resultado.size());
+		assertEquals(Prioridad.ALTA, resultado.get(0).getPrioridad());
+	}
+
+	@Test
+	void filtrarCombinado_prioridades_filtraPorVariasPrioridades() {
+		String emailUsuario = "filtro@ejemplo.com";
+		FiltroTareaCombinadoRequest filtro = new FiltroTareaCombinadoRequest();
+		filtro.setPrioridades(List.of(Prioridad.ALTA, Prioridad.IMPRESCINDIBLE));
+		prepararFiltroCombinado(emailUsuario, tareasFiltroCombinado());
+
+		List<TareaFiltroCombinadoResponse> resultado = tsimpl.filtrarCombinado(filtro, emailUsuario);
+
+		assertEquals(2, resultado.size());
+		assertTrue(resultado.stream()
+				.allMatch(tarea -> List.of(Prioridad.ALTA, Prioridad.IMPRESCINDIBLE)
+						.contains(tarea.getPrioridad())));
+	}
+
+	@Test
+	void filtrarCombinado_estadoLegacy_filtraPorEstadoUnico() {
+		String emailUsuario = "filtro@ejemplo.com";
+		FiltroTareaCombinadoRequest filtro = new FiltroTareaCombinadoRequest();
+		filtro.setEstado(Estado.EN_CURSO);
+		prepararFiltroCombinado(emailUsuario, tareasFiltroCombinado());
+
+		List<TareaFiltroCombinadoResponse> resultado = tsimpl.filtrarCombinado(filtro, emailUsuario);
+
+		assertEquals(1, resultado.size());
+		assertEquals("EN_CURSO", resultado.get(0).getEstado());
+	}
+
+	@Test
+	void filtrarCombinado_estados_filtraPorVariosEstados() {
+		String emailUsuario = "filtro@ejemplo.com";
+		FiltroTareaCombinadoRequest filtro = new FiltroTareaCombinadoRequest();
+		filtro.setEstados(List.of(Estado.EN_CURSO, Estado.VENCIDA, Estado.SIN_FECHA));
+		prepararFiltroCombinado(emailUsuario, tareasFiltroCombinado());
+
+		List<TareaFiltroCombinadoResponse> resultado = tsimpl.filtrarCombinado(filtro, emailUsuario);
+
+		assertEquals(3, resultado.size());
+		assertTrue(resultado.stream()
+				.allMatch(tarea -> List.of("EN_CURSO", "VENCIDA", "SIN_FECHA").contains(tarea.getEstado())));
+	}
+
+	@Test
+	void filtrarCombinado_listasVacias_noFiltranPorPrioridadNiEstado() {
+		String emailUsuario = "filtro@ejemplo.com";
+		FiltroTareaCombinadoRequest filtro = new FiltroTareaCombinadoRequest();
+		filtro.setPrioridades(List.of());
+		filtro.setEstados(List.of());
+		prepararFiltroCombinado(emailUsuario, tareasFiltroCombinado());
+
+		List<TareaFiltroCombinadoResponse> resultado = tsimpl.filtrarCombinado(filtro, emailUsuario);
+
+		assertEquals(4, resultado.size());
+	}
+
+	@Test
+	void guardarEstadoFiltroCombinado_prioridadesYEstados_restauranListas() {
+		String emailUsuario = "filtro@ejemplo.com";
+		FiltroTareaCombinadoRequest filtro = new FiltroTareaCombinadoRequest();
+		filtro.setPrioridades(List.of(Prioridad.ALTA, Prioridad.IMPRESCINDIBLE));
+		filtro.setEstados(List.of(Estado.EN_CURSO, Estado.VENCIDA, Estado.SIN_FECHA));
+		Usuario usuario = prepararUsuarioFiltroGuardado(emailUsuario);
+		when(eftr.findByUsuario(usuario)).thenReturn(Optional.empty());
+		when(eftr.save(any(EstadoFiltroTarea.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+		var response = tsimpl.guardarEstadoFiltroCombinado(filtro, emailUsuario);
+
+		assertEquals(List.of(Prioridad.ALTA, Prioridad.IMPRESCINDIBLE), response.getPrioridades());
+		assertEquals(List.of(Estado.EN_CURSO, Estado.VENCIDA, Estado.SIN_FECHA), response.getEstados());
+		assertEquals(Prioridad.ALTA, response.getPrioridad());
+		assertEquals(Estado.EN_CURSO, response.getEstado());
+	}
+
+	@Test
+	void guardarEstadoFiltroCombinado_prioridadYEstadoLegacy_restauranLegacyYListasNormalizadas() {
+		String emailUsuario = "filtro@ejemplo.com";
+		FiltroTareaCombinadoRequest filtro = new FiltroTareaCombinadoRequest();
+		filtro.setPrioridad(Prioridad.ALTA);
+		filtro.setEstado(Estado.EN_CURSO);
+		Usuario usuario = prepararUsuarioFiltroGuardado(emailUsuario);
+		when(eftr.findByUsuario(usuario)).thenReturn(Optional.empty());
+		when(eftr.save(any(EstadoFiltroTarea.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+		var response = tsimpl.guardarEstadoFiltroCombinado(filtro, emailUsuario);
+
+		assertEquals(Prioridad.ALTA, response.getPrioridad());
+		assertEquals(List.of(Prioridad.ALTA), response.getPrioridades());
+		assertEquals(Estado.EN_CURSO, response.getEstado());
+		assertEquals(List.of(Estado.EN_CURSO), response.getEstados());
+	}
+
+	private void prepararFiltroCombinado(String emailUsuario, List<Tarea> tareas) {
+		Usuario usuario = new Usuario(1L);
+		usuario.setEmail(emailUsuario);
+		when(ur.findByEmail(emailUsuario)).thenReturn(Optional.of(usuario));
+		when(agmr.findTareasAsignadasGrupoUsuario(emailUsuario)).thenReturn(List.of());
+		when(tr.findByUsuarioEmail(emailUsuario)).thenReturn(tareas);
+	}
+
+	private Usuario prepararUsuarioFiltroGuardado(String emailUsuario) {
+		Usuario usuario = new Usuario(1L);
+		usuario.setEmail(emailUsuario);
+		when(ur.findByEmail(emailUsuario)).thenReturn(Optional.of(usuario));
+		return usuario;
+	}
+
+	private List<Tarea> tareasFiltroCombinado() {
+		return List.of(
+				tareaFiltroCombinado(1L, Prioridad.BAJA, null),
+				tareaFiltroCombinado(2L, Prioridad.MEDIA, LocalDateTime.now().minusDays(1)),
+				tareaFiltroCombinado(3L, Prioridad.ALTA, LocalDateTime.now().plusDays(1)),
+				tareaFiltroCombinadoCompletada(4L, Prioridad.IMPRESCINDIBLE,
+						LocalDateTime.now().plusDays(2)));
+	}
+
+	private Tarea tareaFiltroCombinado(Long id, Prioridad prioridad, LocalDateTime fechaEntrega) {
+		Tarea tarea = new Tarea(id);
+		tarea.setTitulo("Tarea " + id);
+		tarea.setDescripcion("Descripcion " + id);
+		tarea.setPrioridad(prioridad);
+		tarea.setTiempo(30);
+		tarea.setFechaAgregado(LocalDateTime.now().minusHours(id));
+		tarea.setFechaEntrega(fechaEntrega);
+		tarea.setCompletada(false);
+		return tarea;
+	}
+
+	private Tarea tareaFiltroCombinadoCompletada(Long id, Prioridad prioridad,
+			LocalDateTime fechaEntrega) {
+		Tarea tarea = tareaFiltroCombinado(id, prioridad, fechaEntrega);
+		tarea.setCompletada(true);
+		tarea.setFechaCompletada(LocalDateTime.now());
+		return tarea;
 	}
 }

@@ -366,13 +366,17 @@ public class TareaServiceImpl implements TareaService{
 				? filtroNormalizado.getOrigen()
 				: OrigenTareaFiltro.TODAS;
 		validarFiltroCombinado(filtroNormalizado, usuario, origen);
+		List<Prioridad> prioridades = normalizarPrioridades(filtroNormalizado);
+		List<Estado> estados = normalizarEstados(filtroNormalizado);
 		
 		EstadoFiltroTarea estadoFiltro = eftr.findByUsuario(usuario).orElseGet(EstadoFiltroTarea::new);
 		estadoFiltro.setUsuario(usuario);
 		estadoFiltro.setOrigen(origen);
 		estadoFiltro.setIdGrupo(filtroNormalizado.getIdGrupo());
-		estadoFiltro.setPrioridad(filtroNormalizado.getPrioridad());
-		estadoFiltro.setEstado(filtroNormalizado.getEstado());
+		estadoFiltro.setPrioridad(primerElementoONull(prioridades));
+		estadoFiltro.setPrioridades(prioridades);
+		estadoFiltro.setEstado(primerElementoONull(estados));
+		estadoFiltro.setEstados(estados);
 		estadoFiltro.setPalabrasClave(filtroNormalizado.getPalabrasClave());
 		estadoFiltro.setTiempoMax(filtroNormalizado.getTiempoMax());
 		estadoFiltro.setIdCategoria(filtroNormalizado.getIdCategoria());
@@ -412,13 +416,16 @@ public class TareaServiceImpl implements TareaService{
 		if (tarea == null) {
 			return false;
 		}
-		if (Boolean.TRUE.equals(filtro.getSoloPorCompletar()) && esEstadoCompletado(tarea.getEstado())) {
+		List<Prioridad> prioridades = normalizarPrioridades(filtro);
+		List<Estado> estados = normalizarEstados(filtro);
+		if (estados.isEmpty() && Boolean.TRUE.equals(filtro.getSoloPorCompletar())
+				&& esEstadoCompletado(tarea.getEstado())) {
 			return false;
 		}
-		if (filtro.getPrioridad() != null && tarea.getPrioridad() != filtro.getPrioridad()) {
+		if (!prioridades.isEmpty() && !prioridades.contains(tarea.getPrioridad())) {
 			return false;
 		}
-		if (filtro.getEstado() != null && tarea.getEstado() != filtro.getEstado()) {
+		if (!estados.isEmpty() && !estados.contains(tarea.getEstado())) {
 			return false;
 		}
 		if (filtro.getTiempoMax() != null && tarea.getTiempo() > filtro.getTiempoMax()) {
@@ -472,11 +479,32 @@ public class TareaServiceImpl implements TareaService{
 		if (filtro.getTiempoMax() != null && filtro.getTiempoMax() < 0) {
 			throw new ValidationException("El tiempo maximo no puede ser negativo.");
 		}
-		if (Boolean.TRUE.equals(filtro.getSoloPorCompletar()) && esEstadoCompletado(filtro.getEstado())) {
-			throw new ValidationException("No se puede combinar soloPorCompletar con un estado completado.");
-		}
 		validarGrupoFiltro(filtro.getIdGrupo(), usuario);
 		validarCategoriaFiltro(filtro.getIdCategoria(), usuario);
+	}
+
+	private List<Prioridad> normalizarPrioridades(FiltroTareaCombinadoRequest filtro) {
+		if (filtro.getPrioridades() != null && !filtro.getPrioridades().isEmpty()) {
+			return filtro.getPrioridades();
+		}
+		if (filtro.getPrioridad() != null) {
+			return List.of(filtro.getPrioridad());
+		}
+		return List.of();
+	}
+
+	private List<Estado> normalizarEstados(FiltroTareaCombinadoRequest filtro) {
+		if (filtro.getEstados() != null && !filtro.getEstados().isEmpty()) {
+			return filtro.getEstados();
+		}
+		if (filtro.getEstado() != null) {
+			return List.of(filtro.getEstado());
+		}
+		return List.of();
+	}
+
+	private <T> T primerElementoONull(List<T> valores) {
+		return valores.isEmpty() ? null : valores.get(0);
 	}
 	
 	private void validarGrupoFiltro(Long idGrupo, Usuario usuario) {
@@ -513,6 +541,8 @@ public class TareaServiceImpl implements TareaService{
 		recomendado.setIdGrupo(origen.getIdGrupo());
 		recomendado.setPrioridad(origen.getPrioridad());
 		recomendado.setEstado(origen.getEstado());
+		recomendado.setPrioridades(origen.getPrioridades());
+		recomendado.setEstados(origen.getEstados());
 		recomendado.setPalabrasClave(origen.getPalabrasClave());
 		recomendado.setTiempoMax(origen.getTiempoMax());
 		recomendado.setIdCategoria(origen.getIdCategoria());
