@@ -43,15 +43,18 @@ public class AsignacionGrupoServiceImpl implements AsignacionGrupoService {
 	private final GrupoMiembroRepository gmr;
 	private final TareaRepository tr;
 	private final UsuarioRepository ur;
+	private final NotificacionService ns;
 
 	public AsignacionGrupoServiceImpl(AsignacionGrupoRepository agr, AsignacionGrupoMiembroRepository agmr,
-			GrupoRepository gr, GrupoMiembroRepository gmr, TareaRepository tr, UsuarioRepository ur) {
+			GrupoRepository gr, GrupoMiembroRepository gmr, TareaRepository tr, UsuarioRepository ur,
+			NotificacionService ns) {
 		this.agr = agr;
 		this.agmr = agmr;
 		this.gr = gr;
 		this.gmr = gmr;
 		this.tr = tr;
 		this.ur = ur;
+		this.ns = ns;
 	}
 
 	@Transactional
@@ -94,7 +97,9 @@ public class AsignacionGrupoServiceImpl implements AsignacionGrupoService {
 			asignacionMiembro.setFechaAsignacion(LocalDateTime.now());
 			asignacionMiembro.setFechaEntregaInicial(asignacionGrupoRequest.getFechaEntrega());
 			asignacionMiembro.setFechaEntregaActual(asignacionGrupoRequest.getFechaEntrega());
-			miembrosAsignados.add(agmr.save(asignacionMiembro));
+			AsignacionGrupoMiembro miembroGuardado = agmr.save(asignacionMiembro);
+			ns.crearDesdeAsignacionGrupo(miembroGuardado);
+			miembrosAsignados.add(miembroGuardado);
 		}
 
 		return new AsignacionGrupoResponse(guardada, miembrosAsignados);

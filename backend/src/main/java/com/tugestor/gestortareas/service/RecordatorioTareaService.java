@@ -6,4 +6,5 @@ import com.tugestor.gestortareas.dto.RecordatorioTareaResponse;
 public interface RecordatorioTareaService {
 	RecordatorioTareaResponse configurarRecordatorioInteligente(Long idTarea,
 			RecordatorioInteligenteRequest request, String emailUsuario);
+	int procesarRecordatoriosInteligentesVencidos();
 }

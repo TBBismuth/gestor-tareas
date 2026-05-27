@@ -1,6 +1,7 @@
 package com.tugestor.gestortareas.service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -21,10 +22,13 @@ import jakarta.validation.ValidationException;
 public class RecordatorioTareaServiceImpl implements RecordatorioTareaService {
 	private final RecordatorioTareaRepository rtr;
 	private final TareaRepository tr;
+	private final NotificacionService ns;
 
-	public RecordatorioTareaServiceImpl(RecordatorioTareaRepository rtr, TareaRepository tr) {
+	public RecordatorioTareaServiceImpl(RecordatorioTareaRepository rtr, TareaRepository tr,
+			NotificacionService ns) {
 		this.rtr = rtr;
 		this.tr = tr;
+		this.ns = ns;
 	}
 
 	@Override
@@ -37,6 +41,24 @@ public class RecordatorioTareaServiceImpl implements RecordatorioTareaService {
 		return Boolean.TRUE.equals(request.getActivo())
 				? activarRecordatorioInteligente(tarea)
 				: desactivarRecordatorioInteligente(tarea);
+	}
+
+	@Override
+	@Transactional
+	public int procesarRecordatoriosInteligentesVencidos() {
+		LocalDateTime ahora = LocalDateTime.now();
+		List<RecordatorioTarea> pendientes = rtr
+				.findByTipoAndActivoTrueAndNotificacionGeneradaFalseAndFechaProgramadaLessThanEqual(
+						TipoRecordatorioTarea.RECORDATORIO_INTELIGENTE, ahora);
+		for (RecordatorioTarea recordatorio : pendientes) {
+			ns.crearDesdeRecordatorioInteligente(recordatorio, ahora);
+			recordatorio.setActivo(false);
+			recordatorio.setFechaProcesado(ahora);
+			recordatorio.setNotificacionGenerada(true);
+			recordatorio.setFechaActualizacion(ahora);
+		}
+		rtr.saveAll(pendientes);
+		return pendientes.size();
 	}
 
 	private RecordatorioTareaResponse activarRecordatorioInteligente(Tarea tarea) {
