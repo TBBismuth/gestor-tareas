@@ -9,12 +9,15 @@ import org.springframework.web.bind.annotation.*;
 
 import com.tugestor.gestortareas.dto.EstadoFiltroTareaResponse;
 import com.tugestor.gestortareas.dto.FiltroTareaCombinadoRequest;
+import com.tugestor.gestortareas.dto.RecordatorioInteligenteRequest;
+import com.tugestor.gestortareas.dto.RecordatorioTareaResponse;
 import com.tugestor.gestortareas.dto.TareaAsignadaGrupoResponse;
 import com.tugestor.gestortareas.dto.TareaFiltroCombinadoResponse;
 import com.tugestor.gestortareas.dto.TareaRequest;
 import com.tugestor.gestortareas.dto.TareaResponse;
 import com.tugestor.gestortareas.model.Estado;
 import com.tugestor.gestortareas.model.Tarea;
+import com.tugestor.gestortareas.service.RecordatorioTareaService;
 import com.tugestor.gestortareas.service.TareaService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -31,10 +34,12 @@ public class TareaController {
 	
 	/* (TareaService ts = new TareaServiceImpl();)
 	 * Spring, al detectar que TareaServiceImpl es un @Service(IMPORTANTE) y que el controlador necesita TareaService,
-	 * automatiza esta asignacion internamente inyectando la dependencia*/
+ * automatiza esta asignacion internamente inyectando la dependencia*/
 	private final TareaService ts;
-	public TareaController(TareaService ts) {
+	private final RecordatorioTareaService rts;
+	public TareaController(TareaService ts, RecordatorioTareaService rts) {
 		this.ts = ts;
+		this.rts = rts;
 	}
 	
 	@GetMapping("/test")
@@ -426,6 +431,23 @@ public class TareaController {
 	public ResponseEntity<TareaResponse> completarTarea(@PathVariable Long id, Principal principal){
 		TareaResponse tareaResponse = ts.marcarTareaCompletada(id, principal.getName());
 		return ResponseEntity.ok(tareaResponse);
+	}
+
+	@PatchMapping("/{id}/recordatorio-inteligente")
+	@Operation(
+			summary = "Activar o desactivar recordatorio inteligente",
+			description = "Configura de forma idempotente el recordatorio inteligente de una tarea del usuario autenticado."
+			)
+	@ApiResponses({
+		@ApiResponse(responseCode = "200", description = "Recordatorio inteligente actualizado correctamente"),
+		@ApiResponse(responseCode = "400", description = "La tarea no permite calcular un recordatorio inteligente o el payload es invalido"),
+		@ApiResponse(responseCode = "401", description = "No autenticado o token invalido"),
+		@ApiResponse(responseCode = "403", description = "La tarea no pertenece al usuario autenticado"),
+		@ApiResponse(responseCode = "404", description = "Tarea no encontrada")
+	})
+	public RecordatorioTareaResponse configurarRecordatorioInteligente(@PathVariable Long id,
+			@Valid @RequestBody RecordatorioInteligenteRequest request, Principal principal) {
+		return rts.configurarRecordatorioInteligente(id, request, principal.getName());
 	}
 	
 	@GetMapping("/hoy")
