@@ -11,6 +11,7 @@ public interface NotificacionService {
 	long contarActivas(String emailUsuario);
 	NotificacionResponse cerrarNotificacion(Long idNotificacion, String emailUsuario);
 	void cerrarTodas(String emailUsuario);
+	int procesarAvisos24hPendientes();
 	void crearDesdeRecordatorioInteligente(RecordatorioTarea recordatorio, java.time.LocalDateTime fechaCreacion);
 	void crearDesdeAsignacionGrupo(AsignacionGrupoMiembro asignacionGrupoMiembro);
 }

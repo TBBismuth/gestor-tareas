@@ -12,9 +12,12 @@ public class NotificationSchedulerService {
 	private static final Logger logger = LoggerFactory.getLogger(NotificationSchedulerService.class);
 
 	private final RecordatorioTareaService recordatorioTareaService;
+	private final NotificacionService notificacionService;
 
-	public NotificationSchedulerService(RecordatorioTareaService recordatorioTareaService) {
+	public NotificationSchedulerService(RecordatorioTareaService recordatorioTareaService,
+			NotificacionService notificacionService) {
 		this.recordatorioTareaService = recordatorioTareaService;
+		this.notificacionService = notificacionService;
 	}
 
 	@EventListener(ApplicationReadyEvent.class)
@@ -33,12 +36,14 @@ public class NotificationSchedulerService {
 
 	private void ejecutarProcesamiento(String origen) {
 		try {
-			int procesados = recordatorioTareaService.procesarRecordatoriosInteligentesVencidos();
-			if (procesados > 0) {
-				logger.info("Recordatorios inteligentes procesados en ciclo {}: {}", origen, procesados);
+			int recordatoriosProcesados = recordatorioTareaService.procesarRecordatoriosInteligentesVencidos();
+			int avisos24hGenerados = notificacionService.procesarAvisos24hPendientes();
+			if (recordatoriosProcesados > 0 || avisos24hGenerados > 0) {
+				logger.info("Notificaciones procesadas en ciclo {}. Recordatorios: {}, avisos 24h: {}",
+						origen, recordatoriosProcesados, avisos24hGenerados);
 			}
 		} catch (Exception ex) {
-			logger.error("Error procesando recordatorios inteligentes en ciclo {}.", origen, ex);
+			logger.error("Error procesando notificaciones pendientes en ciclo {}.", origen, ex);
 		}
 	}
 }

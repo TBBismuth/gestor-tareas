@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.tugestor.gestortareas.model.Prioridad;
 import com.tugestor.gestortareas.model.Tarea;
+import com.tugestor.gestortareas.model.Usuario;
 
 public interface TareaRepository extends JpaRepository<Tarea, Long> {
 	List<Tarea> findAllByUsuarioEmailOrderByTituloAsc(String emailUsuarioCreador);
@@ -24,6 +25,8 @@ public interface TareaRepository extends JpaRepository<Tarea, Long> {
 	List<Tarea> findByUsuarioEmailAndFechaEntregaBetween(String emailUsuarioCreador, LocalDateTime inicio,LocalDateTime fin);
 	List<Tarea> findByUsuarioEmailAndCompletadaFalseAndFechaEntregaAfterOrderByFechaEntregaAsc(String emailUsuarioCreador, LocalDateTime fechaActual);
 	List<Tarea> findByUsuarioEmailAndCompletadaFalseAndFechaEntregaBeforeOrderByFechaEntregaAsc(String emailUsuarioCreador, LocalDateTime fechaActual);
+	List<Tarea> findByUsuarioAndCompletadaFalseAndFechaEntregaBetween(
+			Usuario usuario, LocalDateTime inicio, LocalDateTime fin);
 	List<Tarea> findByCategoria_IdCategoria(Long idCategoria);
 	List<Tarea> findAllByUsuarioEmail(String emailUsuario);
 	

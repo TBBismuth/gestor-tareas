@@ -9,4 +9,5 @@ import com.tugestor.gestortareas.model.Usuario;
 
 public interface PreferenciasNotificacionRepository extends JpaRepository<PreferenciasNotificacion, Long> {
 	Optional<PreferenciasNotificacion> findByUsuario(Usuario usuario);
+	java.util.List<PreferenciasNotificacion> findByNotificacionesActivasTrueAndAviso24hActivoTrue();
 }
