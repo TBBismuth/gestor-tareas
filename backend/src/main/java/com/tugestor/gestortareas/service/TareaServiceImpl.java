@@ -6,6 +6,7 @@ import java.util.*;
 
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.tugestor.gestortareas.dto.EstadoFiltroTareaResponse;
 import com.tugestor.gestortareas.dto.FiltroTareaCombinadoRequest;
@@ -30,6 +31,7 @@ import com.tugestor.gestortareas.repository.CategoriaRepository;
 import com.tugestor.gestortareas.repository.EstadoFiltroTareaRepository;
 import com.tugestor.gestortareas.repository.GrupoMiembroRepository;
 import com.tugestor.gestortareas.repository.GrupoRepository;
+import com.tugestor.gestortareas.repository.NotificacionRepository;
 import com.tugestor.gestortareas.repository.RecordatorioTareaRepository;
 import com.tugestor.gestortareas.repository.TareaRepository;
 import com.tugestor.gestortareas.repository.UsuarioRepository;
@@ -56,10 +58,11 @@ public class TareaServiceImpl implements TareaService{
 	private final GrupoMiembroRepository gmr;
 	private final EstadoFiltroTareaRepository eftr;
 	private final RecordatorioTareaRepository rtr;
+	private final NotificacionRepository nr;
 	private final TareaInteligenteRankingService rankingInteligenteService;
 	public TareaServiceImpl(TareaRepository tr, CategoriaRepository cr, UsuarioRepository ur,
 			AsignacionGrupoMiembroRepository agmr, GrupoRepository gr, GrupoMiembroRepository gmr,
-			EstadoFiltroTareaRepository eftr, RecordatorioTareaRepository rtr,
+			EstadoFiltroTareaRepository eftr, RecordatorioTareaRepository rtr, NotificacionRepository nr,
 			TareaInteligenteRankingService rankingInteligenteService) {
 		this.tr = tr;
 		this.cr = cr;
@@ -69,6 +72,7 @@ public class TareaServiceImpl implements TareaService{
 		this.gmr = gmr;
 		this.eftr = eftr;
 		this.rtr = rtr;
+		this.nr = nr;
 		this.rankingInteligenteService = rankingInteligenteService;
 	}
 	
@@ -134,6 +138,7 @@ public class TareaServiceImpl implements TareaService{
 	}
 	
 	@Override
+	@Transactional
 	public void eliminarPorId(Long id, String emailUsuario) {
 		Tarea tarea = tr.findById(id)
 				.orElseThrow(() -> new EntityNotFoundException("Tarea no encontrada con id: " + id));
@@ -143,6 +148,8 @@ public class TareaServiceImpl implements TareaService{
 		if (agmr.existsByTareaGenerada(tarea)) {
 			throw new AccessDeniedException("No puedes eliminar una tarea asignada desde un grupo.");
 		}
+		nr.desvincularTarea(tarea);
+		rtr.deleteByTarea(tarea);
 		tr.delete(tarea);
 	}
 	

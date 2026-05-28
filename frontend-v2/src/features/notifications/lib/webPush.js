@@ -1,3 +1,5 @@
+import { getAccessToken } from "../../auth/authStorage.js";
+
 const vapidPublicKey = import.meta.env.VITE_WEBPUSH_PUBLIC_KEY || "";
 
 export function getPushAvailability() {
@@ -50,6 +52,10 @@ export async function createPushSubscription() {
   const availability = getPushAvailability();
   if (!availability.available) {
     throw new Error(availability.reason);
+  }
+
+  if (!getAccessToken()) {
+    throw new Error("No hay sesion activa.");
   }
 
   const permission = await Notification.requestPermission();

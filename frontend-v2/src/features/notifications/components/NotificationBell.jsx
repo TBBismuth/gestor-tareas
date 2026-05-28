@@ -20,7 +20,6 @@ import {
   closeAllNotifications,
   closeNotification,
   getNotifications,
-  getNotificationsCount,
   getNotificationPreferences,
   deletePushSubscription,
   registerPushSubscription,
@@ -35,7 +34,6 @@ import {
 } from "../lib/webPush.js";
 
 export const NOTIFICATIONS_QUERY_KEY = ["notifications", "active"];
-export const NOTIFICATIONS_COUNT_QUERY_KEY = ["notifications", "count"];
 export const NOTIFICATION_PREFERENCES_QUERY_KEY = ["notifications", "preferences"];
 
 const defaultPreferences = {
@@ -314,6 +312,7 @@ function NotificationPreferences({ groups = [] }) {
     mutationFn: updateNotificationPreferences,
     onSuccess: (updatedPreferences) => {
       queryClient.setQueryData(NOTIFICATION_PREFERENCES_QUERY_KEY, updatedPreferences);
+      queryClient.invalidateQueries({ queryKey: NOTIFICATIONS_QUERY_KEY });
       toast.success("Preferencias actualizadas.");
     },
     onError: () => {
@@ -439,17 +438,12 @@ export default function NotificationBell({ groups = [] }) {
   const notificationsQuery = useQuery({
     queryKey: NOTIFICATIONS_QUERY_KEY,
     queryFn: getNotifications,
-    enabled: open,
-  });
-  const countQuery = useQuery({
-    queryKey: NOTIFICATIONS_COUNT_QUERY_KEY,
-    queryFn: getNotificationsCount,
     refetchInterval: 60000,
   });
   const notifications = notificationsQuery.data ?? [];
-  const count = Number(countQuery.data ?? notifications.length ?? 0);
+  const count = notifications.length;
   const visibleCount = count > 99 ? "99+" : String(count);
-  const hasNotifications = count > 0 || notifications.length > 0;
+  const hasNotifications = count > 0;
   const sortedNotifications = useMemo(
     () =>
       [...notifications].sort(
@@ -463,7 +457,6 @@ export default function NotificationBell({ groups = [] }) {
     onSuccess: () => {
       toast.success("Notificacion cerrada.");
       queryClient.invalidateQueries({ queryKey: NOTIFICATIONS_QUERY_KEY });
-      queryClient.invalidateQueries({ queryKey: NOTIFICATIONS_COUNT_QUERY_KEY });
     },
     onError: () => {
       toast.error("No se pudo cerrar la notificacion.");
@@ -474,7 +467,6 @@ export default function NotificationBell({ groups = [] }) {
     onSuccess: () => {
       toast.success("Notificaciones cerradas.");
       queryClient.invalidateQueries({ queryKey: NOTIFICATIONS_QUERY_KEY });
-      queryClient.invalidateQueries({ queryKey: NOTIFICATIONS_COUNT_QUERY_KEY });
     },
     onError: () => {
       toast.error("No se pudieron cerrar las notificaciones.");
@@ -507,13 +499,17 @@ export default function NotificationBell({ groups = [] }) {
   return (
     <div className="relative" ref={panelRef}>
       <IconButton
-        className="relative"
+        className={cn(
+          "relative",
+          hasNotifications &&
+            "border-[color:var(--color-brand)] bg-[color:var(--state-active-bg)] text-[color:var(--state-active-text)] shadow-control"
+        )}
         label="Abrir notificaciones"
         onClick={() => setOpen((current) => !current)}
       >
         <Bell size={18} />
         {count > 0 && (
-          <span className="absolute -right-1 -top-1 grid min-w-5 place-items-center rounded-full border border-[color:var(--color-surface-panel)] bg-[color:var(--state-danger-text)] px-1 text-[0.68rem] font-bold leading-5 text-white">
+          <span className="absolute -right-1 -top-1 grid min-w-5 animate-pulse place-items-center rounded-full border border-[color:var(--color-surface-panel)] bg-[color:var(--state-danger-text)] px-1 text-[0.68rem] font-bold leading-5 text-white">
             {visibleCount}
           </span>
         )}
@@ -524,7 +520,14 @@ export default function NotificationBell({ groups = [] }) {
           <header className="flex items-center justify-between gap-3 border-b border-app px-4 py-3">
             <div>
               <h2 className="text-base font-semibold text-primary">Notificaciones</h2>
-              <p className="text-xs text-muted">{count} activas</p>
+              <p
+                className={cn(
+                  "text-xs",
+                  hasNotifications ? "font-semibold text-[color:var(--state-active-text)]" : "text-muted"
+                )}
+              >
+                {count} activas
+              </p>
             </div>
             {hasNotifications && (
               <Button
