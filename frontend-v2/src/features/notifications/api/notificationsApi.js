@@ -28,3 +28,14 @@ export async function updateNotificationPreferences(payload) {
   const { data } = await apiClient.put("/notificaciones/preferencias", payload);
   return data;
 }
+
+export async function registerPushSubscription(payload) {
+  const { data } = await apiClient.post("/notificaciones/push-subscripciones", payload);
+  return data;
+}
+
+export async function deletePushSubscription(endpoint) {
+  await apiClient.delete("/notificaciones/push-subscripciones", {
+    data: { endpoint },
+  });
+}
