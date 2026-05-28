@@ -34,6 +34,7 @@ public class SeguridadConfig {
 						"/api/**"
 						).permitAll()
 				.requestMatchers(
+						"/api/health",
 						"/api/usuario/add",
 						"/api/usuario/login",
 						"/api/usuario/refresh",
