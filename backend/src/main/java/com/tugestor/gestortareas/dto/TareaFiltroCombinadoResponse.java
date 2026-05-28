@@ -33,20 +33,32 @@ public class TareaFiltroCombinadoResponse {
 	private EstadoRevisionAsignacion estadoRevisionAsignacion;
 	private String comentarioRevision;
 	private TipoAsignacionGrupo tipoAsignacion;
+	private boolean recordatorioInteligenteActivo;
 
 	public TareaFiltroCombinadoResponse() {
 	}
 
 	public TareaFiltroCombinadoResponse(Tarea tarea) {
+		this(tarea, false);
+	}
+
+	public TareaFiltroCombinadoResponse(Tarea tarea, boolean recordatorioInteligenteActivo) {
 		cargarDatosTarea(tarea);
 		this.origenTarea = OrigenTareaFiltro.PERSONAL;
+		this.recordatorioInteligenteActivo = recordatorioInteligenteActivo;
 	}
 
 	public TareaFiltroCombinadoResponse(AsignacionGrupoMiembro asignacionMiembro) {
+		this(asignacionMiembro, false);
+	}
+
+	public TareaFiltroCombinadoResponse(AsignacionGrupoMiembro asignacionMiembro,
+			boolean recordatorioInteligenteActivo) {
 		cargarDatosTarea(asignacionMiembro.getTareaGenerada());
 		this.origenTarea = OrigenTareaFiltro.GRUPO;
 		this.estadoRevisionAsignacion = asignacionMiembro.getEstadoRevision();
 		this.comentarioRevision = asignacionMiembro.getComentarioRevision();
+		this.recordatorioInteligenteActivo = recordatorioInteligenteActivo;
 
 		AsignacionGrupo asignacion = asignacionMiembro.getAsignacionGrupo();
 		if (asignacion != null) {
@@ -141,5 +153,11 @@ public class TareaFiltroCombinadoResponse {
 	}
 	public TipoAsignacionGrupo getTipoAsignacion() {
 		return tipoAsignacion;
+	}
+	public boolean isRecordatorioInteligenteActivo() {
+		return recordatorioInteligenteActivo;
+	}
+	public void setRecordatorioInteligenteActivo(boolean recordatorioInteligenteActivo) {
+		this.recordatorioInteligenteActivo = recordatorioInteligenteActivo;
 	}
 }

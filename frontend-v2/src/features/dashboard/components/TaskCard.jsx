@@ -234,6 +234,10 @@ export default function TaskCard({
                   </Button>
                   {canUseSmartReminder && (
                     <Button
+                      className={cn(
+                        isSmartReminderActive &&
+                          "border-[color:var(--color-brand)] bg-[color:var(--state-active-bg)] text-[color:var(--state-active-text)]"
+                      )}
                       disabled={isUpdatingSmartReminder}
                       onClick={() =>
                         onToggleSmartReminder?.(task, !isSmartReminderActive)

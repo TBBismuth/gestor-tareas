@@ -32,10 +32,15 @@ public class TareaAsignadaGrupoResponse {
 	private LocalDateTime fechaEntregaInicial;
 	private LocalDateTime fechaEntregaActual;
 	private LocalDateTime fechaRevision;
+	private boolean recordatorioInteligenteActivo;
 
 	public TareaAsignadaGrupoResponse() {
 	}
 	public TareaAsignadaGrupoResponse(AsignacionGrupoMiembro asignacionMiembro) {
+		this(asignacionMiembro, false);
+	}
+	public TareaAsignadaGrupoResponse(AsignacionGrupoMiembro asignacionMiembro,
+			boolean recordatorioInteligenteActivo) {
 		Tarea tarea = asignacionMiembro.getTareaGenerada();
 		if (tarea != null) {
 			this.idTarea = tarea.getIdTarea();
@@ -49,6 +54,7 @@ public class TareaAsignadaGrupoResponse {
 			this.fechaCompletada = tarea.getFechaCompletada();
 			this.estado = tarea.getEstado().name();
 		}
+		this.recordatorioInteligenteActivo = recordatorioInteligenteActivo;
 		this.idAsignacionGrupoMiembro = asignacionMiembro.getIdAsignacionGrupoMiembro();
 		AsignacionGrupo asignacion = asignacionMiembro.getAsignacionGrupo();
 		if (asignacion != null) {
@@ -130,5 +136,11 @@ public class TareaAsignadaGrupoResponse {
 	}
 	public LocalDateTime getFechaRevision() {
 		return fechaRevision;
+	}
+	public boolean isRecordatorioInteligenteActivo() {
+		return recordatorioInteligenteActivo;
+	}
+	public void setRecordatorioInteligenteActivo(boolean recordatorioInteligenteActivo) {
+		this.recordatorioInteligenteActivo = recordatorioInteligenteActivo;
 	}
 }

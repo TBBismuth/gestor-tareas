@@ -21,6 +21,7 @@ public class TareaResponse {
 	private Long idUsuario;
 	private String estado;
 	private String emailUsuarioQueCompleta;
+	private boolean recordatorioInteligenteActivo;
 
 	public TareaResponse() {
 	}
@@ -44,6 +45,9 @@ public class TareaResponse {
 		this.emailUsuarioQueCompleta = emailUsuarioQueCompleta;
 	}
 	public TareaResponse(Tarea tarea) {
+		this(tarea, false);
+	}
+	public TareaResponse(Tarea tarea, boolean recordatorioInteligenteActivo) {
 		this.idTarea = tarea.getIdTarea();
 		this.titulo = tarea.getTitulo();
 		this.descripcion = tarea.getDescripcion();
@@ -58,6 +62,7 @@ public class TareaResponse {
 		this.idUsuario = tarea.getUsuario() != null ? tarea.getUsuario().getIdUsuario() : null;
 		this.estado = tarea.getEstado().name();
 		this.emailUsuarioQueCompleta = tarea.getUsuarioQueCompleta() != null ? tarea.getUsuarioQueCompleta().getEmail() : null;
+		this.recordatorioInteligenteActivo = recordatorioInteligenteActivo;
 	}
 
 	public Long getIdTarea() {
@@ -143,5 +148,11 @@ public class TareaResponse {
 	}
 	public void setEmailUsuarioQueCompleta(String emailUsuarioQueCompleta) {
 		this.emailUsuarioQueCompleta = emailUsuarioQueCompleta;
+	}
+	public boolean isRecordatorioInteligenteActivo() {
+		return recordatorioInteligenteActivo;
+	}
+	public void setRecordatorioInteligenteActivo(boolean recordatorioInteligenteActivo) {
+		this.recordatorioInteligenteActivo = recordatorioInteligenteActivo;
 	}
 }

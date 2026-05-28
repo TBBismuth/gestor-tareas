@@ -58,8 +58,7 @@ public class TareaController {
 	})
 	public List<TareaResponse> listarTareas(Principal principal){	// Principal es una interfaz que representa al usuario autenticado
 		List<Tarea> tareas = ts.obtenerTodas(principal.getName());
-		return tareas.stream().map(TareaResponse::new)	// Convierte cada Tarea en un TareaResponse
-				.toList(); // Recoge el resultado en una nueva lista que es devuelta como respuesta
+		return ts.crearTareaResponses(tareas, principal.getName());
 	}
 	
 	@PostMapping("/add")
@@ -74,7 +73,7 @@ public class TareaController {
 	})
 	public TareaResponse aniadirTarea(@Valid @RequestBody TareaRequest tareaRequest, Principal principal){
 		Tarea tarea = ts.guardarTarea(tareaRequest, principal.getName());
-		return new TareaResponse(tarea);
+		return ts.crearTareaResponse(tarea, principal.getName());
 	}
 	
 	@GetMapping("/{id}")
@@ -92,7 +91,7 @@ public class TareaController {
 	})
 	public TareaResponse listarTareaId(@PathVariable Long id, Principal principal) {	//Con @PathVariable indico que el {id} de la url es el valor de id
 		Tarea tarea = ts.obtenerPorId(id, principal.getName());
-		return new TareaResponse(tarea);
+		return ts.crearTareaResponse(tarea, principal.getName());
 	}
 	
 	@DeleteMapping("/delete/{id}")
@@ -129,7 +128,7 @@ public class TareaController {
 	})
 	public TareaResponse modificarTarea(@PathVariable Long id,@Valid @RequestBody TareaRequest tareaRequest, Principal principal) {
 		Tarea tarea = ts.actualizarPorId(id, tareaRequest, principal.getName());
-		return new TareaResponse(tarea);
+		return ts.crearTareaResponse(tarea, principal.getName());
 	}
 	
 	@GetMapping("/titulo")
@@ -143,7 +142,7 @@ public class TareaController {
 	})
 	public List<TareaResponse> listarPorTitulo(Principal principal){
 		List<Tarea> tareas = ts.obtenerPorTitulo(principal.getName());
-		return tareas.stream().map(TareaResponse::new).toList();
+		return ts.crearTareaResponses(tareas, principal.getName());
 	}
 	
 	@GetMapping("/tiempo")
@@ -157,7 +156,7 @@ public class TareaController {
 	})
 	public List<TareaResponse> listarPorTiempo(Principal principal){
 		List<Tarea> tareas = ts.obtenerPorTiempo(principal.getName());
-		return tareas.stream().map(TareaResponse::new).toList();
+		return ts.crearTareaResponses(tareas, principal.getName());
 	}
 	
 	@GetMapping("/prioridad")
@@ -171,7 +170,7 @@ public class TareaController {
 	})
 	public List<TareaResponse> listarPorPrioridad(Principal principal){
 		List<Tarea> tareas = ts.obtenerPorPrioridad(principal.getName());
-		return tareas.stream().map(TareaResponse::new).toList();
+		return ts.crearTareaResponses(tareas, principal.getName());
 	}
 	
 	@GetMapping("/fecha")
@@ -185,7 +184,7 @@ public class TareaController {
 	})
 	public List<TareaResponse> listarPorFechaEntrega(Principal principal){
 		List<Tarea> tareas = ts.obtenerPorFechaEntrega(principal.getName());
-		return tareas.stream().map(TareaResponse::new).toList();
+		return ts.crearTareaResponses(tareas, principal.getName());
 	}
 	
 	@GetMapping("/proximas")
@@ -199,7 +198,7 @@ public class TareaController {
 	})
 	public List<TareaResponse> listarTareasProximas(Principal principal) {
 		List<Tarea> tareas = ts.obtenerTareasProximas(principal.getName());
-		return tareas.stream().map(TareaResponse::new).toList();
+		return ts.crearTareaResponses(tareas, principal.getName());
 	}
 	
 	@GetMapping("/vencidas")
@@ -213,7 +212,7 @@ public class TareaController {
 	})
 	public List<TareaResponse> listarTareasVencidas(Principal principal) {
 		List<Tarea> tareas = ts.obtenerTareasVencidas(principal.getName());
-		return tareas.stream().map(TareaResponse::new).toList();
+		return ts.crearTareaResponses(tareas, principal.getName());
 	}
 	
 	@GetMapping("/asignadas-grupo")
@@ -318,7 +317,7 @@ public class TareaController {
 	})
 	public List<TareaResponse> filtrarPorPrioridad(@PathVariable String prioridad, Principal principal) {
 		List<Tarea> tareas = ts.filtrarPorPrioridad(prioridad, principal.getName());
-		return tareas.stream().map(TareaResponse::new).toList();
+		return ts.crearTareaResponses(tareas, principal.getName());
 	}
 	
 	@GetMapping("/filtrar/tiempo/{tiempo}")
@@ -335,7 +334,7 @@ public class TareaController {
 	})
 	public List<TareaResponse> filtrarPorTiempo(@PathVariable int tiempo, Principal principal) {
 		List<Tarea> tareas = ts.filtrarPorTiempo(tiempo, principal.getName());
-		return tareas.stream().map(TareaResponse::new).toList();
+		return ts.crearTareaResponses(tareas, principal.getName());
 	}
 	
 	@GetMapping("/filtrar/palabras/{palabrasClave}")
@@ -352,7 +351,7 @@ public class TareaController {
 	})
 	public List<TareaResponse> filtrarPorPalabrasClave(@PathVariable String palabrasClave, Principal principal) {
 		List<Tarea> tareas = ts.filtrarPorPalabrasClave(palabrasClave, principal.getName());
-		return tareas.stream().map(TareaResponse::new).toList();
+		return ts.crearTareaResponses(tareas, principal.getName());
 	}
 	
 	@GetMapping("/filtrar/categoria/{idCategoria}")
@@ -369,7 +368,7 @@ public class TareaController {
 	})
 	public List<TareaResponse> filtrarPorCategoria(@PathVariable Long idCategoria, Principal principal) {
 		List<Tarea> tareas = ts.filtrarPorCategoria(idCategoria, principal.getName());
-		return tareas.stream().map(TareaResponse::new).toList();
+		return ts.crearTareaResponses(tareas, principal.getName());
 	}
 	
 	/* Metodo deshabilitado hasta tener roles de usuario.
@@ -394,7 +393,7 @@ public class TareaController {
 	})
 	public List<TareaResponse> filtrarPorEstado(@PathVariable Estado estado, Principal principal) {
 		List<Tarea> tareas = ts.filtrarPorEstado(estado, principal.getName());
-		return tareas.stream().map(TareaResponse::new).toList();
+		return ts.crearTareaResponses(tareas, principal.getName());
 	}
 	
 	@GetMapping("/estado/{id}")
@@ -461,7 +460,7 @@ public class TareaController {
 	})
 	public List<TareaResponse> listarTareasHoy(Principal principal) {
 		List<Tarea> tareas = ts.obtenerTareasHoy(principal.getName());
-		return tareas.stream().map(TareaResponse::new).toList();
+		return ts.crearTareaResponses(tareas, principal.getName());
 	}
 	
 }

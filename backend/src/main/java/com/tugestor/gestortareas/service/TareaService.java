@@ -16,6 +16,8 @@ public interface TareaService {
 	 *Por lo tanto es lo mismo que poner:
 	 *(public abstract) Tarea guardarTarea(Tarea tarea); */
 	Tarea guardarTarea(TareaRequest tarea, String emailUsuarioCreador);
+	TareaResponse crearTareaResponse(Tarea tarea, String emailUsuarioCreador);
+	List<TareaResponse> crearTareaResponses(List<Tarea> tareas, String emailUsuarioCreador);
 	List<Tarea> obtenerTodas(String emailUsuarioCreador);
 	Tarea obtenerPorId(Long id, String emailUsuarioCreador);
 	void eliminarPorId(Long id, String emailUsuarioCreador);

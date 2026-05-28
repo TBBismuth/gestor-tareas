@@ -20,7 +20,8 @@ export function mapTaskResponseToCardTask(task, categoryById = new Map()) {
     iconoCategoria: category?.icono || null,
     idUsuario: task.idUsuario,
     emailUsuarioQueCompleta: task.emailUsuarioQueCompleta,
-    recordatorioInteligenteActivo: task.recordatorioInteligenteActivo ?? task.recordatorioActivo,
+    recordatorioInteligenteActivo:
+      task.recordatorioInteligenteActivo === true || task.recordatorioActivo === true,
     origenTarea: "PERSONAL",
     idGrupoOrigen: null,
     nombreGrupoOrigen: null,
@@ -52,7 +53,8 @@ export function mapAssignedGroupTaskResponseToCardTask(task, categoryById = new 
     iconoCategoria: task.iconoCategoria || task.categoriaIcono || category?.icono || null,
     idUsuario: task.idUsuario,
     emailUsuarioQueCompleta: task.emailUsuarioQueCompleta,
-    recordatorioInteligenteActivo: task.recordatorioInteligenteActivo ?? task.recordatorioActivo,
+    recordatorioInteligenteActivo:
+      task.recordatorioInteligenteActivo === true || task.recordatorioActivo === true,
     origenTarea: "GRUPO",
     idGrupoOrigen: task.idGrupoOrigen || null,
     nombreGrupoOrigen: task.nombreGrupoOrigen || null,
@@ -116,7 +118,8 @@ export function mapRecommendedTaskResponseToCardTask(task, categoryById = new Ma
     iconoCategoria: task.iconoCategoria || task.categoriaIcono || category?.icono || null,
     idUsuario: task.idUsuario,
     emailUsuarioQueCompleta: task.emailUsuarioQueCompleta,
-    recordatorioInteligenteActivo: task.recordatorioInteligenteActivo ?? task.recordatorioActivo,
+    recordatorioInteligenteActivo:
+      task.recordatorioInteligenteActivo === true || task.recordatorioActivo === true,
     origenTarea: task.origenTarea || "PERSONAL",
     idGrupoOrigen: task.idGrupoOrigen || null,
     nombreGrupoOrigen: task.nombreGrupoOrigen || null,

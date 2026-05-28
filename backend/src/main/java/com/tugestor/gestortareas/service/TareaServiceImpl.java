@@ -23,12 +23,14 @@ import com.tugestor.gestortareas.model.Grupo;
 import com.tugestor.gestortareas.model.OrigenTareaFiltro;
 import com.tugestor.gestortareas.model.Prioridad;
 import com.tugestor.gestortareas.model.Tarea;
+import com.tugestor.gestortareas.model.TipoRecordatorioTarea;
 import com.tugestor.gestortareas.model.Usuario;
 import com.tugestor.gestortareas.repository.AsignacionGrupoMiembroRepository;
 import com.tugestor.gestortareas.repository.CategoriaRepository;
 import com.tugestor.gestortareas.repository.EstadoFiltroTareaRepository;
 import com.tugestor.gestortareas.repository.GrupoMiembroRepository;
 import com.tugestor.gestortareas.repository.GrupoRepository;
+import com.tugestor.gestortareas.repository.RecordatorioTareaRepository;
 import com.tugestor.gestortareas.repository.TareaRepository;
 import com.tugestor.gestortareas.repository.UsuarioRepository;
 import com.tugestor.gestortareas.service.scoring.TareaInteligenteRankingService;
@@ -53,10 +55,12 @@ public class TareaServiceImpl implements TareaService{
 	private final GrupoRepository gr;
 	private final GrupoMiembroRepository gmr;
 	private final EstadoFiltroTareaRepository eftr;
+	private final RecordatorioTareaRepository rtr;
 	private final TareaInteligenteRankingService rankingInteligenteService;
 	public TareaServiceImpl(TareaRepository tr, CategoriaRepository cr, UsuarioRepository ur,
 			AsignacionGrupoMiembroRepository agmr, GrupoRepository gr, GrupoMiembroRepository gmr,
-			EstadoFiltroTareaRepository eftr, TareaInteligenteRankingService rankingInteligenteService) {
+			EstadoFiltroTareaRepository eftr, RecordatorioTareaRepository rtr,
+			TareaInteligenteRankingService rankingInteligenteService) {
 		this.tr = tr;
 		this.cr = cr;
 		this.ur = ur;
@@ -64,6 +68,7 @@ public class TareaServiceImpl implements TareaService{
 		this.gr = gr;
 		this.gmr = gmr;
 		this.eftr = eftr;
+		this.rtr = rtr;
 		this.rankingInteligenteService = rankingInteligenteService;
 	}
 	
@@ -94,6 +99,20 @@ public class TareaServiceImpl implements TareaService{
 			throw new ValidationException("La fecha de entrega no puede haber pasado.");
 		}
 		return tr.save(tarea);
+	}
+
+	@Override
+	public TareaResponse crearTareaResponse(Tarea tarea, String emailUsuarioCreador) {
+		return new TareaResponse(tarea, tieneRecordatorioInteligenteActivo(tarea, emailUsuarioCreador));
+	}
+
+	@Override
+	public List<TareaResponse> crearTareaResponses(List<Tarea> tareas, String emailUsuarioCreador) {
+		Set<Long> idsConRecordatorio = obtenerIdsTareasConRecordatorioInteligenteActivo(
+				tareas.stream().map(Tarea::getIdTarea).toList(), emailUsuarioCreador);
+		return tareas.stream()
+				.map(tarea -> new TareaResponse(tarea, idsConRecordatorio.contains(tarea.getIdTarea())))
+				.toList();
 	}
 	
 	@Override
@@ -258,7 +277,7 @@ public class TareaServiceImpl implements TareaService{
 		tarea.setUsuarioQueCompleta(usuarioAutenticado);
 		tr.save(tarea);
 		actualizarRevisionSiEsAsignacionGrupo(tarea);
-		return new TareaResponse(tarea);
+		return crearTareaResponse(tarea, emailUsuarioQueCompleta);
 	}
 	
 	@Override
@@ -290,17 +309,16 @@ public class TareaServiceImpl implements TareaService{
 	
 	@Override
 	public List<TareaAsignadaGrupoResponse> obtenerTareasAsignadasGrupo(String emailUsuarioCreador) {
-		return agmr.findTareasAsignadasGrupoUsuario(emailUsuarioCreador).stream()
-				.map(TareaAsignadaGrupoResponse::new)
-				.toList();
+		return mapearTareasAsignadasGrupo(
+				agmr.findTareasAsignadasGrupoUsuario(emailUsuarioCreador), emailUsuarioCreador);
 	}
 	
 	@Override
 	public List<TareaAsignadaGrupoResponse> obtenerTareasAsignadasGrupoPorGrupo(Long idGrupo,
 			String emailUsuarioCreador) {
-		return agmr.findTareasAsignadasGrupoUsuarioPorGrupo(emailUsuarioCreador, idGrupo).stream()
-				.map(TareaAsignadaGrupoResponse::new)
-				.toList();
+		return mapearTareasAsignadasGrupo(
+				agmr.findTareasAsignadasGrupoUsuarioPorGrupo(emailUsuarioCreador, idGrupo),
+				emailUsuarioCreador);
 	}
 	
 	@Override
@@ -331,14 +349,12 @@ public class TareaServiceImpl implements TareaService{
 				filtroNormalizado, emailUsuarioCreador, origen, asignacionesGrupo, idsTareasGrupo);
 		
 		if (criterioOrden == CriterioOrdenTareaCombinado.INTELIGENTE) {
-			return rankingInteligenteService.ordenarPorScoreDesc(contextos).stream()
-					.map(this::mapearContextoFiltroCombinado)
-					.toList();
+			return mapearContextosFiltroCombinado(
+					rankingInteligenteService.ordenarPorScoreDesc(contextos), emailUsuarioCreador);
 		}
 		
-		List<TareaFiltroCombinadoResponse> resultado = new ArrayList<>(contextos.stream()
-				.map(this::mapearContextoFiltroCombinado)
-				.toList());
+		List<TareaFiltroCombinadoResponse> resultado = new ArrayList<>(
+				mapearContextosFiltroCombinado(contextos, emailUsuarioCreador));
 		resultado.sort(comparadorFiltroCombinado(criterioOrden));
 		return resultado;
 	}
@@ -574,11 +590,68 @@ public class TareaServiceImpl implements TareaService{
 		return contextos;
 	}
 	
-	private TareaFiltroCombinadoResponse mapearContextoFiltroCombinado(TareaScoringContext contexto) {
+	private TareaFiltroCombinadoResponse mapearContextoFiltroCombinado(TareaScoringContext contexto,
+			Set<Long> idsConRecordatorio) {
+		Long idTarea = contexto.getTarea() != null ? contexto.getTarea().getIdTarea() : null;
+		boolean recordatorioActivo = idTarea != null && idsConRecordatorio.contains(idTarea);
 		if (contexto.tieneAsignacionGrupo()) {
-			return new TareaFiltroCombinadoResponse(contexto.getAsignacionGrupoMiembro());
+			return new TareaFiltroCombinadoResponse(contexto.getAsignacionGrupoMiembro(), recordatorioActivo);
 		}
-		return new TareaFiltroCombinadoResponse(contexto.getTarea());
+		return new TareaFiltroCombinadoResponse(contexto.getTarea(), recordatorioActivo);
+	}
+
+	private List<TareaFiltroCombinadoResponse> mapearContextosFiltroCombinado(
+			List<TareaScoringContext> contextos, String emailUsuarioCreador) {
+		Set<Long> idsConRecordatorio = obtenerIdsTareasConRecordatorioInteligenteActivo(
+				contextos.stream()
+						.map(TareaScoringContext::getTarea)
+						.filter(Objects::nonNull)
+						.map(Tarea::getIdTarea)
+						.toList(),
+				emailUsuarioCreador);
+		return contextos.stream()
+				.map(contexto -> mapearContextoFiltroCombinado(contexto, idsConRecordatorio))
+				.toList();
+	}
+
+	private List<TareaAsignadaGrupoResponse> mapearTareasAsignadasGrupo(
+			List<AsignacionGrupoMiembro> asignaciones, String emailUsuarioCreador) {
+		Set<Long> idsConRecordatorio = obtenerIdsTareasConRecordatorioInteligenteActivo(
+				asignaciones.stream()
+						.map(AsignacionGrupoMiembro::getTareaGenerada)
+						.filter(Objects::nonNull)
+						.map(Tarea::getIdTarea)
+						.toList(),
+				emailUsuarioCreador);
+		return asignaciones.stream()
+				.map(asignacion -> {
+					Tarea tarea = asignacion.getTareaGenerada();
+					boolean recordatorioActivo = tarea != null
+							&& idsConRecordatorio.contains(tarea.getIdTarea());
+					return new TareaAsignadaGrupoResponse(asignacion, recordatorioActivo);
+				})
+				.toList();
+	}
+
+	private boolean tieneRecordatorioInteligenteActivo(Tarea tarea, String emailUsuarioCreador) {
+		if (tarea == null || tarea.getIdTarea() == null) {
+			return false;
+		}
+		return obtenerIdsTareasConRecordatorioInteligenteActivo(
+				List.of(tarea.getIdTarea()), emailUsuarioCreador).contains(tarea.getIdTarea());
+	}
+
+	private Set<Long> obtenerIdsTareasConRecordatorioInteligenteActivo(
+			List<Long> idsTareas, String emailUsuarioCreador) {
+		List<Long> idsNormalizados = idsTareas.stream()
+				.filter(Objects::nonNull)
+				.distinct()
+				.toList();
+		if (idsNormalizados.isEmpty()) {
+			return Set.of();
+		}
+		return new HashSet<>(rtr.findActiveTaskIdsByUsuarioEmailAndTipo(
+				emailUsuarioCreador, TipoRecordatorioTarea.RECORDATORIO_INTELIGENTE, idsNormalizados));
 	}
 	
 	private Usuario obtenerUsuarioAutenticado(String emailUsuario) {
