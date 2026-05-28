@@ -1,5 +1,14 @@
 import { useState } from "react";
-import { AlignLeft, Check, ChevronDown, Pencil, Trash2, Users } from "lucide-react";
+import {
+  AlignLeft,
+  Bell,
+  BellOff,
+  Check,
+  ChevronDown,
+  Pencil,
+  Trash2,
+  Users,
+} from "lucide-react";
 import Badge from "../../../components/ui/Badge.jsx";
 import Button from "../../../components/ui/Button.jsx";
 import { cn } from "../../../lib/cn";
@@ -38,9 +47,13 @@ const groupReviewHeaderBadges = {
 export default function TaskCard({
   isCompleting = false,
   isDeleting = false,
+  isUpdatingSmartReminder = false,
   onComplete,
   onDelete,
   onEdit,
+  onToggleSmartReminder,
+  showSmartReminderAction = false,
+  smartReminderActive,
   task,
 }) {
   const [expanded, setExpanded] = useState(false);
@@ -56,6 +69,11 @@ export default function TaskCard({
     isGroupTask &&
     (task.estadoRevisionAsignacion === "PENDIENTE" ||
       task.estadoRevisionAsignacion === "REABIERTA");
+  const canUseSmartReminder =
+    showSmartReminderAction && !isGroupTask && !isCompleted && Boolean(task.fechaEntrega);
+  const isSmartReminderActive =
+    smartReminderActive ?? task.recordatorioInteligenteActivo ?? false;
+  const SmartReminderIcon = isSmartReminderActive ? BellOff : Bell;
   const groupReviewHeaderBadge = isGroupTask
     ? groupReviewHeaderBadges[task.estadoRevisionAsignacion]
     : null;
@@ -214,6 +232,22 @@ export default function TaskCard({
                     <Trash2 size={17} />
                     {isDeleting ? "Eliminando..." : "Borrar"}
                   </Button>
+                  {canUseSmartReminder && (
+                    <Button
+                      disabled={isUpdatingSmartReminder}
+                      onClick={() =>
+                        onToggleSmartReminder?.(task, !isSmartReminderActive)
+                      }
+                      variant="secondary"
+                    >
+                      <SmartReminderIcon size={17} />
+                      {isUpdatingSmartReminder
+                        ? "Actualizando..."
+                        : isSmartReminderActive
+                          ? "Desactivar recordatorio"
+                          : "Activar recordatorio"}
+                    </Button>
+                  )}
                 </>
               )}
             </div>

@@ -6,6 +6,10 @@ import AppShell from "../../components/layout/AppShell.jsx";
 import RightSidebar from "../../components/layout/RightSidebar.jsx";
 import ViewActionsBar from "../../components/layout/ViewActionsBar.jsx";
 import Button from "../../components/ui/Button.jsx";
+import NotificationBell, {
+  NOTIFICATION_PREFERENCES_QUERY_KEY,
+} from "../notifications/components/NotificationBell.jsx";
+import { getNotificationPreferences } from "../notifications/api/notificationsApi.js";
 import CategoryFormModal from "./components/CategoryFormModal.jsx";
 import CategoryGrid from "./components/CategoryGrid.jsx";
 import DeleteCategoryModal from "./components/DeleteCategoryModal.jsx";
@@ -48,6 +52,7 @@ import {
   getRecommendedTasks,
   getSavedAdvancedFilter,
   saveAdvancedFilter,
+  updateSmartReminder,
   updateTask,
 } from "./api/tasksApi.js";
 import {
@@ -210,6 +215,7 @@ export default function DashboardPage() {
   const [isMegaFilterActive, setIsMegaFilterActive] = useState(false);
   const [appliedMegaFilters, setAppliedMegaFilters] = useState(null);
   const [megaFilterRunId, setMegaFilterRunId] = useState(0);
+  const [smartReminderByTaskId, setSmartReminderByTaskId] = useState({});
   const categoriesQuery = useQuery({
     queryKey: CATEGORIES_QUERY_KEY,
     queryFn: getMyCategories,
@@ -234,6 +240,10 @@ export default function DashboardPage() {
     queryKey: GROUPS_QUERY_KEY,
     queryFn: getMyGroups,
     enabled: true,
+  });
+  const notificationPreferencesQuery = useQuery({
+    queryKey: NOTIFICATION_PREFERENCES_QUERY_KEY,
+    queryFn: getNotificationPreferences,
   });
   const savedAdvancedFilterQuery = useQuery({
     queryKey: ["tasks", "saved-advanced-filter"],
@@ -324,6 +334,22 @@ export default function DashboardPage() {
     },
     onError: () => {
       toast.error("No se pudo eliminar la tarea.");
+    },
+  });
+  const smartReminderMutation = useMutation({
+    mutationFn: ({ task, activo }) => updateSmartReminder(task.idTarea, activo),
+    onSuccess: (recordatorio, variables) => {
+      toast.success("Recordatorio inteligente actualizado.");
+      setSmartReminderByTaskId((current) => ({
+        ...current,
+        [variables.task.idTarea]: recordatorio?.activo ?? variables.activo,
+      }));
+      queryClient.invalidateQueries({ queryKey: MY_TASKS_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: RECOMMENDED_TASKS_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ["tasks", "combined-filter"] });
+    },
+    onError: (error) => {
+      toast.error(getActionErrorMessage(error, "No se pudo actualizar el recordatorio inteligente."));
     },
   });
   const createCategoryMutation = useMutation({
@@ -793,6 +819,14 @@ export default function DashboardPage() {
     return createTaskMutation.mutateAsync(payload);
   }
 
+  function handleToggleSmartReminder(task, activo) {
+    if (smartReminderMutation.isPending) {
+      return;
+    }
+
+    smartReminderMutation.mutate({ task, activo });
+  }
+
   return (
     <AppShell
       focusArea={focusArea}
@@ -845,10 +879,13 @@ export default function DashboardPage() {
           {showQuickTaskSearch && (
             <QuickTaskSearch value={quickSearch} onChange={setQuickSearch} />
           )}
-          <Button className="w-full sm:w-auto" onClick={handleHeaderAction}>
-            <Plus size={17} />
-            {headerActionLabel}
-          </Button>
+          <div className="flex items-center gap-2">
+            <NotificationBell groups={groups} />
+            <Button className="flex-1 sm:w-auto sm:flex-none" onClick={handleHeaderAction}>
+              <Plus size={17} />
+              {headerActionLabel}
+            </Button>
+          </div>
         </div>
       </div>
       {isMegaFilterActive && (
@@ -882,7 +919,14 @@ export default function DashboardPage() {
               onCompleteTask={(task) => completeTaskMutation.mutate(task)}
               onDeleteTask={handleDeleteTask}
               onEditTask={handleEditTask}
+              onToggleSmartReminder={handleToggleSmartReminder}
+              showSmartReminderAction={
+                notificationPreferencesQuery.data?.recordatorioInteligenteActivo === true
+              }
+              smartReminderByTaskId={smartReminderByTaskId}
               tasks={filteredMegaTasks}
+              isUpdatingSmartReminder={smartReminderMutation.isPending}
+              updatingSmartReminderTaskId={smartReminderMutation.variables?.task?.idTarea}
             />
           )}
         </>
@@ -918,7 +962,14 @@ export default function DashboardPage() {
               onCompleteTask={(task) => completeTaskMutation.mutate(task)}
               onDeleteTask={handleDeleteTask}
               onEditTask={handleEditTask}
+              onToggleSmartReminder={handleToggleSmartReminder}
+              showSmartReminderAction={
+                notificationPreferencesQuery.data?.recordatorioInteligenteActivo === true
+              }
+              smartReminderByTaskId={smartReminderByTaskId}
               tasks={filteredTasks}
+              isUpdatingSmartReminder={smartReminderMutation.isPending}
+              updatingSmartReminderTaskId={smartReminderMutation.variables?.task?.idTarea}
             />
           )}
         </>
@@ -1013,7 +1064,14 @@ export default function DashboardPage() {
               onCompleteTask={(task) => completeTaskMutation.mutate(task)}
               onDeleteTask={handleDeleteTask}
               onEditTask={handleEditTask}
+              onToggleSmartReminder={handleToggleSmartReminder}
+              showSmartReminderAction={
+                notificationPreferencesQuery.data?.recordatorioInteligenteActivo === true
+              }
+              smartReminderByTaskId={smartReminderByTaskId}
               tasks={filteredRecommendedTasks}
+              isUpdatingSmartReminder={smartReminderMutation.isPending}
+              updatingSmartReminderTaskId={smartReminderMutation.variables?.task?.idTarea}
             />
           )}
         </>

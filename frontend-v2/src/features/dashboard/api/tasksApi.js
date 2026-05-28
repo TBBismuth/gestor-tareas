@@ -49,3 +49,8 @@ export async function updateTask(id, payload) {
 export async function deleteTask(id) {
   await apiClient.delete(`/tarea/delete/${id}`);
 }
+
+export async function updateSmartReminder(id, activo) {
+  const { data } = await apiClient.patch(`/tarea/${id}/recordatorio-inteligente`, { activo });
+  return data;
+}
