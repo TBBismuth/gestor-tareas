@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,14 +35,17 @@ public class NotificacionServiceImpl implements NotificacionService {
 	private final PreferenciasNotificacionRepository pnr;
 	private final TareaRepository tr;
 	private final AsignacionGrupoMiembroRepository agmr;
+	private final ApplicationEventPublisher eventPublisher;
 
 	public NotificacionServiceImpl(NotificacionRepository nr, UsuarioRepository ur,
-			PreferenciasNotificacionRepository pnr, TareaRepository tr, AsignacionGrupoMiembroRepository agmr) {
+			PreferenciasNotificacionRepository pnr, TareaRepository tr, AsignacionGrupoMiembroRepository agmr,
+			ApplicationEventPublisher eventPublisher) {
 		this.nr = nr;
 		this.ur = ur;
 		this.pnr = pnr;
 		this.tr = tr;
 		this.agmr = agmr;
+		this.eventPublisher = eventPublisher;
 	}
 
 	@Override
@@ -123,7 +127,7 @@ public class NotificacionServiceImpl implements NotificacionService {
 		notificacion.setFechaCreacion(fechaCreacion);
 		notificacion.setCerrada(false);
 		notificacion.setPushEstado(EstadoPushNotificacion.NO_APLICA);
-		nr.save(notificacion);
+		guardarYPublicar(notificacion);
 	}
 
 	@Override
@@ -150,7 +154,7 @@ public class NotificacionServiceImpl implements NotificacionService {
 		notificacion.setFechaCreacion(ahora);
 		notificacion.setCerrada(false);
 		notificacion.setPushEstado(EstadoPushNotificacion.NO_APLICA);
-		nr.save(notificacion);
+		guardarYPublicar(notificacion);
 	}
 
 	private boolean debeCrearAviso24h(PreferenciasNotificacion preferencias, Tarea tarea) {
@@ -200,7 +204,13 @@ public class NotificacionServiceImpl implements NotificacionService {
 		notificacion.setFechaCreacion(ahora);
 		notificacion.setCerrada(false);
 		notificacion.setPushEstado(EstadoPushNotificacion.NO_APLICA);
-		nr.save(notificacion);
+		guardarYPublicar(notificacion);
+	}
+
+	private Notificacion guardarYPublicar(Notificacion notificacion) {
+		Notificacion guardada = nr.save(notificacion);
+		eventPublisher.publishEvent(new NotificacionCreadaEvent(guardada.getIdNotificacion()));
+		return guardada;
 	}
 
 	private void validarPropietario(Notificacion notificacion, String emailUsuario) {
