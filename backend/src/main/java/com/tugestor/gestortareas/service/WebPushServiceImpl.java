@@ -67,6 +67,11 @@ public class WebPushServiceImpl implements WebPushService {
 					properties.getVapidPublicKey().trim(),
 					properties.getVapidPrivateKey().trim(),
 					properties.getVapidSubject().trim());
+		} catch (LinkageError error) {
+			marcarFallida(notificacion, "Dependencia Web Push no disponible.");
+			logger.error("No se pudo inicializar Web Push por un problema de dependencias: {}",
+					error.getClass().getSimpleName());
+			return;
 		} catch (Exception ex) {
 			marcarFallida(notificacion, "No se pudo inicializar Web Push.");
 			logger.error("No se pudo inicializar Web Push con la configuracion VAPID.", ex);
@@ -93,6 +98,10 @@ public class WebPushServiceImpl implements WebPushService {
 						darDeBajaSubscripcion(subscripcion);
 					}
 				}
+			} catch (LinkageError error) {
+				ultimoError = "Dependencia Web Push no disponible.";
+				logger.error("Fallo enviando Web Push por un problema de dependencias: {}",
+						error.getClass().getSimpleName());
 			} catch (Exception ex) {
 				ultimoError = "No se pudo enviar Web Push.";
 				logger.warn("Fallo enviando Web Push para una subscripcion activa: {}", ex.getClass().getSimpleName());

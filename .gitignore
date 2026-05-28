@@ -78,3 +78,4 @@ frontend-v2/node_modules/
 # Build outputs
 dist/
 frontend-v2/dist/
+frontend-v2/.env
