@@ -595,6 +595,55 @@
     flex: 0 0 auto;
   }
 
+  .mega-filter-shell {
+    padding: 0.75rem 0.75rem 1.45rem;
+  }
+
+  .mega-filter-shell h2 {
+    font-size: 1rem;
+    line-height: 1.35;
+  }
+
+  .mega-filter-content {
+    gap: 0.65rem;
+    margin-top: 0.7rem;
+  }
+
+  .mega-filter-content > .grid {
+    gap: 0.65rem;
+  }
+
+  .mega-filter-content label,
+  .mega-filter-content [aria-disabled] {
+    min-width: 0;
+  }
+
+  .mega-filter-content label > div:first-child,
+  .mega-filter-content .relative > div:first-child,
+  .mega-filter-content [aria-disabled] .relative > div:first-child {
+    min-height: 1.35rem;
+    margin-bottom: 0.15rem;
+  }
+
+  .mega-filter-content label > span,
+  .mega-filter-content .relative > div:nth-child(2) > button {
+    min-height: 2.25rem;
+  }
+
+  .mega-filter-content input {
+    font-size: 0.875rem;
+  }
+
+  .mega-filter-content .absolute.left-0.top-full {
+    min-width: 0;
+    max-width: calc(100vw - 2rem);
+  }
+
+  .mega-filter-content button[type="submit"],
+  .mega-filter-content button[type="button"] {
+    min-height: 2.35rem;
+  }
+
   .group-assignments-admin-header--hidden-mobile,
   .group-assignments-list-pane--hidden-mobile,
   .group-assignments-detail-pane--hidden-mobile {

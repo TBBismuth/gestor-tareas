@@ -364,7 +364,7 @@ export default function MegaFilterBar({
 
   return (
     <header
-      className="relative rounded-panel border border-app bg-panel px-4 pb-6 pt-4 shadow-panel"
+      className="mega-filter-shell relative rounded-panel border border-app bg-panel px-4 pb-6 pt-4 shadow-panel"
       onClick={onFocus}
     >
       <div
