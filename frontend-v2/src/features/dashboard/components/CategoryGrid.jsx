@@ -7,7 +7,7 @@ export default function CategoryGrid({ categories, onDelete, onEdit }) {
     <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
       {categories.map((category, index) => (
         <article
-          className="stagger-card category-card relative overflow-hidden rounded-panel border border-app bg-card p-4 shadow-card"
+          className="stagger-card dashboard-category-card category-card relative overflow-hidden rounded-panel border border-app bg-card p-4 shadow-card"
           key={category.idCategoria}
           style={{ "--stagger-delay": `${Math.min(index * 35, 250)}ms` }}
         >
@@ -18,12 +18,12 @@ export default function CategoryGrid({ categories, onDelete, onEdit }) {
               aria-hidden="true"
             />
           )}
-          <div className="relative z-10 flex min-h-28 flex-col justify-between gap-4">
+          <div className="dashboard-category-card-body relative z-10 flex min-h-28 flex-col justify-between gap-4">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   {category.icono && (
-                    <span className="grid size-9 shrink-0 place-items-center rounded-control border border-app bg-[color:var(--state-inactive-bg)] text-lg">
+                    <span className="dashboard-category-card-icon grid size-9 shrink-0 place-items-center rounded-control border border-app bg-[color:var(--state-inactive-bg)] text-lg">
                       {category.icono}
                     </span>
                   )}
@@ -34,7 +34,7 @@ export default function CategoryGrid({ categories, onDelete, onEdit }) {
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="dashboard-category-card-actions flex flex-wrap items-center gap-2">
               {category.protegida ? (
                 <Badge>Categoría base</Badge>
               ) : (
