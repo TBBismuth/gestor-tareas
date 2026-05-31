@@ -197,6 +197,10 @@
   animation-delay: var(--stagger-delay, 0ms);
 }
 
+.task-flip-item {
+  transform: translateZ(0);
+}
+
 @keyframes stagger-card-in {
   from {
     opacity: 0;

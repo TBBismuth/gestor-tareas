@@ -46,6 +46,7 @@ const groupReviewHeaderBadges = {
 
 export default function TaskCard({
   animationDelay,
+  collapseSignal,
   isCompleting = false,
   isDeleting = false,
   isUpdatingSmartReminder = false,
@@ -107,6 +108,10 @@ export default function TaskCard({
     const timeoutId = window.setTimeout(() => setDetailMounted(false), 220);
     return () => window.clearTimeout(timeoutId);
   }, [expanded]);
+
+  useEffect(() => {
+    setExpanded(false);
+  }, [collapseSignal]);
 
   return (
     <article
