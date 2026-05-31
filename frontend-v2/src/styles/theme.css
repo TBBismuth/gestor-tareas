@@ -1158,6 +1158,16 @@
 }
 
 @media (max-width: 640px) {
+  :root {
+    --category-card-bg-image: url("/backgrounds/category-card-mobile-light.webp");
+    --task-card-bg-image: url("/backgrounds/task-card-mobile-light.webp");
+  }
+
+  :root[data-theme="dark"] {
+    --category-card-bg-image: url("/backgrounds/category-card-mobile-dark.webp");
+    --task-card-bg-image: url("/backgrounds/task-card-mobile-dark.webp");
+  }
+
   .task-card-shell {
     --task-priority-width: 0.55rem;
     --task-state-width: 0.55rem;
