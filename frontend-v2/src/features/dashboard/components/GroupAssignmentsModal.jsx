@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ClipboardList, Plus, Users } from "lucide-react";
+import { ArrowLeft, ClipboardList, Plus, Users } from "lucide-react";
 import { toast } from "sonner";
 import Badge from "../../../components/ui/Badge.jsx";
 import Button from "../../../components/ui/Button.jsx";
@@ -252,6 +252,7 @@ function AdminAssignmentsView({ group, open }) {
   const queryClient = useQueryClient();
   const [selectedAssignmentId, setSelectedAssignmentId] = useState(null);
   const [formOpen, setFormOpen] = useState(false);
+  const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
   const [recipientToValidate, setRecipientToValidate] = useState(null);
   const [recipientToReopen, setRecipientToReopen] = useState(null);
   const groupId = group?.idGrupo;
@@ -274,6 +275,7 @@ function AdminAssignmentsView({ group, open }) {
     if (!open) {
       setSelectedAssignmentId(null);
       setFormOpen(false);
+      setMobileDetailOpen(false);
       setRecipientToValidate(null);
       setRecipientToReopen(null);
     }
@@ -290,6 +292,7 @@ function AdminAssignmentsView({ group, open }) {
     setFormOpen(false);
     if (assignmentId) {
       setSelectedAssignmentId(assignmentId);
+      setMobileDetailOpen(true);
     }
     queryClient.invalidateQueries({ queryKey: ["groups", groupId, "assignments"] });
     queryClient.invalidateQueries({ queryKey: ["groups", groupId, "assignments", assignmentId] });
@@ -340,6 +343,11 @@ function AdminAssignmentsView({ group, open }) {
     reopenMutation.variables?.recipient?.idAsignacionGrupoMiembro ||
     null;
 
+  function handleSelectAssignment(assignment) {
+    setSelectedAssignmentId(assignment.idAsignacionGrupo);
+    setMobileDetailOpen(true);
+  }
+
   const content = (() => {
     if (assignmentsQuery.isLoading) {
       return <StateMessage>Cargando asignaciones...</StateMessage>;
@@ -354,25 +362,47 @@ function AdminAssignmentsView({ group, open }) {
     }
 
     return (
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.25fr)]">
-        <section>
+      <div className="group-assignments-admin-layout grid gap-4 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.25fr)]">
+        <section
+          className={cn(
+            "group-assignments-list-pane",
+            mobileDetailOpen && "group-assignments-list-pane--hidden-mobile"
+          )}
+        >
           <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-primary">
             <ClipboardList size={17} />
             Asignaciones
           </h3>
-          <div className="grid max-h-[60vh] gap-2 overflow-y-auto pr-1">
+          <div className="group-assignments-list-scroll grid max-h-[60vh] gap-2 overflow-y-auto pr-1">
             {assignments.map((assignment) => (
               <AssignmentSummaryCard
                 active={String(selectedAssignment?.idAsignacionGrupo) === String(assignment.idAsignacionGrupo)}
                 assignment={assignment}
                 key={assignment.idAsignacionGrupo}
-                onSelect={(nextAssignment) => setSelectedAssignmentId(nextAssignment.idAsignacionGrupo)}
+                onSelect={handleSelectAssignment}
               />
             ))}
           </div>
         </section>
-        <section>
-          <h3 className="mb-3 text-sm font-semibold text-primary">Detalle</h3>
+        <section
+          className={cn(
+            "group-assignments-detail-pane",
+            !mobileDetailOpen && "group-assignments-detail-pane--hidden-mobile"
+          )}
+        >
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <Button
+              className="group-assignments-back-button"
+              onClick={() => setMobileDetailOpen(false)}
+              size="sm"
+              type="button"
+              variant="secondary"
+            >
+              <ArrowLeft size={15} />
+              Volver
+            </Button>
+            <h3 className="text-sm font-semibold text-primary">Detalle</h3>
+          </div>
           <AssignmentDetail
             detail={detailQuery.data}
             error={detailQuery.isError}
@@ -392,7 +422,12 @@ function AdminAssignmentsView({ group, open }) {
 
   return (
     <>
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div
+        className={cn(
+          "group-assignments-admin-header mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between",
+          mobileDetailOpen && "group-assignments-admin-header--hidden-mobile"
+        )}
+      >
         <div>
           <h3 className="text-sm font-semibold text-primary">Asignaciones</h3>
           <p className="mt-1 text-sm text-muted">

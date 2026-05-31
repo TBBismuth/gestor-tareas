@@ -594,6 +594,49 @@
     display: inline-grid;
     flex: 0 0 auto;
   }
+
+  .group-assignments-admin-header--hidden-mobile,
+  .group-assignments-list-pane--hidden-mobile,
+  .group-assignments-detail-pane--hidden-mobile {
+    display: none;
+  }
+
+  .group-assignments-admin-layout {
+    display: block;
+  }
+
+  .group-assignments-list-pane,
+  .group-assignments-detail-pane {
+    animation: group-assignments-pane-in 180ms ease-out;
+  }
+
+  .group-assignments-list-scroll {
+    max-height: none;
+    overflow: visible;
+    padding-right: 0;
+  }
+
+  .group-assignments-back-button {
+    display: inline-flex;
+  }
+
+  .group-assignments-detail-pane .success-action-button,
+  .group-assignments-detail-pane .danger-action-button {
+    width: 100%;
+    min-height: 2.5rem;
+  }
+}
+
+@keyframes group-assignments-pane-in {
+  from {
+    opacity: 0;
+    transform: translateX(0.5rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .danger-icon-button:hover,
@@ -704,6 +747,21 @@
   padding-bottom: 0;
   pointer-events: none;
   transform: translateY(-0.35rem);
+}
+
+.group-assignments-back-button {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .group-assignments-back-button {
+    display: inline-flex;
+  }
+}
+
+.group-assignments-list-pane,
+.group-assignments-detail-pane {
+  min-width: 0;
 }
 
 .peer:checked + .category-color-switch > span {
@@ -989,6 +1047,11 @@
   .mega-filter-content[data-expanded="true"],
   .notification-preferences-content[data-expanded="true"],
   .group-card-actions-panel[data-expanded="true"] {
+    animation: none;
+  }
+
+  .group-assignments-list-pane,
+  .group-assignments-detail-pane {
     animation: none;
   }
 
