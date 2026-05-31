@@ -5,10 +5,11 @@ import Button from "../../../components/ui/Button.jsx";
 export default function CategoryGrid({ categories, onDelete, onEdit }) {
   return (
     <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-      {categories.map((category) => (
+      {categories.map((category, index) => (
         <article
-          className="category-card relative overflow-hidden rounded-panel border border-app bg-card p-4 shadow-card"
+          className="stagger-card category-card relative overflow-hidden rounded-panel border border-app bg-card p-4 shadow-card"
           key={category.idCategoria}
+          style={{ "--stagger-delay": `${Math.min(index * 35, 250)}ms` }}
         >
           {category.color && (
             <div

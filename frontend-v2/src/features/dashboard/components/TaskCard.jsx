@@ -45,6 +45,7 @@ const groupReviewHeaderBadges = {
 };
 
 export default function TaskCard({
+  animationDelay,
   isCompleting = false,
   isDeleting = false,
   isUpdatingSmartReminder = false,
@@ -109,10 +110,11 @@ export default function TaskCard({
 
   return (
     <article
-      className="task-card-shell group relative overflow-hidden rounded-panel border border-app shadow-card transition hover:-translate-y-0.5"
+      className="stagger-card task-card-shell group relative overflow-hidden rounded-panel border border-app shadow-card transition hover:-translate-y-0.5"
       style={{
         "--task-priority-color": priority.color,
         "--task-state-color": state.color,
+        "--stagger-delay": animationDelay,
       }}
     >
       <div className="task-card-color-zone task-card-priority-zone" aria-hidden="true" />

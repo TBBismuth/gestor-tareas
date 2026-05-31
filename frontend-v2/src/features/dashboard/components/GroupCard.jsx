@@ -10,7 +10,7 @@ import {
   Trash2,
   Users,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Badge from "../../../components/ui/Badge.jsx";
 import Button from "../../../components/ui/Button.jsx";
 import { cn } from "../../../lib/cn";
@@ -38,6 +38,7 @@ function SecondaryActionButton({ children, danger = false, icon: Icon, onClick }
 }
 
 export default function GroupCard({
+  animationDelay,
   currentUserId,
   group,
   knownRole,
@@ -50,6 +51,8 @@ export default function GroupCard({
   onViewMembers,
 }) {
   const [expanded, setExpanded] = useState(false);
+  const [actionsMounted, setActionsMounted] = useState(false);
+  const [actionsVisible, setActionsVisible] = useState(false);
   const [descriptionOpen, setDescriptionOpen] = useState(false);
   const isCreator =
     group.creadorActual === true ||
@@ -83,10 +86,22 @@ export default function GroupCard({
     setExpanded((current) => !current);
   }
 
+  useEffect(() => {
+    if (expanded) {
+      setActionsMounted(true);
+      const timeoutId = window.setTimeout(() => setActionsVisible(true), 20);
+      return () => window.clearTimeout(timeoutId);
+    }
+
+    setActionsVisible(false);
+    const timeoutId = window.setTimeout(() => setActionsMounted(false), 220);
+    return () => window.clearTimeout(timeoutId);
+  }, [expanded]);
+
   return (
     <article
       className={cn(
-        "category-card group relative overflow-hidden rounded-panel border border-app bg-card p-4 shadow-card transition-[box-shadow,transform] hover:-translate-y-0.5",
+        "stagger-card group-card category-card group relative overflow-hidden rounded-panel border border-app bg-card p-4 shadow-card transition-[box-shadow,transform] hover:-translate-y-0.5",
         visualState === "collapsed" && "group-card--collapsed",
         visualState === "expanded-single" && "group-card--expanded-single",
         visualState === "expanded-multi" && "group-card--expanded-multi",
@@ -95,6 +110,7 @@ export default function GroupCard({
       )}
       aria-expanded={expanded}
       onClick={toggleExpanded}
+      style={{ "--stagger-delay": animationDelay }}
     >
       {group.color && (
         <div
@@ -177,9 +193,11 @@ export default function GroupCard({
           </Button>
         </div>
 
-        {hasSecondaryActions && expanded && (
+        {hasSecondaryActions && actionsMounted && (
           <div
             className="group-card-actions-panel rounded-panel border border-app p-3"
+            data-expanded={actionsVisible}
+            aria-hidden={!expanded}
             onClick={(event) => event.stopPropagation()}
           >
             <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted">

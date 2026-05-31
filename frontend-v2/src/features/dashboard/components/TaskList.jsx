@@ -17,8 +17,9 @@ export default function TaskList({
 }) {
   return (
     <div className="mt-5 grid gap-3">
-      {tasks.map((task) => (
+      {tasks.map((task, index) => (
         <TaskCard
+          animationDelay={`${Math.min(index * 35, 250)}ms`}
           isCompleting={isCompleting && completingTaskId === task.idTarea}
           isDeleting={isDeleting && deletingTaskId === task.idTarea}
           isUpdatingSmartReminder={
