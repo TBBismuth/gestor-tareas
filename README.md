@@ -1,470 +1,897 @@
-## 📂 Gestor de Tareas
+# 📂 Gestor de Tareas
 
-Note: the Spanish version of this README is provided further below.
+> Spanish version available below.
 
-RESTful API built with **Spring Boot** for multi-user task management, featuring **JWT**-based authentication, category management, and flexible task filtering. Developed as a personal educational project to deepen and broaden skills in **Spring Boot** and API development.
+**Gestor de Tareas** is a full-stack task management application built as a final project for **Desarrollo de Aplicaciones Multiplataforma (DAM)**. It includes a **Spring Boot REST API**, a **React + Vite PWA frontend**, JWT authentication, collaborative groups, advanced filtering, smart task ordering, internal notifications and Web Push support.
 
+The project started as an educational backend/API project and evolved into a deployed web application with a cloud backend, cloud database and installable PWA frontend.
 
+---
 
+## ✨ Main Features
 
-## ✨ Features
+### Authentication and account access
 
-User Authentication: User registration and login with encrypted passwords (BCrypt) and **JWT** token generation. All endpoints are secured with **JWT** (except registration and login).
+- User registration and login.
+- Password encryption with BCrypt.
+- JWT-based authentication using access tokens and refresh tokens.
+- Protected endpoints using `Authorization: Bearer <token>`.
+- Authenticated user endpoint with `GET /api/usuario/me`.
+- Authenticated account deletion with `DELETE /api/usuario/me`.
 
-Task Management (CRUD): Full create, read, update, delete functionality for tasks. Tasks can be marked as completed, and the user who completed the task is recorded. Each task has an automatically calculated status (e.g. EN_CURSO, COMPLETADA, VENCIDA, COMPLETADA_CON_RETRASO, SIN_FECHA – in progress, completed, expired, completed late, or no deadline).
+### Task management
 
-Category Management: Create, edit, delete, and list categories for organizing tasks.
-
-Task Filtering & Sorting: Filter tasks by priority, status, category, estimated time, or keywords in title/description. Also supports sorting task lists by title, priority, estimated time, or due date, and a quick view of tasks due today.
-
-Input Validation: Robust validation for request data (required fields, future dates for due dates, positive time estimates, etc.), ensuring reliability of inputs.
-
-API Documentation: Interactive API documentation is available via Swagger/OpenAPI. When the application is running, **Swagger UI** can be accessed at http://localhost:8080/documentacion-api to explore and test the endpoints, view schemas, and download the OpenAPI specification.
-
-Configurable Settings: Flexible configuration using an external properties file. An example config file (application-example.properties) is provided to set up database connection details and the **JWT** secret key.
-
-DTO Architecture: Clear structure separating domain models and transfer objects (e.g. TareaRequest, TareaResponse, UsuarioRequest, UsuarioResponse) for cleaner API responses and requests.
-
-Global Exception Handling: Centralized exception management using a global exception handler to produce consistent error responses.
-
-Comprehensive Testing: Extensive unit and integration tests are included (**JUnit 5** with **Spring Boot** testing). The test suite covers controllers, services, repositories, and exception handlers to ensure code reliability. (Tests run with an in-memory **H2** database for isolation.)
-
-
-
-
-## ⚙️ Requirements
-
-Java 17 or higher: Developed and tested on Java 21, but Java 17+ is required at minimum.
-
-Maven: Used for build and dependency management (Maven Wrapper or Maven 3.8+ recommended).
-
-Database: **MariaDB** (or another compatible SQL database). The default configuration assumes **MariaDB** on localhost.
-
-
-
-
-## 🛠️ Configuration
-
-For security, the repository does not include a production application.properties. Instead, an example file is provided:
-
-src/main/resources/application-example.properties
-
-Copy this file and rename it to application.properties in the same directory. Then update the configuration values for your environment, especially the database connection and **JWT** secret key. For example:
-
-spring.datasource.url=jdbc:mariadb://localhost:3306/gestor_tareas
-spring.datasource.username=<your_db_username>
-spring.datasource.password=<your_db_password>
-jwt.secret=<your_jwt_secret_key>
-
-Ensure your database is running and the credentials match your setup.
-
-
-
-
-## ▶️ Running the Application
-
-To build and run the application locally:
-
-mvn clean install
-mvn spring-boot:run
-
-By default, the server will start at . You can then use the API (see endpoints below) or access the **Swagger UI** as described above.
-
-
-
-
-## 🔐 Authentication Workflow
-
-This API uses **JWT** (JSON Web Tokens) for securing endpoints. All protected endpoints require an Authorization: Bearer <token> header with a valid token. Typical usage flow:
-
-Register a new user:
-- **POST** `/api/usuario/add` –Body (JSON):
-
-
-{
-  "nombre": "Usuario Ejemplo",
-  "email": "usuario@ejemplo.com",
-  "password": "tu_password"
-}
-
-This creates a new user account. (No token required for this endpoint.)
-
-Login with the user credentials:
-- **POST** `/api/usuario/login` –Body (JSON):
-
-
-{
-  "email": "usuario@ejemplo.com",
-  "password": "tu_password"
-}
-
-On success, the response will include a **JWT** in a field (for example, "token": "<**JWT**>"). This endpoint also does not require a token.
-
-Authorize subsequent requests:
-For any further API requests, include the **JWT** in the Authorization header:
-
-
-Authorization: Bearer <token>
-
-You can now access protected endpoints with the token. The token is valid for 24 hours by default.
-
-
-
-
-## 🛣️ Main API Endpoints
-
-Below is a summary of the primary API endpoints. All routes are prefixed with /api.
-
-### Users
-
-- **POST** `/api/usuario/add` – Register a new user
-
-- **POST** `/api/usuario/login` – Authenticate and obtain a **JWT**
-
-- **GET** `/api/usuario` – List all users
-
-- **GET** `/api/usuario/{id}` – Get user details by ID
-
-- **GET** `/api/usuario/email/{email}` – Get user details by email
-
-- **DELETE** `/api/usuario/delete/{id}` – Delete a user by ID
-
-### Tasks
-
-- **GET** `/api/tarea` – List all tasks of the authenticated user
-
-- **GET** `/api/tarea/{id}` – Get a specific task by ID (if owned by the authenticated user)
-
-- **POST** `/api/tarea/add` – Create a new task
-
-- **PUT** `/api/tarea/update/{id}` – Update an existing task
-
-- **PATCH** `/api/tarea/completar/{id}` – Mark a task as completed
-
-- **DELETE** `/api/tarea/delete/{id}` – Delete a task
-
-- **GET** `/api/tarea/estado/{id}` – Get the status of a specific task (by ID)
-
-- **GET** `/api/tarea/filtrar/estado/{estado}` – Filter tasks by status
-
-- **GET** `/api/tarea/filtrar/categoria/{idCategoria}` – Filter tasks by category (category ID)
-
-- **GET** `/api/tarea/filtrar/prioridad/{prioridad}` – Filter tasks by priority
-
-- **GET** `/api/tarea/filtrar/tiempo/{minutos}` – Filter tasks by estimated time (in minutes)
-
-- **GET** `/api/tarea/filtrar/palabras/{keywords}` – Filter tasks by keywords contained in title or description
-
-- **GET** `/api/tarea/titulo` – List tasks sorted alphabetically by title
-
-- **GET** `/api/tarea/tiempo` – List tasks sorted by estimated time
-
-- **GET** `/api/tarea/prioridad` – List tasks sorted by priority
-
-- **GET** `/api/tarea/fecha` – List tasks sorted by due date
-
-- **GET** `/api/tarea/hoy` – List tasks with a due date of today
+- Create, read, update and delete personal tasks.
+- Mark tasks as completed.
+- Automatically calculated task status:
+  - `EN_CURSO`
+  - `VENCIDA`
+  - `COMPLETADA`
+  - `COMPLETADA_CON_RETRASO`
+  - `SIN_FECHA`
+- Due date, priority, estimated time, description and category support.
+- Views for tasks due today, upcoming tasks and overdue tasks.
 
 ### Categories
 
-- **GET** `/api/categoria` – List all categories
+- User-owned categories.
+- Protected default categories created when a user registers.
+- Category color and icon support.
+- Category create, update, search and delete operations.
+- Safe category deletion: tasks remain in the system and become uncategorized.
 
-- **GET** `/api/categoria/nombre/{nombre}` – Search categories by name (partial match)
+### Groups and collaborative assignments
 
-- **POST** `/api/categoria/add` – Create a new category
+- Group creation and management.
+- Invitation code flow.
+- Group roles: creator, admin and member.
+- Member management, role changes, ownership transfer and group leave/delete flows.
+- Group task assignments to all members or selected members.
+- Individual task generation per assignee.
+- Assignment tracking, delivery validation and reopening with review comments.
 
-- **PUT** `/api/categoria/update/{id}` – Update an existing category
+### Advanced filtering and smart ordering
 
-- **DELETE** `/api/categoria/delete/{id}` – Delete a category
+- Combined filtering over personal and group-origin tasks.
+- Filter by origin, group, category, multiple priorities, multiple states, keywords, maximum estimated time, exact due date, due date until and ordering criterion.
+- Saved filter state per authenticated user.
+- Smart ordering criterion based on a deterministic scoring heuristic.
+- Dedicated recommended tasks endpoint.
 
-(All endpoints above (except user registration and login) require a valid **JWT** in the Authorization header.)
+### Notifications and reminders
 
+- Internal notification tray.
+- Active notification counter.
+- Close one notification or close all notifications.
+- Notification preferences per user.
+- 24-hour-before-due-date alerts.
+- Smart reminder per task.
+- Group assignment notifications.
+- Web Push subscription registration and deletion.
+- Browser/system notifications when supported and allowed by the user.
 
+### Frontend / PWA
 
+- React + Vite frontend.
+- Installable PWA behavior.
+- Light/dark theme support.
+- Responsive layout for desktop and mobile.
+- Mobile-friendly task cards, filters, notification modal, auth screens and group assignment modal.
+- Optimized mobile card backgrounds using WebP assets.
+
+---
+
+## 🧱 Tech Stack
+
+### Backend
+
+- Java 21
+- Spring Boot
+- Spring Web
+- Spring Security
+- Spring Data JPA
+- Hibernate
+- PostgreSQL
+- JWT
+- Swagger/OpenAPI
+- Web Push with VAPID
+- Maven
+
+### Frontend
+
+- React
+- Vite
+- JavaScript
+- TanStack Query
+- Axios
+- React Router
+- React Hook Form
+- Tailwind CSS / centralized CSS tokens
+- Service Worker / PWA
+
+### Deployment
+
+- Backend: Render
+- Frontend: Vercel
+- Database: Neon PostgreSQL
+- Version control: Git + GitHub
+
+---
+
+## ⚙️ Requirements
+
+### Backend
+
+- Java 21 recommended.
+- Maven Wrapper included.
+- PostgreSQL database.
+
+### Frontend
+
+- Node.js 20+ recommended.
+- npm.
+
+---
+
+## 🛠️ Local Configuration
+
+### Backend configuration
+
+The real local `application.properties` file is not versioned if it contains credentials or secrets. Use the example configuration file as a template and create your own local file.
+
+Typical backend values include:
+
+```properties
+spring.datasource.url=jdbc:postgresql://localhost:5432/gestor_tareas
+spring.datasource.username=your_db_user
+spring.datasource.password=your_db_password
+jwt.secret=your_jwt_secret
+
+app.webpush.enabled=false
+app.webpush.vapid-public-key=
+app.webpush.vapid-private-key=
+app.webpush.vapid-subject=mailto:admin@example.com
+app.webpush.default-url=/app
+```
+
+In production, sensitive values are configured as environment variables in Render.
+
+### Frontend configuration
+
+The frontend can use a local `.env` file based on `.env.example`.
+
+Example:
+
+```env
+VITE_WEBPUSH_PUBLIC_KEY=your_public_vapid_key
+```
+
+The VAPID public key can exist in the frontend. The private VAPID key must only exist in the backend.
+
+---
+
+## ▶️ Running Locally
+
+### Backend
+
+From the backend folder:
+
+```bash
+./mvnw spring-boot:run
+```
+
+On Windows:
+
+```bash
+mvnw.cmd spring-boot:run
+```
+
+The backend usually runs at:
+
+```text
+http://localhost:8080
+```
+
+### Frontend
+
+From the `frontend-v2` folder:
+
+```bash
+npm install
+npm run dev
+```
+
+The Vite development server usually runs at:
+
+```text
+http://localhost:5173
+```
+
+### Production build
+
+Backend:
+
+```bash
+./mvnw -DskipTests clean package
+```
+
+Frontend:
+
+```bash
+npm run build
+```
+
+---
+
+## 🔐 Authentication Workflow
+
+1. Register a new user:
+
+```http
+POST /api/usuario/add
+```
+
+Example body:
+
+```json
+{
+  "nombre": "Example User",
+  "email": "user@example.com",
+  "password": "your_password"
+}
+```
+
+2. Login:
+
+```http
+POST /api/usuario/login
+```
+
+Example body:
+
+```json
+{
+  "email": "user@example.com",
+  "password": "your_password"
+}
+```
+
+3. Use the access token in protected requests:
+
+```http
+Authorization: Bearer <access_token>
+```
+
+4. Refresh the session when the access token expires:
+
+```http
+POST /api/usuario/refresh
+```
+
+The refresh token is only used to obtain a new access token. It should not be used as a normal API access token.
+
+---
+
+## 🛣️ Main API Areas
+
+All routes are prefixed with `/api`.
+
+### Users
+
+- `POST /api/usuario/add`
+- `POST /api/usuario/login`
+- `POST /api/usuario/refresh`
+- `GET /api/usuario/me`
+- `DELETE /api/usuario/me`
+
+### Tasks
+
+- `GET /api/tarea`
+- `GET /api/tarea/{id}`
+- `POST /api/tarea/add`
+- `PUT /api/tarea/update/{id}`
+- `PATCH /api/tarea/completar/{id}`
+- `DELETE /api/tarea/delete/{id}`
+- `GET /api/tarea/hoy`
+- `GET /api/tarea/proximas`
+- `GET /api/tarea/vencidas`
+- `POST /api/tarea/filtrar-combinado`
+- `POST /api/tarea/recomendadas`
+- `GET /api/tarea/filtro-combinado/save`
+- `PUT /api/tarea/filtro-combinado/save`
+- `PATCH /api/tarea/{id}/recordatorio-inteligente`
+- `GET /api/tarea/asignadas-grupo`
+- `GET /api/tarea/asignadas-grupo/{idGrupo}`
+
+### Categories
+
+- `GET /api/categoria`
+- `GET /api/categoria/nombre/{nombreParcial}`
+- `POST /api/categoria/add`
+- `PUT /api/categoria/update/{id}`
+- `DELETE /api/categoria/delete/{id}`
+
+### Groups
+
+- `GET /api/grupo`
+- `GET /api/grupo/{id}`
+- `POST /api/grupo/add`
+- `PUT /api/grupo/update/{id}`
+- `PATCH /api/grupo/active/{id}`
+- `DELETE /api/grupo/delete/{id}`
+- `POST /api/grupo/join`
+- `GET /api/grupo/{id}/miembros`
+- `POST /api/grupo/{id}/miembros/add`
+- `DELETE /api/grupo/{id}/miembros/delete/{idUsuario}`
+- `PATCH /api/grupo/{id}/miembros/rol/{idUsuario}`
+- `PATCH /api/grupo/{id}/transfer-ownership`
+- `DELETE /api/grupo/{id}/leave`
+- `GET /api/grupo/{id}/invitation-code`
+- `POST /api/grupo/{id}/invitation-code/regenerate`
+
+### Group assignments
+
+- `POST /api/grupo/{id}/asignaciones/add`
+- `GET /api/grupo/{id}/asignaciones`
+- `GET /api/grupo/{id}/asignaciones/{idAsignacion}`
+- `PATCH /api/grupo/asignaciones/{idAsignacionGrupoMiembro}/validate`
+- `PATCH /api/grupo/asignaciones/{idAsignacionGrupoMiembro}/reopen`
+
+### Notifications
+
+- `GET /api/notificaciones`
+- `GET /api/notificaciones/count`
+- `PATCH /api/notificaciones/{id}/cerrar`
+- `PATCH /api/notificaciones/cerrar-todas`
+- `GET /api/notificaciones/preferencias`
+- `PUT /api/notificaciones/preferencias`
+- `POST /api/notificaciones/push-subscripciones`
+- `DELETE /api/notificaciones/push-subscripciones`
+
+### Health check
+
+- `GET /api/health`
+
+---
 
 ## 📖 Swagger API Documentation
 
-As mentioned, this project integrates **Swagger UI** (via Springdoc OpenAPI) for API documentation. Once the app is running, navigate to  to view the interactive documentation. From there you can try out API calls directly in the browser, see detailed models (schemas), and even download the OpenAPI (Swagger) specification for integration or analysis.
+Swagger UI is available in the deployed backend:
 
+```text
+https://gestor-backend-tnsg.onrender.com/swagger-ui/index.html#/
+```
 
+When running locally, Swagger is available from the local backend URL if enabled by configuration.
 
+---
 
-## ✅ Testing
+## ✅ Testing and Validation
 
-This project includes a comprehensive test suite. To run all tests, execute:
+The project has an automatic test base created during earlier development stages, including unit, repository, controller and flow tests.
 
-mvn test
+However, part of that test suite is currently outdated because the backend evolved significantly: refresh token authentication, groups, assignments, advanced filtering, smart ordering, notifications and Web Push changed several contracts.
 
-The tests are written with **JUnit 5** and use **Spring Boot**'s testing support. They cover all layers of the application (controllers, services, repositories, and exception handling). An in-memory **H2** database is automatically used for tests, so you do not need a running **MariaDB** instance to execute the test suite. Test data is loaded and torn down for each test, ensuring isolation.
+Current validation has mainly been performed through:
 
+- Backend compilation with Maven.
+- Backend packaging when needed.
+- API testing with Postman.
+- Swagger checks.
+- Frontend production builds with `npm run build`.
+- Manual frontend testing.
+- PWA installation checks.
+- Production validation on Vercel + Render + Neon.
 
+Useful commands:
 
+```bash
+./mvnw -DskipTests compile
+./mvnw -DskipTests clean package
+npm run build
+```
 
-## 🧪 Current Status and Future Plans
+Updating and cleaning the automatic test suite is planned as future technical work.
 
-At present, the backend implementation is complete, and the application’s core features (as listed above) are fully functional and tested.
+---
 
-Planned features for future versions:
+## 🚀 Current Status
 
-Intelligent task prioritization algorithm – e.g. automatically rank or highlight tasks based on urgency, deadlines, or other criteria.
+The current version includes:
 
-Notifications & reminders – system to notify users of upcoming deadlines or send reminders for pending tasks.
+- Backend API deployed on Render.
+- Frontend PWA deployed on Vercel.
+- PostgreSQL database hosted on Neon.
+- JWT access/refresh authentication.
+- Personal tasks and categories.
+- Collaborative groups and assignments.
+- Advanced combined filtering.
+- Smart task ordering.
+- Internal notifications.
+- Web Push support.
+- Responsive mobile interface.
 
-Advanced user roles & permissions – implement role-based access control (e.g. admin users, read-only roles) for more nuanced security.
+---
 
-Web frontend – a user-friendly web interface for the API (to be developed, since currently only the REST API backend exists).
+## 🧪 Future Plans
 
-Deployment configuration – containerization or cloud deployment (Docker, CI/CD, etc.) for running the application in a production environment.
+Planned improvements include:
 
-(These features are not yet implemented at the time of writing and are intended for future releases.)
+- Email verification.
+- Captcha during registration.
+- Profile and account settings.
+- Change email/password flows.
+- More advanced notification preferences.
+- Google login/register.
+- Google Calendar integration.
+- Calendar view.
+- Personal and group statistics.
+- CSV/PDF import and export.
+- More complete group review history.
+- Real shared group tasks without individual duplication.
+- Native mobile app with React Native.
+- Accessibility improvements.
+- Monitoring and advanced logs.
+- Database backups and recovery strategy.
+- Versioned migrations with Flyway or Liquibase.
+- Updated automatic test suite.
 
-
-
+---
 
 ## ✍️ Author and License
 
-Developed by Miguel Guerrero Murillo.
-Repository: 
-Licensed under the MIT License.
+Developed by **Miguel Guerrero Murillo**.
 
+GitHub: https://github.com/TBBismuth
 
+Licensed under the **MIT License**.
 
+---
 
-## 🚀 Note: This project is optimized for use with Eclipse IDE (the repository includes Eclipse configuration files like .classpath and the .settings/ folder to simplify setup). You can import the project directly into Eclipse without additional configuration.
+# 📂 Gestor de Tareas (Versión en Español)
 
+> English version available above.
 
+**Gestor de Tareas** es una aplicación full stack de gestión de tareas desarrollada como proyecto final de **Desarrollo de Aplicaciones Multiplataforma (DAM)**. Incluye una **API REST con Spring Boot**, un **frontend PWA con React + Vite**, autenticación JWT, grupos colaborativos, filtros avanzados, ordenación inteligente de tareas, notificaciones internas y soporte de Web Push.
 
+El proyecto comenzó como una aplicación educativa centrada en backend y API, y evolucionó hasta convertirse en una aplicación web desplegada, con backend en la nube, base de datos en la nube y frontend instalable como PWA.
 
-## 📂 Gestor de Tareas (Versión en Español)
+---
 
-Nota: Este README está disponible en inglés arriba. A continuación, se presenta la versión en español.
+## ✨ Características principales
 
-API REST desarrollada con **Spring Boot** para gestionar tareas multiusuario, con autenticación **JWT**, gestión de categorías y filtrado de tareas. Desarrollado como un proyecto personal didáctico para avanzar y ampliar mis conocimientos en desarrollo de APIs con **Spring Boot**.
+### Autenticación y cuenta
 
+- Registro e inicio de sesión de usuarios.
+- Contraseñas cifradas con BCrypt.
+- Autenticación mediante JWT con access token y refresh token.
+- Endpoints protegidos mediante `Authorization: Bearer <token>`.
+- Consulta de la cuenta autenticada con `GET /api/usuario/me`.
+- Eliminación de la cuenta autenticada con `DELETE /api/usuario/me`.
 
+### Gestión de tareas
 
+- Crear, consultar, actualizar y eliminar tareas personales.
+- Marcar tareas como completadas.
+- Estado de tarea calculado automáticamente:
+  - `EN_CURSO`
+  - `VENCIDA`
+  - `COMPLETADA`
+  - `COMPLETADA_CON_RETRASO`
+  - `SIN_FECHA`
+- Soporte para fecha de entrega, prioridad, tiempo estimado, descripción y categoría.
+- Vistas de tareas de hoy, próximas a vencer y vencidas.
 
-## ✨ Características
+### Categorías
 
-Autenticación de Usuarios: Registro y login de usuarios con contraseña encriptada (BCrypt) y generación de token **JWT**. Todos los endpoints están protegidos con **JWT** (salvo los de registro y login).
+- Categorías propias por usuario.
+- Categorías base protegidas creadas al registrar una cuenta.
+- Soporte de color e icono en categorías.
+- Crear, editar, buscar y eliminar categorías.
+- Eliminación segura de categorías: las tareas se conservan y quedan sin categoría.
 
-Gestión de Tareas (CRUD): Completo create, read, update, delete para tareas. Es posible marcar las tareas como completadas, almacenando quién las completó. Cada tarea tiene un estado calculado automáticamente (por ejemplo: EN_CURSO, COMPLETADA, VENCIDA, COMPLETADA_CON_RETRASO, SIN_FECHA).
+### Grupos y asignaciones colaborativas
 
-Gestión de Categorías: Crear, editar, eliminar y listar categorías para organizar las tareas.
+- Creación y gestión de grupos.
+- Unión a grupos mediante código de invitación.
+- Roles de grupo: creador, admin y miembro.
+- Gestión de miembros, cambios de rol, transferencia de ownership y salida/eliminación de grupos.
+- Asignación de tareas a todo el grupo o a miembros seleccionados.
+- Generación de tareas individuales por destinatario.
+- Seguimiento de asignaciones, validación de entregas y reapertura con comentarios de revisión.
 
-Filtrado y Ordenación de Tareas: Filtrar las tareas por prioridad, estado, categoría, tiempo estimado o palabras clave (en el título o la descripción). También se puede obtener listados ordenados por título, prioridad, tiempo estimado o fecha de entrega, así como consultar rápidamente las tareas con fecha de hoy.
+### Filtro avanzado y ordenación inteligente
 
-Validación de Datos: Validaciones robustas en las entradas (campos requeridos, fechas de entrega futuras, tiempo estimado positivo, etc.) para garantizar la integridad de los datos.
+- Filtro combinado sobre tareas personales y tareas con origen grupal.
+- Filtro por origen, grupo, categoría, múltiples prioridades, múltiples estados, palabras clave, tiempo máximo, fecha exacta, fecha hasta y criterio de ordenación.
+- Estado del filtro guardado por usuario.
+- Criterio de ordenación inteligente basado en una heurística determinista.
+- Endpoint dedicado de tareas recomendadas.
 
-Documentación de la API: Documentación interactiva disponible mediante Swagger/OpenAPI. Con la aplicación en funcionamiento, se puede acceder a la interfaz **Swagger UI** en http://localhost:8080/documentacion-api para explorar y probar los endpoints, ver los esquemas de datos y descargar la especificación OpenAPI.
+### Notificaciones y recordatorios
 
-Configuración Flexible: Uso de un archivo de propiedades externo para la configuración. Se incluye un archivo de ejemplo (application-example.properties) para facilitar la configuración de la conexión a base de datos y la clave secreta **JWT**.
+- Bandeja interna de notificaciones.
+- Contador de notificaciones activas.
+- Cierre individual o global de notificaciones.
+- Preferencias de notificación por usuario.
+- Avisos 24 horas antes del vencimiento.
+- Recordatorio inteligente por tarea.
+- Notificaciones por asignaciones de grupo.
+- Registro y desactivación de suscripciones Web Push.
+- Notificaciones del navegador/sistema cuando el navegador lo soporta y el usuario concede permisos.
 
-Arquitectura DTO: Estructura clara que separa las entidades de la lógica de negocio de los objetos de transferencia de datos (DTO), por ejemplo TareaRequest, TareaResponse, UsuarioRequest, UsuarioResponse.
+### Frontend / PWA
 
-Manejador Global de Excepciones: Gestión centralizada de errores mediante un controlador global, lo que unifica el formato de las respuestas de error de la API.
+- Frontend desarrollado con React + Vite.
+- Comportamiento instalable como PWA.
+- Soporte de tema claro/oscuro.
+- Diseño responsive para escritorio y móvil.
+- Tarjetas, filtros, modal de notificaciones, pantallas de autenticación y modal de asignaciones adaptados a móvil.
+- Fondos móviles de tarjetas optimizados mediante WebP.
 
-Pruebas Automatizadas: Amplia cobertura de pruebas unitarias e integrales con **JUnit 5** y **Spring Boot**. El conjunto de pruebas cubre controladores, servicios, repositorios y manejo de excepciones, asegurando la confiabilidad del código. (Las pruebas usan una base de datos **H2** en memoria para aislar los datos.)
+---
 
+## 🧱 Stack tecnológico
 
+### Backend
 
+- Java 21
+- Spring Boot
+- Spring Web
+- Spring Security
+- Spring Data JPA
+- Hibernate
+- PostgreSQL
+- JWT
+- Swagger/OpenAPI
+- Web Push con VAPID
+- Maven
+
+### Frontend
+
+- React
+- Vite
+- JavaScript
+- TanStack Query
+- Axios
+- React Router
+- React Hook Form
+- Tailwind CSS / tokens CSS centralizados
+- Service Worker / PWA
+
+### Despliegue
+
+- Backend: Render
+- Frontend: Vercel
+- Base de datos: Neon PostgreSQL
+- Control de versiones: Git + GitHub
+
+---
 
 ## ⚙️ Requisitos
 
-Java 17 o superior: Desarrollado y probado con Java 21, se requiere al menos Java 17.
+### Backend
 
-Maven: Utilizado para la compilación y gestión de dependencias (se recomienda Maven 3.8+ o el Maven Wrapper incluido).
+- Java 21 recomendado.
+- Maven Wrapper incluido.
+- Base de datos PostgreSQL.
 
-Base de Datos: **MariaDB** (u otro SGBD SQL compatible). La configuración por defecto asume una base **MariaDB** local.
+### Frontend
 
+- Node.js 20+ recomendado.
+- npm.
 
+---
 
+## 🛠️ Configuración local
 
-## 🛠️ Configuración
+### Configuración del backend
 
-Por motivos de seguridad, no se incluye el archivo de propiedades de aplicación en el repositorio (application.properties). En su lugar, encontrarás un archivo de ejemplo:
+El archivo local real `application.properties` no se versiona si contiene credenciales o secretos. Debe usarse el archivo de ejemplo como plantilla y crear una configuración local propia.
 
-src/main/resources/application-example.properties
+Valores habituales del backend:
 
-Cópialo en el mismo directorio con el nombre application.properties y edita sus valores según tu entorno, especialmente los datos de conexión a la base de datos y la clave secreta **JWT**. Por ejemplo:
+```properties
+spring.datasource.url=jdbc:postgresql://localhost:5432/gestor_tareas
+spring.datasource.username=tu_usuario_db
+spring.datasource.password=tu_password_db
+jwt.secret=tu_secreto_jwt
 
-spring.datasource.url=jdbc:mariadb://localhost:3306/gestor_tareas
-spring.datasource.username=tu_usuario
-spring.datasource.password=tu_contraseña
-jwt.secret=tu_clave_secreta_jwt
+app.webpush.enabled=false
+app.webpush.vapid-public-key=
+app.webpush.vapid-private-key=
+app.webpush.vapid-subject=mailto:admin@example.com
+app.webpush.default-url=/app
+```
 
-Asegúrate de que tu base de datos esté en funcionamiento y de que las credenciales correspondan a tu configuración.
+En producción, los valores sensibles se configuran como variables de entorno en Render.
 
+### Configuración del frontend
 
+El frontend puede utilizar un archivo `.env` local basado en `.env.example`.
 
+Ejemplo:
 
-## ▶️ Ejecución de la Aplicación
+```env
+VITE_WEBPUSH_PUBLIC_KEY=tu_clave_publica_vapid
+```
 
-Para compilar y ejecutar la aplicación localmente:
+La clave pública VAPID puede existir en el frontend. La clave privada VAPID debe existir únicamente en el backend.
 
-mvn clean install
-mvn spring-boot:run
+---
 
-Por defecto, el servidor estará disponible en . Desde allí puedes utilizar la API (ver los endpoints listados abajo) o acceder a la documentación Swagger mencionada anteriormente.
+## ▶️ Ejecución local
 
+### Backend
 
+Desde la carpeta del backend:
 
+```bash
+./mvnw spring-boot:run
+```
 
-## 🔐 Flujo de Autenticación
+En Windows:
 
-El proyecto utiliza **JWT** (JSON Web Tokens) para proteger los endpoints. Todos los endpoints (salvo registro y login) requieren en las peticiones la cabecera Authorization con un token válido. El flujo típico para usar la API es:
+```bash
+mvnw.cmd spring-boot:run
+```
 
-Registrar un nuevo usuario:
-- **POST** `/api/usuario/add` –Cuerpo (JSON):
+El backend normalmente se levanta en:
 
+```text
+http://localhost:8080
+```
 
+### Frontend
+
+Desde la carpeta `frontend-v2`:
+
+```bash
+npm install
+npm run dev
+```
+
+El servidor de desarrollo de Vite normalmente se levanta en:
+
+```text
+http://localhost:5173
+```
+
+### Build de producción
+
+Backend:
+
+```bash
+./mvnw -DskipTests clean package
+```
+
+Frontend:
+
+```bash
+npm run build
+```
+
+---
+
+## 🔐 Flujo de autenticación
+
+1. Registrar un nuevo usuario:
+
+```http
+POST /api/usuario/add
+```
+
+Ejemplo de cuerpo:
+
+```json
 {
   "nombre": "Usuario Ejemplo",
   "email": "usuario@ejemplo.com",
   "password": "tu_password"
 }
+```
 
-Esto creará una nueva cuenta de usuario. (Este endpoint no requiere token.)
+2. Iniciar sesión:
 
-Iniciar sesión (login):
-- **POST** `/api/usuario/login` –Cuerpo (JSON):
+```http
+POST /api/usuario/login
+```
 
+Ejemplo de cuerpo:
 
+```json
 {
   "email": "usuario@ejemplo.com",
   "password": "tu_password"
 }
+```
 
-Si las credenciales son correctas, la respuesta incluirá un **JWT** en un campo (por ejemplo, "token": "<**JWT**>"). (Este endpoint tampoco requiere token.)
+3. Usar el access token en peticiones protegidas:
 
-Usar el token para acceder a la API:
-Para llamadas posteriores, incluye el **JWT** en la cabecera Authorization de tus peticiones:
+```http
+Authorization: Bearer <access_token>
+```
 
+4. Renovar sesión cuando caduca el access token:
 
-Authorization: Bearer <token>
+```http
+POST /api/usuario/refresh
+```
 
-A partir de ese momento, podrás acceder a los endpoints protegidos con el token proporcionado. El token es válido por 24 horas de forma predeterminada.
+El refresh token solo se utiliza para obtener un nuevo access token. No debe utilizarse como token normal de acceso a la API.
 
+---
 
+## 🛣️ Áreas principales de la API
 
-
-## 🛣️ Endpoints Principales
-
-A continuación se resumen los principales endpoints de la API. Todas las rutas comienzan con /api.
+Todas las rutas comienzan por `/api`.
 
 ### Usuarios
 
-- **POST** `/api/usuario/add` – Registrar un nuevo usuario
-
-- **POST** `/api/usuario/login` – Autenticar usuario y obtener **JWT**
-
-- **GET** `/api/usuario` – Listar todos los usuarios
-
-- **GET** `/api/usuario/{id}` – Obtener detalles de un usuario por ID
-
-- **GET** `/api/usuario/email/{email}` – Obtener detalles de un usuario por email
-
-- **DELETE** `/api/usuario/delete/{id}` – Eliminar un usuario por ID
+- `POST /api/usuario/add`
+- `POST /api/usuario/login`
+- `POST /api/usuario/refresh`
+- `GET /api/usuario/me`
+- `DELETE /api/usuario/me`
 
 ### Tareas
 
-- **GET** `/api/tarea` – Listar todas las tareas del usuario autenticado
-
-- **GET** `/api/tarea/{id}` – Obtener una tarea específica por ID (si pertenece al usuario autenticado)
-
-- **POST** `/api/tarea/add` – Crear una nueva tarea
-
-- **PUT** `/api/tarea/update/{id}` – Modificar una tarea existente
-
-- **PATCH** `/api/tarea/completar/{id}` – Marcar una tarea como completada
-
-- **DELETE** `/api/tarea/delete/{id}` – Eliminar una tarea
-
-- **GET** `/api/tarea/estado/{id}` – Consultar el estado de una tarea por ID
-
-- **GET** `/api/tarea/filtrar/estado/{estado}` – Filtrar tareas por estado
-
-- **GET** `/api/tarea/filtrar/categoria/{idCategoria}` – Filtrar tareas por categoría (ID de categoría)
-
-- **GET** `/api/tarea/filtrar/prioridad/{prioridad}` – Filtrar tareas por prioridad
-
-- **GET** `/api/tarea/filtrar/tiempo/{minutos}` – Filtrar tareas por tiempo estimado (en minutos)
-
-- **GET** `/api/tarea/filtrar/palabras/{keywords}` – Filtrar tareas por palabras clave contenidas en el título o la descripción
-
-- **GET** `/api/tarea/titulo` – Listar tareas ordenadas alfabéticamente por título
-
-- **GET** `/api/tarea/tiempo` – Listar tareas ordenadas por tiempo estimado
-
-- **GET** `/api/tarea/prioridad` – Listar tareas ordenadas por prioridad
-
-- **GET** `/api/tarea/fecha` – Listar tareas ordenadas por fecha de entrega
-
-- **GET** `/api/tarea/hoy` – Listar tareas cuya fecha de entrega es hoy
+- `GET /api/tarea`
+- `GET /api/tarea/{id}`
+- `POST /api/tarea/add`
+- `PUT /api/tarea/update/{id}`
+- `PATCH /api/tarea/completar/{id}`
+- `DELETE /api/tarea/delete/{id}`
+- `GET /api/tarea/hoy`
+- `GET /api/tarea/proximas`
+- `GET /api/tarea/vencidas`
+- `POST /api/tarea/filtrar-combinado`
+- `POST /api/tarea/recomendadas`
+- `GET /api/tarea/filtro-combinado/save`
+- `PUT /api/tarea/filtro-combinado/save`
+- `PATCH /api/tarea/{id}/recordatorio-inteligente`
+- `GET /api/tarea/asignadas-grupo`
+- `GET /api/tarea/asignadas-grupo/{idGrupo}`
 
 ### Categorías
 
-- **GET** `/api/categoria` – Listar todas las categorías
+- `GET /api/categoria`
+- `GET /api/categoria/nombre/{nombreParcial}`
+- `POST /api/categoria/add`
+- `PUT /api/categoria/update/{id}`
+- `DELETE /api/categoria/delete/{id}`
 
-- **GET** `/api/categoria/nombre/{nombre}` – Buscar categorías por nombre (coincidencia parcial)
+### Grupos
 
-- **POST** `/api/categoria/add` – Crear una nueva categoría
+- `GET /api/grupo`
+- `GET /api/grupo/{id}`
+- `POST /api/grupo/add`
+- `PUT /api/grupo/update/{id}`
+- `PATCH /api/grupo/active/{id}`
+- `DELETE /api/grupo/delete/{id}`
+- `POST /api/grupo/join`
+- `GET /api/grupo/{id}/miembros`
+- `POST /api/grupo/{id}/miembros/add`
+- `DELETE /api/grupo/{id}/miembros/delete/{idUsuario}`
+- `PATCH /api/grupo/{id}/miembros/rol/{idUsuario}`
+- `PATCH /api/grupo/{id}/transfer-ownership`
+- `DELETE /api/grupo/{id}/leave`
+- `GET /api/grupo/{id}/invitation-code`
+- `POST /api/grupo/{id}/invitation-code/regenerate`
 
-- **PUT** `/api/categoria/update/{id}` – Modificar una categoría existente
+### Asignaciones de grupo
 
-- **DELETE** `/api/categoria/delete/{id}` – Eliminar una categoría
+- `POST /api/grupo/{id}/asignaciones/add`
+- `GET /api/grupo/{id}/asignaciones`
+- `GET /api/grupo/{id}/asignaciones/{idAsignacion}`
+- `PATCH /api/grupo/asignaciones/{idAsignacionGrupoMiembro}/validate`
+- `PATCH /api/grupo/asignaciones/{idAsignacionGrupoMiembro}/reopen`
 
-(Todos los endpoints anteriores, excepto registro de usuario y login, requieren un token **JWT** válido en la cabecera Authorization.)
+### Notificaciones
 
+- `GET /api/notificaciones`
+- `GET /api/notificaciones/count`
+- `PATCH /api/notificaciones/{id}/cerrar`
+- `PATCH /api/notificaciones/cerrar-todas`
+- `GET /api/notificaciones/preferencias`
+- `PUT /api/notificaciones/preferencias`
+- `POST /api/notificaciones/push-subscripciones`
+- `DELETE /api/notificaciones/push-subscripciones`
 
+### Health check
 
+- `GET /api/health`
+
+---
 
 ## 📖 Documentación Swagger
 
-Como se mencionó, el proyecto integra **Swagger UI** (Springdoc OpenAPI) para documentar la API. Una vez que la aplicación esté en ejecución, navega a  para ver la documentación interactiva. Desde allí podrás probar los endpoints directamente, revisar los modelos de datos (schemas) y descargar la especificación OpenAPI (Swagger) para su uso en otras herramientas.
+Swagger UI está disponible en el backend desplegado:
 
+```text
+https://gestor-backend-tnsg.onrender.com/swagger-ui/index.html#/
+```
 
+En local, Swagger estará disponible desde la URL local del backend si está habilitado por configuración.
 
+---
 
-## ✅ Pruebas
+## ✅ Pruebas y validación
 
-Este proyecto incluye una completa batería de pruebas automatizadas. Para ejecutar todos los tests, utiliza:
+El proyecto cuenta con una base de tests automáticos creada durante fases anteriores del desarrollo, incluyendo pruebas unitarias, de repositorio, de controladores y de flujo.
 
-mvn test
+Sin embargo, parte de esa batería está actualmente desactualizada debido a que el backend evolucionó de forma importante: autenticación con refresh token, grupos, asignaciones, filtro avanzado, ordenación inteligente, notificaciones y Web Push cambiaron varios contratos.
 
-Las pruebas están escritas con **JUnit 5** y utilizan el soporte de **Spring Boot** para testing. Cubren todas las capas de la aplicación (controladores, servicios, repositorios y manejo de excepciones). Para aislar los tests, se utiliza una base de datos **H2** en memoria, por lo que no se requiere tener **MariaDB** levantado para ejecutar la suite de pruebas. Los datos de prueba se cargan y limpian en cada test, asegurando independencia entre casos.
+La validación actual se ha realizado principalmente mediante:
 
+- Compilación del backend con Maven.
+- Empaquetado del backend cuando ha sido necesario.
+- Pruebas de API con Postman.
+- Comprobaciones con Swagger.
+- Builds del frontend con `npm run build`.
+- Pruebas manuales del frontend.
+- Comprobación de instalación PWA.
+- Validación en producción sobre Vercel + Render + Neon.
 
+Comandos útiles:
 
+```bash
+./mvnw -DskipTests compile
+./mvnw -DskipTests clean package
+npm run build
+```
 
-## 🧪 Estado Actual y Pendientes (Futuras Versiones)
+Actualizar y sanear la batería automática de tests queda como trabajo técnico futuro.
 
-Actualmente, el backend está completo y la aplicación incluye todas las funcionalidades básicas mencionadas anteriormente, con su correspondiente batería de pruebas automatizadas.
+---
 
-Funcionalidades previstas para futuras versiones:
+## 🚀 Estado actual
 
-Algoritmo inteligente de priorización de tareas – por ejemplo, ordenar o destacar automáticamente las tareas en función de su urgencia, fecha límite u otros criterios.
+La versión actual incluye:
 
-Notificaciones y recordatorios – sistema para notificar a los usuarios sobre fechas próximas de vencimiento o recordar tareas pendientes.
+- Backend API desplegado en Render.
+- Frontend PWA desplegado en Vercel.
+- Base de datos PostgreSQL alojada en Neon.
+- Autenticación JWT con access token y refresh token.
+- Tareas personales y categorías.
+- Grupos y asignaciones colaborativas.
+- Filtro combinado avanzado.
+- Ordenación inteligente de tareas.
+- Notificaciones internas.
+- Soporte Web Push.
+- Interfaz responsive para móvil.
 
-Roles de usuario y permisos avanzados – implementación de control de acceso por roles (p. ej., usuarios administradores, roles solo lectura) para una seguridad más granular.
+---
 
-Frontend web – una interfaz web para los usuarios (actualmente solo existe el backend API REST).
+## 🧪 Futuras mejoras
 
-Despliegue en producción – configuración para desplegar la aplicación en un entorno productivo (contenedores Docker, CI/CD, nube, etc.).
+Mejoras previstas:
 
-(Estas características aún no están implementadas en el momento de redactar este documento y se consideran para futuras versiones del proyecto.)
+- Validación de email.
+- Captcha en registro.
+- Perfil de usuario y ajustes de cuenta.
+- Cambio de email/contraseña.
+- Preferencias de notificación más avanzadas.
+- Login/registro con Google.
+- Integración con Google Calendar.
+- Vista calendario.
+- Estadísticas personales y por grupo.
+- Importación y exportación CSV/PDF.
+- Histórico más completo de revisiones de grupo.
+- Tareas grupales compartidas reales sin duplicación individual.
+- Aplicación móvil nativa con React Native.
+- Mejoras de accesibilidad.
+- Monitorización y logs avanzados.
+- Copias de seguridad y estrategia de recuperación.
+- Migraciones versionadas con Flyway o Liquibase.
+- Actualización de la suite automática de tests.
 
+---
 
+## ✍️ Autor y licencia
 
+Desarrollado por **Miguel Guerrero Murillo**.
 
-## ✍️ Autor y Licencia
+GitHub: https://github.com/TBBismuth
 
-Desarrollado por Miguel Guerrero Murillo.
-Repositorio: 
-Licencia: MIT.
-
-
-
-
-## 🚀 Nota: Este proyecto está optimizado para Eclipse IDE; el repositorio incluye archivos de configuración de Eclipse (como .classpath y la carpeta .settings/) para facilitar la configuración al importar el proyecto. Puedes importar el repositorio directamente en Eclipse sin configuraciones adicionales.
+Licencia: **MIT**.
