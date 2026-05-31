@@ -107,13 +107,15 @@ export default function TaskCard({
       <div className="task-card-center">
         <button
           type="button"
-          className="grid w-full grid-cols-[1fr_auto] items-center gap-4 p-4 text-left"
+          className="task-card-summary grid w-full grid-cols-[1fr_auto] items-center gap-4 p-4 text-left"
           onClick={() => setExpanded((current) => !current)}
           aria-expanded={expanded}
         >
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <h3 className="truncate text-base font-semibold text-primary">{task.titulo}</h3>
+              <h3 className="task-card-title truncate text-base font-semibold text-primary">
+                {task.titulo}
+              </h3>
               {isGroupTask && (
                 <Badge toneColor="var(--color-brand)">
                   <Users size={13} />
@@ -126,13 +128,15 @@ export default function TaskCard({
                 </Badge>
               )}
             </div>
-            <div className="mt-2 flex flex-wrap items-center gap-2">
+            <div className="task-card-meta-row mt-2 flex flex-wrap items-center gap-2">
               <Badge toneColor={priority.color}>{priority.label}</Badge>
               <Badge toneColor={state.color}>{state.label}</Badge>
               <span className="task-card-meta-separator" aria-hidden="true" />
               <span className="task-card-meta text-sm text-muted">
                 {metaItems.map((item, index) => (
-                  <span key={index}>{item}</span>
+                  <span className="task-card-meta-item" key={index}>
+                    {item}
+                  </span>
                 ))}
               </span>
             </div>
@@ -151,6 +155,7 @@ export default function TaskCard({
           <div className="task-card-detail border-t border-app px-4 py-4">
             {task.descripcion?.trim() && (
               <Button
+                className="task-card-action-button"
                 size="sm"
                 type="button"
                 variant="secondary"
@@ -199,7 +204,7 @@ export default function TaskCard({
               {isGroupTask ? (
                 canDeliverGroupTask && (
                   <Button
-                    className="success-action-button"
+                    className="success-action-button task-card-action-button"
                     disabled={isCompleting}
                     onClick={() => onComplete?.(task)}
                   >
@@ -211,7 +216,7 @@ export default function TaskCard({
                 <>
                   {!isCompleted && (
                     <Button
-                      className="success-action-button"
+                      className="success-action-button task-card-action-button"
                       disabled={isCompleting}
                       onClick={() => onComplete?.(task)}
                     >
@@ -219,13 +224,18 @@ export default function TaskCard({
                       {isCompleting ? "Completando..." : "Completar"}
                     </Button>
                   )}
-                  <Button disabled={isDeleting} variant="secondary" onClick={() => onEdit?.(task)}>
+                  <Button
+                    className="task-card-action-button"
+                    disabled={isDeleting}
+                    variant="secondary"
+                    onClick={() => onEdit?.(task)}
+                  >
                     <Pencil size={17} />
                     Editar
                   </Button>
                   <Button
                     variant="secondary"
-                    className="danger-action-button"
+                    className="danger-action-button task-card-action-button"
                     disabled={isDeleting}
                     onClick={() => onDelete?.(task)}
                   >
@@ -235,6 +245,7 @@ export default function TaskCard({
                   {canUseSmartReminder && (
                     <Button
                       className={cn(
+                        "task-card-action-button",
                         isSmartReminderActive &&
                           "border-[color:var(--color-brand)] bg-[color:var(--state-active-bg)] text-[color:var(--state-active-text)]"
                       )}
