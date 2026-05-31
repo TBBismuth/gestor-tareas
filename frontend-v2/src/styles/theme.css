@@ -256,6 +256,23 @@
   justify-content: center;
 }
 
+.auth-logo-easter-button {
+  display: inline-grid;
+  width: fit-content;
+  place-items: center;
+  border: 0;
+  border-radius: var(--radius-panel);
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  cursor: pointer;
+}
+
+.auth-logo-easter-button:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 3px;
+}
+
 .auth-visual-panel {
   position: relative;
   display: grid;
