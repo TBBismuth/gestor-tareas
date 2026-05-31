@@ -433,7 +433,10 @@ function NotificationPreferences({ groups = [] }) {
 export default function NotificationBell({ groups = [] }) {
   const [open, setOpen] = useState(false);
   const [preferencesOpen, setPreferencesOpen] = useState(false);
-  const panelRef = useRef(null);
+  const [preferencesMounted, setPreferencesMounted] = useState(false);
+  const [preferencesVisible, setPreferencesVisible] = useState(false);
+  const triggerRef = useRef(null);
+  const contentRef = useRef(null);
   const queryClient = useQueryClient();
   const notificationsQuery = useQuery({
     queryKey: NOTIFICATIONS_QUERY_KEY,
@@ -477,9 +480,15 @@ export default function NotificationBell({ groups = [] }) {
     if (!open) return undefined;
 
     function handlePointerDown(event) {
-      if (!panelRef.current?.contains(event.target)) {
-        setOpen(false);
+      const target = event.target;
+      if (
+        triggerRef.current?.contains(target) ||
+        contentRef.current?.contains(target)
+      ) {
+        return;
       }
+
+      setOpen(false);
     }
 
     function handleKeyDown(event) {
@@ -496,8 +505,20 @@ export default function NotificationBell({ groups = [] }) {
     };
   }, [open]);
 
+  useEffect(() => {
+    if (preferencesOpen) {
+      setPreferencesMounted(true);
+      const timeoutId = window.setTimeout(() => setPreferencesVisible(true), 20);
+      return () => window.clearTimeout(timeoutId);
+    }
+
+    setPreferencesVisible(false);
+    const timeoutId = window.setTimeout(() => setPreferencesMounted(false), 220);
+    return () => window.clearTimeout(timeoutId);
+  }, [preferencesOpen]);
+
   return (
-    <div className="relative" ref={panelRef}>
+    <div className="relative" ref={triggerRef}>
       <IconButton
         className={cn(
           "relative",
@@ -516,7 +537,18 @@ export default function NotificationBell({ groups = [] }) {
       </IconButton>
 
       {open && (
-        <section className="absolute right-0 top-full z-50 mt-2 w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-panel border border-app bg-panel shadow-panel">
+        <div
+          className="notification-panel-layer"
+          onPointerDown={(event) => {
+            if (event.target === event.currentTarget) {
+              setOpen(false);
+            }
+          }}
+        >
+        <section
+          ref={contentRef}
+          className="notification-panel overflow-hidden rounded-panel border border-app bg-panel shadow-panel"
+        >
           <header className="flex items-center justify-between gap-3 border-b border-app px-4 py-3">
             <div>
               <h2 className="text-base font-semibold text-primary">Notificaciones</h2>
@@ -540,9 +572,16 @@ export default function NotificationBell({ groups = [] }) {
                 Cerrar todas
               </Button>
             )}
+            <IconButton
+              label="Cerrar notificaciones"
+              className="notification-panel-close size-8"
+              onClick={() => setOpen(false)}
+            >
+              <X size={15} />
+            </IconButton>
           </header>
 
-          <div className="max-h-[24rem] overflow-y-auto p-3">
+          <div className="notification-panel-scroll max-h-[24rem] overflow-y-auto p-3">
             {notificationsQuery.isLoading && (
               <p className="flex items-center gap-2 rounded-control border border-app bg-[color:var(--color-surface-card-muted)] px-3 py-3 text-sm text-secondary">
                 <Loader2 className="animate-spin" size={16} />
@@ -616,13 +655,18 @@ export default function NotificationBell({ groups = [] }) {
                 className={cn("transition", preferencesOpen && "rotate-180")}
               />
             </button>
-            {preferencesOpen && (
-              <div className="mt-2">
+            {preferencesMounted && (
+              <div
+                className="notification-preferences-content mt-2"
+                data-expanded={preferencesVisible}
+                aria-hidden={!preferencesOpen}
+              >
                 <NotificationPreferences groups={groups} />
               </div>
             )}
           </div>
         </section>
+        </div>
       )}
     </div>
   );

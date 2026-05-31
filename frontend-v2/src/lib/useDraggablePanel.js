@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 import { readStorage, writeStorage } from "./storage";
 
 const DEFAULT_MARGIN = 24;
+const DEFAULT_DRAG_THRESHOLD = 6;
 
 function parsePosition(value) {
   if (!value) return null;
@@ -18,7 +19,20 @@ function parsePosition(value) {
   return null;
 }
 
-function getInitialPosition(node) {
+function resolveDefaultPosition(defaultPosition, node) {
+  if (typeof defaultPosition === "function") {
+    return defaultPosition(node);
+  }
+
+  return defaultPosition || null;
+}
+
+function getInitialPosition(node, defaultPosition) {
+  const resolvedPosition = resolveDefaultPosition(defaultPosition, node);
+  if (resolvedPosition) {
+    return resolvedPosition;
+  }
+
   const rect = node?.getBoundingClientRect();
   const width = rect?.width || 256;
   const height = rect?.height || 320;
@@ -29,16 +43,16 @@ function getInitialPosition(node) {
   };
 }
 
-function clampPosition(position, node) {
+function clampPosition(position, node, margin = DEFAULT_MARGIN) {
   const rect = node?.getBoundingClientRect();
   const width = rect?.width || 256;
   const height = rect?.height || 320;
-  const maxX = Math.max(DEFAULT_MARGIN, window.innerWidth - width - DEFAULT_MARGIN);
-  const maxY = Math.max(DEFAULT_MARGIN, window.innerHeight - height - DEFAULT_MARGIN);
+  const maxX = Math.max(margin, window.innerWidth - width - margin);
+  const maxY = Math.max(margin, window.innerHeight - height - margin);
 
   return {
-    x: Math.min(Math.max(position.x, DEFAULT_MARGIN), maxX),
-    y: Math.min(Math.max(position.y, DEFAULT_MARGIN), maxY),
+    x: Math.min(Math.max(position.x, margin), maxX),
+    y: Math.min(Math.max(position.y, margin), maxY),
   };
 }
 
@@ -46,9 +60,15 @@ function isSamePosition(a, b) {
   return a?.x === b?.x && a?.y === b?.y;
 }
 
-export function useDraggablePanel(storageKey) {
+export function useDraggablePanel(storageKey, options = {}) {
+  const {
+    defaultPosition = null,
+    dragThreshold = DEFAULT_DRAG_THRESHOLD,
+    margin = DEFAULT_MARGIN,
+  } = options;
   const panelRef = useRef(null);
   const dragRef = useRef(null);
+  const suppressClickRef = useRef(false);
   const [position, setPosition] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
 
@@ -61,23 +81,27 @@ export function useDraggablePanel(storageKey) {
 
   const resetPosition = useCallback(() => {
     if (!panelRef.current) return;
-    const nextPosition = clampPosition(getInitialPosition(panelRef.current), panelRef.current);
+    const nextPosition = clampPosition(
+      getInitialPosition(panelRef.current, defaultPosition),
+      panelRef.current,
+      margin
+    );
     setPosition(nextPosition);
     persistPosition(nextPosition);
-  }, [persistPosition]);
+  }, [defaultPosition, margin, persistPosition]);
 
   useLayoutEffect(() => {
     if (!panelRef.current || position) return;
 
     const savedPosition = parsePosition(readStorage(storageKey));
-    const basePosition = savedPosition || getInitialPosition(panelRef.current);
-    const nextPosition = clampPosition(basePosition, panelRef.current);
+    const basePosition = savedPosition || getInitialPosition(panelRef.current, defaultPosition);
+    const nextPosition = clampPosition(basePosition, panelRef.current, margin);
     setPosition(nextPosition);
 
     if (!savedPosition || !isSamePosition(savedPosition, nextPosition)) {
       persistPosition(nextPosition);
     }
-  }, [persistPosition, position, storageKey]);
+  }, [defaultPosition, margin, persistPosition, position, storageKey]);
 
   useEffect(() => {
     function handleResize() {
@@ -85,7 +109,7 @@ export function useDraggablePanel(storageKey) {
 
       setPosition((current) => {
         if (!current) return current;
-        const nextPosition = clampPosition(current, panelRef.current);
+        const nextPosition = clampPosition(current, panelRef.current, margin);
         persistPosition(nextPosition);
         return nextPosition;
       });
@@ -93,18 +117,46 @@ export function useDraggablePanel(storageKey) {
 
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-  }, [persistPosition]);
+  }, [margin, persistPosition]);
+
+  useEffect(() => {
+    if (!panelRef.current || typeof ResizeObserver === "undefined") return undefined;
+
+    const observer = new ResizeObserver(() => {
+      setPosition((current) => {
+        if (!current || !panelRef.current) return current;
+        const nextPosition = clampPosition(current, panelRef.current, margin);
+        if (!isSamePosition(current, nextPosition)) {
+          persistPosition(nextPosition);
+        }
+        return nextPosition;
+      });
+    });
+
+    observer.observe(panelRef.current);
+    return () => observer.disconnect();
+  }, [margin, persistPosition]);
 
   useEffect(() => {
     function handlePointerMove(event) {
       if (!dragRef.current || !panelRef.current) return;
 
+      const deltaX = event.clientX - dragRef.current.startX;
+      const deltaY = event.clientY - dragRef.current.startY;
+      const distance = Math.hypot(deltaX, deltaY);
+
+      if (!dragRef.current.moved && distance < dragThreshold) {
+        return;
+      }
+
+      dragRef.current.moved = true;
       const nextPosition = clampPosition(
         {
           x: event.clientX - dragRef.current.offsetX,
           y: event.clientY - dragRef.current.offsetY,
         },
-        panelRef.current
+        panelRef.current,
+        margin
       );
 
       setPosition(nextPosition);
@@ -113,6 +165,7 @@ export function useDraggablePanel(storageKey) {
     function handlePointerUp() {
       if (!dragRef.current) return;
 
+      suppressClickRef.current = dragRef.current.moved;
       setIsDragging(false);
       dragRef.current = null;
       document.body.style.userSelect = "";
@@ -134,20 +187,30 @@ export function useDraggablePanel(storageKey) {
       window.removeEventListener("pointerup", handlePointerUp);
       window.removeEventListener("pointercancel", handlePointerUp);
     };
-  }, [isDragging, persistPosition]);
+  }, [dragThreshold, isDragging, margin, persistPosition]);
 
   const dragHandleProps = {
     onPointerDown: (event) => {
-      if (event.pointerType !== "mouse" || event.button !== 0 || !panelRef.current) return;
+      if ((event.pointerType === "mouse" && event.button !== 0) || !panelRef.current) return;
 
       const rect = panelRef.current.getBoundingClientRect();
       dragRef.current = {
         offsetX: event.clientX - rect.left,
         offsetY: event.clientY - rect.top,
+        startX: event.clientX,
+        startY: event.clientY,
+        moved: false,
       };
       setIsDragging(true);
       document.body.style.userSelect = "none";
       event.currentTarget.setPointerCapture?.(event.pointerId);
+    },
+    onClickCapture: (event) => {
+      if (!suppressClickRef.current) return;
+
+      suppressClickRef.current = false;
+      event.preventDefault();
+      event.stopPropagation();
     },
   };
 

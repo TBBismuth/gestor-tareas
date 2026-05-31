@@ -17,6 +17,7 @@ export default function ViewActions({
   activeView = "mine",
   orientation = "vertical",
   className,
+  onAction,
   onFocus,
   onViewChange,
 }) {
@@ -27,11 +28,13 @@ export default function ViewActions({
   function handleViewClick(id) {
     onFocus?.();
     onViewChange?.(id);
+    onAction?.();
   }
 
   function handleLogout() {
     onFocus?.();
     logout();
+    onAction?.();
     toast.success("Sesion cerrada.");
     navigate("/login", { replace: true });
   }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   AlignLeft,
   Bell,
@@ -57,6 +57,8 @@ export default function TaskCard({
   task,
 }) {
   const [expanded, setExpanded] = useState(false);
+  const [detailMounted, setDetailMounted] = useState(false);
+  const [detailVisible, setDetailVisible] = useState(false);
   const [descriptionOpen, setDescriptionOpen] = useState(false);
   const priority = getPriorityVisual(task.prioridad);
   const state = getStateVisual(task.estado);
@@ -92,6 +94,18 @@ export default function TaskCard({
         formatTaskDate(task.fechaEntrega),
         renderCategoryLabel(),
       ];
+
+  useEffect(() => {
+    if (expanded) {
+      setDetailMounted(true);
+      const timeoutId = window.setTimeout(() => setDetailVisible(true), 20);
+      return () => window.clearTimeout(timeoutId);
+    }
+
+    setDetailVisible(false);
+    const timeoutId = window.setTimeout(() => setDetailMounted(false), 220);
+    return () => window.clearTimeout(timeoutId);
+  }, [expanded]);
 
   return (
     <article
@@ -151,8 +165,12 @@ export default function TaskCard({
           />
         </button>
 
-        {expanded && (
-          <div className="task-card-detail border-t border-app px-4 py-4">
+        {detailMounted && (
+          <div
+            className="task-card-detail border-t border-app px-4 py-4"
+            data-expanded={detailVisible}
+            aria-hidden={!expanded}
+          >
             {task.descripcion?.trim() && (
               <Button
                 className="task-card-action-button"

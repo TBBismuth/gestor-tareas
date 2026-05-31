@@ -271,6 +271,8 @@ export default function MegaFilterBar({
   onFocus,
 }) {
   const [isFilterBarExpanded, setIsFilterBarExpanded] = useState(false);
+  const [filterContentMounted, setFilterContentMounted] = useState(false);
+  const [filterContentVisible, setFilterContentVisible] = useState(false);
   const { theme, toggleTheme } = useTheme();
   const ThemeIcon = theme === "dark" ? Sun : Moon;
   const groupDisabled = filters.origen === "PERSONAL";
@@ -348,6 +350,18 @@ export default function MegaFilterBar({
     setIsFilterBarExpanded((current) => !current);
   }
 
+  useEffect(() => {
+    if (isFilterBarExpanded) {
+      setFilterContentMounted(true);
+      const timeoutId = window.setTimeout(() => setFilterContentVisible(true), 20);
+      return () => window.clearTimeout(timeoutId);
+    }
+
+    setFilterContentVisible(false);
+    const timeoutId = window.setTimeout(() => setFilterContentMounted(false), 220);
+    return () => window.clearTimeout(timeoutId);
+  }, [isFilterBarExpanded]);
+
   return (
     <header
       className="relative rounded-panel border border-app bg-panel px-4 pb-6 pt-4 shadow-panel"
@@ -382,9 +396,11 @@ export default function MegaFilterBar({
         </IconButton>
       </div>
 
-      {isFilterBarExpanded && (
+      {filterContentMounted && (
       <form
-        className="mt-4 flex flex-col gap-4 transition"
+        className="mega-filter-content mt-4 flex flex-col gap-4 transition"
+        data-expanded={filterContentVisible}
+        aria-hidden={!isFilterBarExpanded}
         onClick={(event) => event.stopPropagation()}
         onSubmit={handleSubmit}
       >
