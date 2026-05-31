@@ -10,7 +10,7 @@ export default function AuthBrandPanel({ centerContent = false }) {
       <div className="auth-orb auth-orb-secondary" aria-hidden="true" />
 
       <div className="relative z-10">
-        <div className="grid gap-4">
+        <div className="auth-brand-heading grid gap-4">
           <img
             src="/branding/app-icon.png"
             alt=""
@@ -27,15 +27,15 @@ export default function AuthBrandPanel({ centerContent = false }) {
           </div>
         </div>
 
-        <p className="mt-5 text-sm leading-6 text-secondary">
+        <p className="auth-brand-copy mt-5 text-sm leading-6 text-secondary">
           Organiza tu dia con una experiencia clara, rapida y enfocada.
         </p>
 
-        <div className="mt-7 grid gap-3">
+        <div className="auth-brand-benefits mt-7 grid gap-3">
           {bullets.map((item) => (
             <div
               key={item}
-              className="flex items-center gap-3 rounded-control bg-[color:var(--auth-bullet-bg)] px-3 py-2 text-secondary"
+              className="auth-brand-benefit flex items-center gap-3 rounded-control bg-[color:var(--auth-bullet-bg)] px-3 py-2 text-secondary"
             >
               <CheckCircle2 size={18} className="text-[color:var(--color-brand)]" />
               <span className="whitespace-nowrap text-sm font-medium">{item}</span>
